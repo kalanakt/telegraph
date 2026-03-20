@@ -1,0 +1,77 @@
+import type { FastifyInstance } from 'fastify';
+
+import { authenticate } from '../plugins/auth.js';
+import { getBot } from '../services/bot.service.js';
+import {
+  createFlow,
+  deleteFlow,
+  getFlow,
+  listFlows,
+  publishFlow,
+  updateFlowGraph,
+} from '../services/flow.service.js';
+
+export default async function flowRoutes(fastify: FastifyInstance) {
+  fastify.addHook('preValidation', authenticate);
+
+  // Verify the bot belongs to the tenant before processing flow routes
+  fastify.addHook('preHandler', async (request, reply) => {
+    const params = request.params as { botId?: string };
+    if (params.botId) {
+      const bot = await getBot(fastify.db, request.user.tenantId, params.botId);
+      if (!bot) {
+        return reply.notFound('Bot not found');
+      }
+    }
+  });
+
+  fastify.get<{ Params: { botId: string } }>('/', async (request, reply) => {
+    const result = await listFlows(fastify.db, request.user.tenantId, request.params.botId);
+    return reply.send(result);
+  });
+
+  fastify.post<{
+    Params: { botId: string };
+    Body: { name: string; description?: string };
+  }>('/', async (request, reply) => {
+    const flow = await createFlow(fastify.db, request.user.tenantId, request.params.botId, request.body);
+    return reply.code(201).send(flow);
+  });
+
+  fastify.get<{
+    Params: { botId: string; flowId: string };
+  }>('/:flowId', async (request, reply) => {
+    const flow = await getFlow(fastify.db, request.user.tenantId, request.params.flowId);
+    if (!flow) {
+      return reply.notFound('Flow not found');
+    }
+    return reply.send(flow);
+  });
+
+  fastify.put<{
+    Params: { botId: string; flowId: string };
+    Body: { graphJson: unknown };
+  }>('/:flowId', async (request, reply) => {
+    const flow = await updateFlowGraph(
+      fastify.db,
+      request.user.tenantId,
+      request.params.flowId,
+      request.body.graphJson,
+    );
+    return reply.send(flow);
+  });
+
+  fastify.delete<{
+    Params: { botId: string; flowId: string };
+  }>('/:flowId', async (request, reply) => {
+    await deleteFlow(fastify.db, request.user.tenantId, request.params.flowId);
+    return reply.code(204).send();
+  });
+
+  fastify.post<{
+    Params: { botId: string; flowId: string };
+  }>('/:flowId/publish', async (request, reply) => {
+    const plan = await publishFlow(fastify.db, request.user.tenantId, request.params.flowId);
+    return reply.send(plan);
+  });
+}
