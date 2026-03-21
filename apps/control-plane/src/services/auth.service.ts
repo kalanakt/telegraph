@@ -27,36 +27,38 @@ export async function register(db: Database, input: RegisterInput) {
     throw Object.assign(new Error('Tenant slug already taken'), { statusCode: 409 });
   }
 
-  // Insert tenant
-  const [tenant] = await db
-    .insert(tenants)
-    .values({
-      name: input.tenantName,
-      slug: input.tenantSlug,
-    })
-    .returning();
+  const result = await db.transaction(async (tx) => {
+    const [tenant] = await tx
+      .insert(tenants)
+      .values({
+        name: input.tenantName,
+        slug: input.tenantSlug,
+      })
+      .returning();
 
-  if (!tenant) {
-    throw new Error('Failed to create tenant');
-  }
+    if (!tenant) {
+      throw new Error('Failed to create tenant');
+    }
 
-  // Hash password and insert user
-  const passwordHash = await bcrypt.hash(input.password, SALT_ROUNDS);
-  const [user] = await db
-    .insert(users)
-    .values({
-      tenantId: tenant.id,
-      email: input.email,
-      passwordHash,
-      role: 'owner',
-    })
-    .returning();
+    const passwordHash = await bcrypt.hash(input.password, SALT_ROUNDS);
+    const [user] = await tx
+      .insert(users)
+      .values({
+        tenantId: tenant.id,
+        email: input.email,
+        passwordHash,
+        role: 'owner',
+      })
+      .returning();
 
-  if (!user) {
-    throw new Error('Failed to create user');
-  }
+    if (!user) {
+      throw new Error('Failed to create user');
+    }
 
-  return { user, tenant };
+    return { user, tenant };
+  });
+
+  return result;
 }
 
 export async function login(db: Database, input: LoginInput) {
