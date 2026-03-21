@@ -1,3 +1,4 @@
+import rateLimit from '@fastify/rate-limit';
 import fastifySensible from '@fastify/sensible';
 import Fastify from 'fastify';
 
@@ -18,6 +19,7 @@ export async function buildApp() {
 
   // Core plugins
   await app.register(fastifySensible);
+  await app.register(rateLimit, { max: 1000, timeWindow: '1 minute' });
   await app.register(corsPlugin);
   await app.register(dbPlugin);
   await app.register(authPlugin);

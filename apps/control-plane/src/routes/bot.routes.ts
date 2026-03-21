@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 
 import { authenticate } from '../plugins/auth.js';
+import { CreateBotBody, RegisterWebhookBody, UpdateBotBody, parseBody } from './validation.js';
 import {
   createBot,
   deleteBot,
@@ -27,10 +28,13 @@ export default async function botRoutes(fastify: FastifyInstance) {
     return reply.send(result);
   });
 
-  fastify.post<{
-    Body: { name: string; token: string; username?: string };
-  }>('/', async (request, reply) => {
-    const bot = await createBot(fastify.db, request.user.tenantId, request.body, getMasterKey());
+  fastify.post('/', async (request, reply) => {
+    const body = parseBody(CreateBotBody, request.body);
+    const bot = await createBot(fastify.db, request.user.tenantId, {
+      name: body.name,
+      token: body.token,
+      ...(body.username != null && { username: body.username }),
+    }, getMasterKey());
     return reply.code(201).send(bot);
   });
 
@@ -44,9 +48,12 @@ export default async function botRoutes(fastify: FastifyInstance) {
 
   fastify.patch<{
     Params: { botId: string };
-    Body: { name?: string; username?: string };
   }>('/:botId', async (request, reply) => {
-    const bot = await updateBot(fastify.db, request.user.tenantId, request.params.botId, request.body);
+    const body = parseBody(UpdateBotBody, request.body);
+    const bot = await updateBot(fastify.db, request.user.tenantId, request.params.botId, {
+      ...(body.name != null && { name: body.name }),
+      ...(body.username != null && { username: body.username }),
+    });
     return reply.send(bot);
   });
 
@@ -57,14 +64,14 @@ export default async function botRoutes(fastify: FastifyInstance) {
 
   fastify.post<{
     Params: { botId: string };
-    Body: { webhookBaseUrl: string };
   }>('/:botId/webhook/register', async (request, reply) => {
+    const body = parseBody(RegisterWebhookBody, request.body);
     const result = await registerWebhook(
       fastify.db,
       request.user.tenantId,
       request.params.botId,
       getMasterKey(),
-      request.body.webhookBaseUrl,
+      body.webhookBaseUrl,
     );
     return reply.send(result);
   });

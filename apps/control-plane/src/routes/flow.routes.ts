@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 
 import { authenticate } from '../plugins/auth.js';
 import { getBot } from '../services/bot.service.js';
+import { CreateFlowBody, UpdateFlowGraphBody, parseBody } from './validation.js';
 import {
   createFlow,
   deleteFlow,
@@ -32,9 +33,12 @@ export default async function flowRoutes(fastify: FastifyInstance) {
 
   fastify.post<{
     Params: { botId: string };
-    Body: { name: string; description?: string };
   }>('/', async (request, reply) => {
-    const flow = await createFlow(fastify.db, request.user.tenantId, request.params.botId, request.body);
+    const body = parseBody(CreateFlowBody, request.body);
+    const flow = await createFlow(fastify.db, request.user.tenantId, request.params.botId, {
+      name: body.name,
+      ...(body.description != null && { description: body.description }),
+    });
     return reply.code(201).send(flow);
   });
 
@@ -50,13 +54,13 @@ export default async function flowRoutes(fastify: FastifyInstance) {
 
   fastify.put<{
     Params: { botId: string; flowId: string };
-    Body: { graphJson: unknown };
   }>('/:flowId', async (request, reply) => {
+    const body = parseBody(UpdateFlowGraphBody, request.body);
     const flow = await updateFlowGraph(
       fastify.db,
       request.user.tenantId,
       request.params.flowId,
-      request.body.graphJson,
+      body.graphJson,
     );
     return reply.send(flow);
   });

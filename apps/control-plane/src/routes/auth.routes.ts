@@ -2,23 +2,19 @@ import type { FastifyInstance } from 'fastify';
 
 import { authenticate } from '../plugins/auth.js';
 import { login, register, signToken } from '../services/auth.service.js';
+import { LoginBody, RegisterBody, parseBody } from './validation.js';
 
 export default async function authRoutes(fastify: FastifyInstance) {
-  fastify.post<{
-    Body: {
-      email: string;
-      password: string;
-      tenantName: string;
-      tenantSlug: string;
-    };
-  }>('/register', async (request, reply) => {
-    const { email, password, tenantName, tenantSlug } = request.body;
+  fastify.post('/register', {
+    config: { rateLimit: { max: 5, timeWindow: '1 hour' } },
+  }, async (request, reply) => {
+    const body = parseBody(RegisterBody, request.body);
 
     const { user, tenant } = await register(fastify.db, {
-      email,
-      password,
-      tenantName,
-      tenantSlug,
+      email: body.email,
+      password: body.password,
+      tenantName: body.tenantName,
+      tenantSlug: body.tenantSlug,
     });
 
     const token = signToken(fastify, user);
@@ -30,19 +26,13 @@ export default async function authRoutes(fastify: FastifyInstance) {
     });
   });
 
-  fastify.post<{
-    Body: {
-      email: string;
-      password: string;
-      tenantSlug: string;
-    };
-  }>('/login', async (request, reply) => {
-    const { email, password, tenantSlug } = request.body;
+  fastify.post('/login', async (request, reply) => {
+    const body = parseBody(LoginBody, request.body);
 
     const { user, tenant } = await login(fastify.db, {
-      email,
-      password,
-      tenantSlug,
+      email: body.email,
+      password: body.password,
+      tenantSlug: body.tenantSlug,
     });
 
     const token = signToken(fastify, user);
