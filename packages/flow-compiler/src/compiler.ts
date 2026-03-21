@@ -104,6 +104,67 @@ export function validate(graph: FlowGraph): CompileError[] {
     }
   }
 
+  errors.push(...detectCycles(graph));
+
+  return errors;
+}
+
+/** Detect cycles in the graph using DFS from trigger nodes. */
+function detectCycles(graph: FlowGraph): CompileError[] {
+  const errors: CompileError[] = [];
+
+  // Build adjacency list
+  const adjacency = new Map<string, string[]>();
+  for (const edge of graph.edges) {
+    const targets = adjacency.get(edge.source);
+    if (targets) {
+      targets.push(edge.target);
+    } else {
+      adjacency.set(edge.source, [edge.target]);
+    }
+  }
+
+  const triggers = graph.nodes.filter((n) => TRIGGER_TYPES.has(n.type));
+  const visited = new Set<string>();
+  const inStack = new Set<string>();
+  const reportedCycles = new Set<string>();
+
+  function dfs(nodeId: string, path: string[]): void {
+    if (inStack.has(nodeId)) {
+      // Extract cycle from the path
+      const cycleStart = path.indexOf(nodeId);
+      const cyclePath = [...path.slice(cycleStart), nodeId];
+      const key = cyclePath.join(' → ');
+      if (!reportedCycles.has(key)) {
+        reportedCycles.add(key);
+        errors.push({
+          message: `Cycle detected: ${key}`,
+          nodeId,
+        });
+      }
+      return;
+    }
+    if (visited.has(nodeId)) return;
+
+    visited.add(nodeId);
+    inStack.add(nodeId);
+    path.push(nodeId);
+
+    const neighbors = adjacency.get(nodeId);
+    if (neighbors) {
+      for (const neighbor of neighbors) {
+        dfs(neighbor, path);
+      }
+    }
+
+    path.pop();
+    inStack.delete(nodeId);
+  }
+
+  for (const trigger of triggers) {
+    dfs(trigger.id, []);
+  }
+
   return errors;
 }
 

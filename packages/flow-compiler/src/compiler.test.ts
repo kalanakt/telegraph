@@ -185,4 +185,27 @@ describe('flow compiler', () => {
     expect(token).toMatch(/^cb_/);
     expect(callbackMap[token]).toMatchObject({ nodeId: 'wait', planId: plan.id });
   });
+
+  it('rejects a graph with cycles', () => {
+    const graph: FlowGraph = {
+      nodes: [
+        { id: 'trigger', type: 'command_trigger', config: { command: '/loop' }, position: { x: 0, y: 0 } },
+        { id: 'a', type: 'send_message', config: { text: 'A' }, position: { x: 0, y: 100 } },
+        { id: 'b', type: 'send_message', config: { text: 'B' }, position: { x: 0, y: 200 } },
+      ],
+      edges: [
+        { id: 'e1', source: 'trigger', target: 'a' },
+        { id: 'e2', source: 'a', target: 'b' },
+        { id: 'e3', source: 'b', target: 'a' },
+      ],
+    };
+    expect(() => compile('flow-cycle', 1, graph)).toThrow(CompileValidationError);
+    try {
+      compile('flow-cycle', 1, graph);
+    } catch (err) {
+      const ve = err as CompileValidationError;
+      expect(ve.errors.some((e) => e.message.includes('Cycle detected'))).toBe(true);
+    }
+  });
+
 });
