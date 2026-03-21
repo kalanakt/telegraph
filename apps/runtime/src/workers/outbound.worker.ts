@@ -47,12 +47,16 @@ export function createOutboundWorker(
       const botResult = await botLimiter.consume(botId);
       if (!botResult.allowed) {
         rateLimitHitsTotal.inc({ bot_id: botId, limiter_type: 'bot' });
-        throw new Error(`Rate limited (bot), retry after ${String(botResult.retryAfterMs)}ms`);
+        const delay = botResult.retryAfterMs ?? 1000;
+        await job.moveToDelayed(Date.now() + delay, job.token);
+        return;
       }
       const chatResult = await chatLimiter.consume(`${botId}:${chatId}`);
       if (!chatResult.allowed) {
         rateLimitHitsTotal.inc({ bot_id: botId, limiter_type: 'chat' });
-        throw new Error(`Rate limited (chat), retry after ${String(chatResult.retryAfterMs)}ms`);
+        const delay = chatResult.retryAfterMs ?? 1000;
+        await job.moveToDelayed(Date.now() + delay, job.token);
+        return;
       }
 
       // 2. Get decrypted bot token (with cache)
@@ -116,9 +120,10 @@ export function createOutboundWorker(
         outboundMessagesTotal.inc({ bot_id: botId, status: 'success' });
       } catch (err: unknown) {
         if (err instanceof GrammyError && err.error_code === 429) {
-          const retryAfter = err.parameters?.retry_after ?? 1;
+          const retryAfter = (err.parameters?.retry_after ?? 1) * 1000;
           outboundMessagesTotal.inc({ bot_id: botId, status: 'rate_limited' });
-          throw new Error(`Telegram 429, retry after ${String(retryAfter)}s`);
+          await job.moveToDelayed(Date.now() + retryAfter, job.token);
+          return;
         }
         outboundMessagesTotal.inc({ bot_id: botId, status: 'error' });
         throw err;
