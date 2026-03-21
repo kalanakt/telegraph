@@ -61,14 +61,18 @@ export async function updateFlowGraph(db: Database, tenantId: string, flowId: st
 }
 
 export async function deleteFlow(db: Database, tenantId: string, flowId: string) {
-  const [flow] = await db
-    .delete(flows)
-    .where(and(eq(flows.id, flowId), eq(flows.tenantId, tenantId)))
-    .returning();
+  await db.transaction(async (tx) => {
+    await tx.delete(publishedPlans).where(eq(publishedPlans.flowId, flowId));
 
-  if (!flow) {
-    throw Object.assign(new Error('Flow not found'), { statusCode: 404 });
-  }
+    const [flow] = await tx
+      .delete(flows)
+      .where(and(eq(flows.id, flowId), eq(flows.tenantId, tenantId)))
+      .returning();
+
+    if (!flow) {
+      throw Object.assign(new Error('Flow not found'), { statusCode: 404 });
+    }
+  });
 }
 
 export async function publishFlow(db: Database, tenantId: string, flowId: string) {
