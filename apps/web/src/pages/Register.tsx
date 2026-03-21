@@ -18,7 +18,7 @@ export function Register() {
     registerMutation.mutate(
       { name, email, password, tenantName, tenantSlug },
       {
-        onSuccess: (data) => {
+        onSuccess: (data: { token: string; user: { id: string; email: string; name: string; tenantId: string } }) => {
           auth.login(data.token, data.user);
           void navigate("/bots");
         },

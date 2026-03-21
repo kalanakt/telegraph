@@ -50,7 +50,7 @@ export function useCreateFlow() {
         method: "POST",
         body: JSON.stringify(input),
       }),
-    onSuccess: (_data, vars) =>
+    onSuccess: (_data: Flow, vars: CreateFlowInput) =>
       qc.invalidateQueries({ queryKey: ["flows", vars.botId] }),
   });
 }
@@ -63,7 +63,7 @@ export function useSaveFlow() {
         method: "PUT",
         body: JSON.stringify({ graphJson: { nodes, edges } }),
       }),
-    onSuccess: (_data, vars) =>
+    onSuccess: (_data: Flow, vars: SaveFlowInput) =>
       qc.invalidateQueries({ queryKey: ["flows", vars.botId, vars.flowId] }),
   });
 }
@@ -75,7 +75,7 @@ export function usePublishFlow() {
       apiFetch<{ version: number }>(`/bots/${botId}/flows/${flowId}/publish`, {
         method: "POST",
       }),
-    onSuccess: (_data, vars) =>
+    onSuccess: (_data: { version: number }, vars: { botId: string; flowId: string }) =>
       qc.invalidateQueries({ queryKey: ["flows", vars.botId] }),
   });
 }

@@ -64,7 +64,7 @@ describe('acquireLock', () => {
 
   it('release is safe for non-acquired lock', async () => {
     const redis = createMockRedis();
-    const result = await acquireLock(redis, 'test-lock', 5000);
+    await acquireLock(redis, 'test-lock', 5000);
 
     // Force a failed acquire
     const failed = await acquireLock(redis, 'test-lock', 5000);

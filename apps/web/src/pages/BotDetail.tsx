@@ -111,7 +111,7 @@ export function BotDetail() {
       {flowsLoading && <p className="text-gray-500">Loading flows…</p>}
 
       <div className="space-y-3">
-        {flows?.map((flow) => (
+        {flows?.map((flow: { id: string; name: string; description?: string; version: number; published: boolean }) => (
           <Link
             key={flow.id}
             to={`/bots/${botId}/flows/${flow.id}`}

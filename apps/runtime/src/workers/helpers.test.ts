@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { renderTemplate, matchTrigger, evaluateCondition, evaluateExpression } from './helpers';
+import { renderTemplate, matchTrigger, evaluateCondition, evaluateExpression } from './helpers.js';
 import type { TriggerMapping } from '@telegraph/schemas';
 
 describe('renderTemplate', () => {

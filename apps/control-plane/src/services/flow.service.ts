@@ -3,7 +3,6 @@ import { and, desc, eq } from 'drizzle-orm';
 import type { Database } from '@telegraph/db/client';
 import { flows, publishedPlans } from '@telegraph/db/schema';
 import { compile, CompileValidationError } from '@telegraph/flow-compiler';
-import type { FlowGraph } from '@telegraph/schemas';
 import type { Redis } from 'ioredis';
 import { validateFlowGraph } from '@telegraph/schemas';
 

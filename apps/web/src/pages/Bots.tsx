@@ -99,7 +99,7 @@ export function Bots() {
       {isLoading && <p className="text-gray-500">Loading bots…</p>}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {bots?.map((bot) => (
+        {bots?.map((bot: { id: string; name: string; status: string; username: string }) => (
           <Link
             key={bot.id}
             to={`/bots/${bot.id}`}

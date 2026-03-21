@@ -16,7 +16,7 @@ export function Login() {
     loginMutation.mutate(
       { email, password, tenantSlug },
       {
-        onSuccess: (data) => {
+        onSuccess: (data: { token: string; user: { id: string; email: string; name: string; tenantId: string } }) => {
           auth.login(data.token, data.user);
           void navigate("/bots");
         },
