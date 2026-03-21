@@ -49,7 +49,7 @@ export function createExecuteWorker(
       const { botId, chatId, planId, entryNodeId, updateData } = job.data;
 
       // 1. Acquire distributed lock
-      const lock = await acquireLock(redis, `lock:session:${botId}:${chatId}`, 10_000);
+      const lock = await acquireLock(redis, `lock:session:${botId}:${chatId}`, 30_000);
       if (!lock.acquired) {
         throw new Error('Could not acquire session lock');
       }
