@@ -75,7 +75,7 @@ export default async function flowRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { botId: string; flowId: string };
   }>('/:flowId/publish', async (request, reply) => {
-    const plan = await publishFlow(fastify.db, request.user.tenantId, request.params.flowId);
+    const plan = await publishFlow(fastify.db, fastify.redis, request.user.tenantId, request.params.flowId);
     return reply.send(plan);
   });
 }

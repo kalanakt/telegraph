@@ -5,6 +5,7 @@ import Fastify from 'fastify';
 import authPlugin from './plugins/auth.js';
 import corsPlugin from './plugins/cors.js';
 import dbPlugin from './plugins/db.js';
+import redisPlugin from './plugins/redis.js';
 import metricsPlugin from './plugins/metrics.js';
 import authRoutes from './routes/auth.routes.js';
 import botRoutes from './routes/bot.routes.js';
@@ -22,6 +23,7 @@ export async function buildApp() {
   await app.register(rateLimit, { max: 1000, timeWindow: '1 minute' });
   await app.register(corsPlugin);
   await app.register(dbPlugin);
+  await app.register(redisPlugin);
   await app.register(authPlugin);
   await app.register(metricsPlugin);
 

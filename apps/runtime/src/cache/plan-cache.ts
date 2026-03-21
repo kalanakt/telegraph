@@ -27,3 +27,7 @@ export async function setCachedPlan(
   const data: CachedPlan = { plan, callbackMap };
   await redis.set(planKey(botId), JSON.stringify(data), 'EX', PLAN_TTL);
 }
+export async function invalidatePlanCache(redis: Redis, botId: string): Promise<void> {
+  await redis.del(planKey(botId));
+}
+

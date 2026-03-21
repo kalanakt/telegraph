@@ -4,6 +4,7 @@ import type { Database } from '@telegraph/db/client';
 import { flows, publishedPlans } from '@telegraph/db/schema';
 import { compile, CompileValidationError } from '@telegraph/flow-compiler';
 import type { FlowGraph } from '@telegraph/schemas';
+import type { Redis } from 'ioredis';
 import { validateFlowGraph } from '@telegraph/schemas';
 
 interface CreateFlowInput {
@@ -75,7 +76,7 @@ export async function deleteFlow(db: Database, tenantId: string, flowId: string)
   });
 }
 
-export async function publishFlow(db: Database, tenantId: string, flowId: string) {
+export async function publishFlow(db: Database, redis: Redis, tenantId: string, flowId: string) {
   // Fetch flow
   const [flow] = await db
     .select()
@@ -133,6 +134,9 @@ export async function publishFlow(db: Database, tenantId: string, flowId: string
       updatedAt: new Date(),
     })
     .where(eq(flows.id, flowId));
+
+  // Invalidate runtime plan cache so the new version is picked up immediately
+  await redis.del(`plan:${flow.botId}`);
 
   return plan;
 }
