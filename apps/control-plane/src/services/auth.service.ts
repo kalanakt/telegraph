@@ -93,5 +93,5 @@ export function signToken(
     userId: user.id,
     tenantId: user.tenantId,
     role: user.role,
-  });
+  }, { expiresIn: '24h' });
 }

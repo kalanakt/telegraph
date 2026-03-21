@@ -22,7 +22,7 @@ export async function listBots(db: Database, tenantId: string) {
       name: bots.name,
       username: bots.username,
       status: bots.status,
-      webhookSecret: bots.webhookSecret,
+      tenantId: bots.tenantId,
       createdAt: bots.createdAt,
       updatedAt: bots.updatedAt,
     })
@@ -56,7 +56,7 @@ export async function createBot(db: Database, tenantId: string, input: CreateBot
     name: bot.name,
     username: bot.username,
     status: bot.status,
-    webhookSecret: bot.webhookSecret,
+    tenantId: bot.tenantId,
     createdAt: bot.createdAt,
     updatedAt: bot.updatedAt,
   };
@@ -69,7 +69,7 @@ export async function getBot(db: Database, tenantId: string, botId: string) {
       name: bots.name,
       username: bots.username,
       status: bots.status,
-      webhookSecret: bots.webhookSecret,
+      tenantId: bots.tenantId,
       createdAt: bots.createdAt,
       updatedAt: bots.updatedAt,
     })
@@ -100,7 +100,7 @@ export async function updateBot(db: Database, tenantId: string, botId: string, i
     name: bot.name,
     username: bot.username,
     status: bot.status,
-    webhookSecret: bot.webhookSecret,
+    tenantId: bot.tenantId,
     createdAt: bot.createdAt,
     updatedAt: bot.updatedAt,
   };
