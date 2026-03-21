@@ -27,7 +27,14 @@ export default async function flowRoutes(fastify: FastifyInstance) {
   });
 
   fastify.get<{ Params: { botId: string } }>('/', async (request, reply) => {
-    const result = await listFlows(fastify.db, request.user.tenantId, request.params.botId);
+    const { limit = '50', offset = '0' } = request.query as Record<string, string>;
+    const result = await listFlows(
+      fastify.db,
+      request.user.tenantId,
+      request.params.botId,
+      Math.min(parseInt(limit), 100),
+      parseInt(offset),
+    );
     return reply.send(result);
   });
 

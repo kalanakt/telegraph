@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 
 import type { Database } from '@telegraph/db/client';
 import { bots, webhookConfigs } from '@telegraph/db/schema';
@@ -15,7 +15,7 @@ interface UpdateBotInput {
   username?: string;
 }
 
-export async function listBots(db: Database, tenantId: string) {
+export async function listBots(db: Database, tenantId: string, limit = 50, offset = 0) {
   return db
     .select({
       id: bots.id,
@@ -27,7 +27,10 @@ export async function listBots(db: Database, tenantId: string) {
       updatedAt: bots.updatedAt,
     })
     .from(bots)
-    .where(and(eq(bots.tenantId, tenantId), eq(bots.status, 'active')));
+    .where(and(eq(bots.tenantId, tenantId), eq(bots.status, 'active')))
+    .limit(limit)
+    .offset(offset)
+    .orderBy(desc(bots.createdAt));
 }
 
 export async function createBot(db: Database, tenantId: string, input: CreateBotInput, masterKey: string) {

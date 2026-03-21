@@ -24,7 +24,13 @@ export default async function botRoutes(fastify: FastifyInstance) {
   fastify.addHook('preValidation', authenticate);
 
   fastify.get('/', async (request, reply) => {
-    const result = await listBots(fastify.db, request.user.tenantId);
+    const { limit = '50', offset = '0' } = request.query as Record<string, string>;
+    const result = await listBots(
+      fastify.db,
+      request.user.tenantId,
+      Math.min(parseInt(limit), 100),
+      parseInt(offset),
+    );
     return reply.send(result);
   });
 

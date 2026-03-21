@@ -12,6 +12,8 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
+
 
 // Enums
 export const userRoleEnum = pgEnum('user_role', ['owner', 'admin', 'member']);
@@ -131,3 +133,40 @@ export const webhookConfigs = pgTable('webhook_configs', {
   url: text('url').notNull(),
   isActive: boolean('is_active').notNull().default(false),
 });
+
+// Relations
+export const tenantsRelations = relations(tenants, ({ many }) => ({
+  users: many(users),
+  bots: many(bots),
+}));
+
+export const usersRelations = relations(users, ({ one }) => ({
+  tenant: one(tenants, { fields: [users.tenantId], references: [tenants.id] }),
+}));
+
+export const botsRelations = relations(bots, ({ one, many }) => ({
+  tenant: one(tenants, { fields: [bots.tenantId], references: [tenants.id] }),
+  flows: many(flows),
+  rawUpdates: many(rawUpdates),
+}));
+
+export const flowsRelations = relations(flows, ({ one, many }) => ({
+  bot: one(bots, { fields: [flows.botId], references: [bots.id] }),
+  tenant: one(tenants, { fields: [flows.tenantId], references: [tenants.id] }),
+  publishedPlans: many(publishedPlans),
+}));
+
+export const publishedPlansRelations = relations(publishedPlans, ({ one }) => ({
+  flow: one(flows, { fields: [publishedPlans.flowId], references: [flows.id] }),
+  bot: one(bots, { fields: [publishedPlans.botId], references: [bots.id] }),
+  tenant: one(tenants, { fields: [publishedPlans.tenantId], references: [tenants.id] }),
+}));
+
+export const rawUpdatesRelations = relations(rawUpdates, ({ one }) => ({
+  bot: one(bots, { fields: [rawUpdates.botId], references: [bots.id] }),
+}));
+
+export const webhookConfigsRelations = relations(webhookConfigs, ({ one }) => ({
+  bot: one(bots, { fields: [webhookConfigs.botId], references: [bots.id] }),
+}));
+

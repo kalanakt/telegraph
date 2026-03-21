@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 
 import type { Database } from '@telegraph/db/client';
 import { flows, publishedPlans } from '@telegraph/db/schema';
@@ -12,11 +12,14 @@ interface CreateFlowInput {
   description?: string;
 }
 
-export async function listFlows(db: Database, tenantId: string, botId: string) {
+export async function listFlows(db: Database, tenantId: string, botId: string, limit = 50, offset = 0) {
   return db
     .select()
     .from(flows)
-    .where(and(eq(flows.botId, botId), eq(flows.tenantId, tenantId)));
+    .where(and(eq(flows.botId, botId), eq(flows.tenantId, tenantId)))
+    .limit(limit)
+    .offset(offset)
+    .orderBy(desc(flows.createdAt));
 }
 
 export async function createFlow(db: Database, tenantId: string, botId: string, input: CreateFlowInput) {
