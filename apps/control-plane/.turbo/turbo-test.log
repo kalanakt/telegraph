@@ -1,0 +1,24 @@
+
+
+> @telegraph/control-plane@0.0.1 test /Users/kalanakt/Dev/netronk/telegraph/apps/control-plane
+> vitest run --passWithNoTests
+
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90m/Users/kalanakt/Dev/netronk/telegraph/apps/control-plane[39m
+
+ [32m✓[39m [2msrc/routes/[22mvalidation[2m.test.ts[22m[2m (7)[22m
+   [32m✓[39m parseBody + Zod schemas[2m (7)[22m
+     [32m✓[39m RegisterBody accepts valid input and returns parsed data
+     [32m✓[39m RegisterBody throws statusCode 400 when email is missing
+     [32m✓[39m RegisterBody throws statusCode 400 for invalid email
+     [32m✓[39m RegisterBody throws statusCode 400 for short password
+     [32m✓[39m RegisterBody throws statusCode 400 for invalid tenant slug
+     [32m✓[39m LoginBody accepts valid input and returns parsed data
+     [32m✓[39m LoginBody throws statusCode 400 when fields are missing
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m7 passed[39m[22m[90m (7)[39m
+[2m   Start at [22m 01:00:53
+[2m   Duration [22m 391ms[2m (transform 31ms, setup 0ms, collect 34ms, tests 5ms, environment 0ms, prepare 71ms)[22m
+
+[?25h

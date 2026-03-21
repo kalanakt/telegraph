@@ -1,0 +1,54 @@
+
+
+> @telegraph/flow-compiler@0.0.1 test /Users/kalanakt/Dev/netronk/telegraph/packages/flow-compiler
+> vitest run
+
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90m/Users/kalanakt/Dev/netronk/telegraph/packages/flow-compiler[39m
+
+[?25l [90m·[39m [2msrc/[22mcompiler[2m.test.ts[22m[2m (11)[22m
+   [90m·[39m flow compiler[2m (11)[22m
+     [90m·[39m compiles a simple flow (command trigger → send_message)
+     [90m·[39m compiles a branching flow (condition → 2 send_messages)
+     [90m·[39m rejects an empty graph
+     [90m·[39m rejects a graph with orphan nodes
+     [90m·[39m rejects a graph with no triggers
+     [90m·[39m compiles wait_for_input and generates callback tokens
+     [90m·[39m rejects a graph with cycles
+     [90m·[39m compiles condition node edges with correct condition fields
+     [90m·[39m compiles a multi-trigger flow with two command triggers
+     [90m·[39m compiles a message_trigger with pattern and matchType
+     [90m·[39m rejects a self-referencing edge
+[?25l[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m✓[39m [2msrc/[22mcompiler[2m.test.ts[22m[2m (11)[22m
+   [32m✓[39m flow compiler[2m (11)[22m
+     [32m✓[39m compiles a simple flow (command trigger → send_message)
+     [32m✓[39m compiles a branching flow (condition → 2 send_messages)
+     [32m✓[39m rejects an empty graph
+     [32m✓[39m rejects a graph with orphan nodes
+     [32m✓[39m rejects a graph with no triggers
+     [32m✓[39m compiles wait_for_input and generates callback tokens
+     [32m✓[39m rejects a graph with cycles
+     [32m✓[39m compiles condition node edges with correct condition fields
+     [32m✓[39m compiles a multi-trigger flow with two command triggers
+     [32m✓[39m compiles a message_trigger with pattern and matchType
+     [32m✓[39m rejects a self-referencing edge
+[?25l[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m✓[39m [2msrc/[22mcompiler[2m.test.ts[22m[2m (11)[22m
+   [32m✓[39m flow compiler[2m (11)[22m
+     [32m✓[39m compiles a simple flow (command trigger → send_message)
+     [32m✓[39m compiles a branching flow (condition → 2 send_messages)
+     [32m✓[39m rejects an empty graph
+     [32m✓[39m rejects a graph with orphan nodes
+     [32m✓[39m rejects a graph with no triggers
+     [32m✓[39m compiles wait_for_input and generates callback tokens
+     [32m✓[39m rejects a graph with cycles
+     [32m✓[39m compiles condition node edges with correct condition fields
+     [32m✓[39m compiles a multi-trigger flow with two command triggers
+     [32m✓[39m compiles a message_trigger with pattern and matchType
+     [32m✓[39m rejects a self-referencing edge
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m11 passed[39m[22m[90m (11)[39m
+[2m   Start at [22m 01:00:50
+[2m   Duration [22m 1.00s[2m (transform 122ms, setup 0ms, collect 172ms, tests 17ms, environment 0ms, prepare 119ms)[22m
+
+[?25h[?25h

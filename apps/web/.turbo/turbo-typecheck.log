@@ -1,0 +1,4 @@
+
+> @telegraph/web@ typecheck /Users/kalanakt/.mux/src/telegraph/agent_exec_60339cb14f/apps/web
+> tsc --noEmit
+

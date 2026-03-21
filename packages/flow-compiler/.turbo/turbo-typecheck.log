@@ -1,0 +1,4 @@
+
+> @telegraph/flow-compiler@0.0.1 typecheck /Users/kalanakt/.mux/src/telegraph/flow-engine-9bbn/packages/flow-compiler
+> tsc --noEmit
+

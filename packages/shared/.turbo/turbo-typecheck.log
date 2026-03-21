@@ -1,0 +1,4 @@
+
+> @telegraph/shared@0.0.1 typecheck /Users/kalanakt/.mux/src/telegraph/agent_exec_60339cb14f/packages/shared
+> tsc --noEmit
+

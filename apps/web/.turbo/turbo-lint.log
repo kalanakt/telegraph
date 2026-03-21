@@ -1,0 +1,5 @@
+
+
+> @telegraph/web@ lint /Users/kalanakt/Dev/netronk/telegraph/apps/web
+> eslint src/
+

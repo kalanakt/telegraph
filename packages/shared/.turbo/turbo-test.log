@@ -1,0 +1,34 @@
+
+
+> @telegraph/shared@0.0.1 test /Users/kalanakt/Dev/netronk/telegraph/packages/shared
+> vitest run --passWithNoTests
+
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90m/Users/kalanakt/Dev/netronk/telegraph/packages/shared[39m
+
+[?25l [32m✓[39m [2msrc/[22mcrypto[2m.test.ts[22m[2m (5)[22m
+[?25l[?25l[?25l[?25l[?25l[?25l[?25l[?25l[2K[1A[2K[G [32m✓[39m [2msrc/[22mcrypto[2m.test.ts[22m[2m (5)[22m
+ [90m·[39m [2msrc/[22mtelegram[2m.test.ts[22m[2m (4)[22m
+[?25l[2K[1A[2K[1A[2K[G [32m✓[39m [2msrc/[22mcrypto[2m.test.ts[22m[2m (5)[22m
+ [32m✓[39m [2msrc/[22mtelegram[2m.test.ts[22m[2m (4)[22m
+[?25l[?25l[2K[1A[2K[1A[2K[G [32m✓[39m [2msrc/[22mcrypto[2m.test.ts[22m[2m (5)[22m
+ [90m·[39m [2msrc/[22mlocks[2m.test.ts[22m[2m (4)[22m
+ [32m✓[39m [2msrc/[22mtelegram[2m.test.ts[22m[2m (4)[22m
+[?25l[2K[1A[2K[1A[2K[1A[2K[G [32m✓[39m [2msrc/[22mcrypto[2m.test.ts[22m[2m (5)[22m
+ [32m✓[39m [2msrc/[22mlocks[2m.test.ts[22m[2m (4)[22m
+ [32m✓[39m [2msrc/[22mtelegram[2m.test.ts[22m[2m (4)[22m
+[?25l[?25l[2K[1A[2K[1A[2K[1A[2K[G [32m✓[39m [2msrc/[22mcrypto[2m.test.ts[22m[2m (5)[22m
+ [32m✓[39m [2msrc/[22mlocks[2m.test.ts[22m[2m (4)[22m
+ [32m✓[39m [2msrc/[22mrate-limiter[2m.test.ts[22m[2m (3)[22m
+ [32m✓[39m [2msrc/[22mtelegram[2m.test.ts[22m[2m (4)[22m
+[?25l[?25l[?25l[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m✓[39m [2msrc/[22mcrypto[2m.test.ts[22m[2m (5)[22m
+ [32m✓[39m [2msrc/[22mlocks[2m.test.ts[22m[2m (4)[22m
+ [32m✓[39m [2msrc/[22mrate-limiter[2m.test.ts[22m[2m (3)[22m
+ [32m✓[39m [2msrc/[22mtelegram[2m.test.ts[22m[2m (4)[22m
+
+[2m Test Files [22m [1m[32m4 passed[39m[22m[90m (4)[39m
+[2m      Tests [22m [1m[32m16 passed[39m[22m[90m (16)[39m
+[2m   Start at [22m 01:00:47
+[2m   Duration [22m 1.94s[2m (transform 118ms, setup 0ms, collect 239ms, tests 49ms, environment 4ms, prepare 1.23s)[22m
+
+[?25h[?25h

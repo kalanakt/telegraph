@@ -1,0 +1,33 @@
+
+
+> @telegraph/schemas@0.0.1 test /Users/kalanakt/Dev/netronk/telegraph/packages/schemas
+> vitest run --passWithNoTests
+
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90m/Users/kalanakt/Dev/netronk/telegraph/packages/schemas[39m
+
+[?25l [32m✓[39m [2msrc/[22mvalidators[2m.test.ts[22m[2m (6)[22m
+   [32m✓[39m validateFlowGraph[2m (4)[22m
+     [32m✓[39m accepts a minimal valid graph (1 trigger + 1 message + 1 edge)
+     [32m✓[39m accepts the simpleEchoFlow sample
+     [32m✓[39m rejects when nodes field is missing
+     [32m✓[39m rejects a node with an invalid type
+   [32m✓[39m validateExecutionPlan[2m (2)[22m
+     [32m✓[39m accepts a minimal valid execution plan
+     [32m✓[39m rejects when flowId is missing
+[?25l[?25l[?25l[?25l[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m✓[39m [2msrc/[22mvalidators[2m.test.ts[22m[2m (6)[22m
+   [32m✓[39m validateFlowGraph[2m (4)[22m
+     [32m✓[39m accepts a minimal valid graph (1 trigger + 1 message + 1 edge)
+     [32m✓[39m accepts the simpleEchoFlow sample
+     [32m✓[39m rejects when nodes field is missing
+     [32m✓[39m rejects a node with an invalid type
+   [32m✓[39m validateExecutionPlan[2m (2)[22m
+     [32m✓[39m accepts a minimal valid execution plan
+     [32m✓[39m rejects when flowId is missing
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
+[2m   Start at [22m 01:00:47
+[2m   Duration [22m 1.91s[2m (transform 74ms, setup 0ms, collect 140ms, tests 6ms, environment 0ms, prepare 311ms)[22m
+
+[?25h[?25h
