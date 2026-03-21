@@ -1,6 +1,7 @@
 import { FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useRegister } from "../api/auth";
+import { useAuth } from "../contexts/AuthContext";
 
 export function Register() {
   const [name, setName] = useState("");
@@ -10,12 +11,18 @@ export function Register() {
   const [tenantSlug, setTenantSlug] = useState("");
   const navigate = useNavigate();
   const registerMutation = useRegister();
+  const auth = useAuth();
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     registerMutation.mutate(
       { name, email, password, tenantName, tenantSlug },
-      { onSuccess: () => void navigate("/login") },
+      {
+        onSuccess: (data) => {
+          auth.login(data.token, data.user);
+          void navigate("/bots");
+        },
+      },
     );
   };
 

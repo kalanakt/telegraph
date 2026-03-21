@@ -10,8 +10,9 @@ import {
   ReactFlow,
   useEdgesState,
   useNodesState,
+  useReactFlow,
 } from "@xyflow/react";
-import { DragEvent, useCallback, useEffect, useMemo, useRef } from "react";
+import { DragEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useFlow, usePublishFlow, useSaveFlow } from "../api/flows";
 import { FlowToolbar } from "../components/flow/FlowToolbar";
@@ -41,9 +42,8 @@ const nodeTypes: NodeTypes = {
   wait_for_input: WaitForInputNode,
 };
 
-let nodeId = 0;
-function getNextId() {
-  return `node_${String(++nodeId)}`;
+function generateNodeId() {
+  return `node_${crypto.randomUUID().slice(0, 8)}`;
 }
 
 export function FlowEditor() {
@@ -52,19 +52,48 @@ export function FlowEditor() {
   const saveFlow = useSaveFlow();
   const publishFlow = usePublishFlow();
 
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+  const [nodes, setNodes, onNodesChangeDefault] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChangeDefault] = useEdgesState<Edge>([]);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const { screenToFlowPosition } = useReactFlow();
+  const [isDirty, setIsDirty] = useState(false);
   const selectedNode = useMemo(
     () => nodes.find((n) => n.selected),
     [nodes],
   );
+
+  const onNodesChange = useCallback(
+    (changes: Parameters<typeof onNodesChangeDefault>[0]) => {
+      setIsDirty(true);
+      onNodesChangeDefault(changes);
+    },
+    [onNodesChangeDefault],
+  );
+
+  const onEdgesChange = useCallback(
+    (changes: Parameters<typeof onEdgesChangeDefault>[0]) => {
+      setIsDirty(true);
+      onEdgesChangeDefault(changes);
+    },
+    [onEdgesChangeDefault],
+  );
+
+  // Warn on unsaved changes
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
 
   // Load flow data
   useEffect(() => {
     if (flow) {
       setNodes(flow.nodes.length > 0 ? flow.nodes : []);
       setEdges(flow.edges.length > 0 ? flow.edges : []);
+      setIsDirty(false);
     }
   }, [flow, setNodes, setEdges]);
 
@@ -86,28 +115,29 @@ export function FlowEditor() {
       const type = event.dataTransfer.getData("application/reactflow");
       if (!type) return;
 
-      const bounds = reactFlowWrapper.current?.getBoundingClientRect();
-      if (!bounds) return;
-
-      const position = {
-        x: event.clientX - bounds.left,
-        y: event.clientY - bounds.top,
-      };
+      const position = screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
 
       const newNode: Node = {
-        id: getNextId(),
+        id: generateNodeId(),
         type,
         position,
         data: { label: type },
       };
 
       setNodes((nds) => [...nds, newNode]);
+      setIsDirty(true);
     },
-    [setNodes],
+    [setNodes, screenToFlowPosition],
   );
 
   const handleSave = () => {
-    saveFlow.mutate({ botId: botId!, flowId: flowId!, nodes, edges });
+    saveFlow.mutate(
+      { botId: botId!, flowId: flowId!, nodes, edges },
+      { onSuccess: () => setIsDirty(false) },
+    );
   };
 
   const handlePublish = () => {
