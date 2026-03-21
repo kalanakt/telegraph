@@ -208,4 +208,120 @@ describe('flow compiler', () => {
     }
   });
 
+  it('compiles condition node edges with correct condition fields', () => {
+    const graph: FlowGraph = {
+      nodes: [
+        { id: 'trigger', type: 'command_trigger', config: { command: '/decide' }, position: { x: 0, y: 0 } },
+        {
+          id: 'cond',
+          type: 'condition',
+          config: {
+            rules: [
+              { variable: 'a', operator: 'eq', value: '1', targetEdgeId: 'e-rule1' },
+              { variable: 'b', operator: 'eq', value: '2', targetEdgeId: 'e-rule2' },
+            ],
+            defaultEdgeId: 'e-default',
+          },
+          position: { x: 0, y: 100 },
+        },
+        { id: 'r1', type: 'send_message', config: { text: 'R1' }, position: { x: -100, y: 200 } },
+        { id: 'r2', type: 'send_message', config: { text: 'R2' }, position: { x: 0, y: 200 } },
+        { id: 'def', type: 'send_message', config: { text: 'Default' }, position: { x: 100, y: 200 } },
+      ],
+      edges: [
+        { id: 'e-t', source: 'trigger', target: 'cond' },
+        { id: 'e-rule1', source: 'cond', target: 'r1' },
+        { id: 'e-rule2', source: 'cond', target: 'r2' },
+        { id: 'e-default', source: 'cond', target: 'def' },
+      ],
+    };
+
+    const { plan } = compile('flow-cond-detail', 1, graph);
+    const condEdges = plan.nodes['cond']!.edges;
+
+    expect(condEdges).toHaveLength(3);
+
+    const rule1Edge = condEdges.find((e) => e.targetNodeId === 'r1');
+    expect(rule1Edge).toMatchObject({ condition: 'e-rule1', targetNodeId: 'r1' });
+
+    const rule2Edge = condEdges.find((e) => e.targetNodeId === 'r2');
+    expect(rule2Edge).toMatchObject({ condition: 'e-rule2', targetNodeId: 'r2' });
+
+    const defaultEdge = condEdges.find((e) => e.targetNodeId === 'def');
+    expect(defaultEdge).toBeDefined();
+    expect(defaultEdge!.condition).toBeUndefined();
+  });
+
+  it('compiles a multi-trigger flow with two command triggers', () => {
+    const graph: FlowGraph = {
+      nodes: [
+        { id: 'tA', type: 'command_trigger', config: { command: '/a' }, position: { x: 0, y: 0 } },
+        { id: 'tB', type: 'command_trigger', config: { command: '/b' }, position: { x: 200, y: 0 } },
+        { id: 'msg', type: 'send_message', config: { text: 'Hello' }, position: { x: 100, y: 100 } },
+      ],
+      edges: [
+        { id: 'e1', source: 'tA', target: 'msg' },
+        { id: 'e2', source: 'tB', target: 'msg' },
+      ],
+    };
+
+    const { plan } = compile('flow-multi', 1, graph);
+
+    expect(plan.triggers).toHaveLength(2);
+    expect(plan.triggers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: 'command', pattern: '/a' }),
+        expect.objectContaining({ type: 'command', pattern: '/b' }),
+      ]),
+    );
+  });
+
+  it('compiles a message_trigger with pattern and matchType', () => {
+    const graph: FlowGraph = {
+      nodes: [
+        {
+          id: 'mt',
+          type: 'message_trigger',
+          config: { pattern: 'hello', matchType: 'contains' },
+          position: { x: 0, y: 0 },
+        },
+        { id: 'reply', type: 'send_message', config: { text: 'Hi!' }, position: { x: 0, y: 100 } },
+      ],
+      edges: [{ id: 'e1', source: 'mt', target: 'reply' }],
+    };
+
+    const { plan } = compile('flow-msg-trigger', 1, graph);
+
+    expect(plan.triggers).toHaveLength(1);
+    expect(plan.triggers[0]).toMatchObject({
+      type: 'message',
+      pattern: 'hello',
+      matchType: 'contains',
+      entryNodeId: 'reply',
+    });
+  });
+
+  it('rejects a self-referencing edge', () => {
+    const graph: FlowGraph = {
+      nodes: [
+        { id: 'trigger', type: 'command_trigger', config: { command: '/self' }, position: { x: 0, y: 0 } },
+        { id: 'loop', type: 'send_message', config: { text: 'Loop' }, position: { x: 0, y: 100 } },
+      ],
+      edges: [
+        { id: 'e1', source: 'trigger', target: 'loop' },
+        { id: 'e-self', source: 'loop', target: 'loop' },
+      ],
+    };
+
+    expect(() => compile('flow-self', 1, graph)).toThrow(CompileValidationError);
+
+    try {
+      compile('flow-self', 1, graph);
+    } catch (err) {
+      const ve = err as CompileValidationError;
+      expect(ve.errors.some((e) => e.message.includes('self-referencing'))).toBe(true);
+    }
+  });
+
+
 });
