@@ -193,6 +193,7 @@ function resolveTriggers(graph: FlowGraph): TriggerMapping[] {
         triggers.push({
           type: 'message',
           pattern: (config['pattern'] as string) ?? '',
+          matchType: (config['matchType'] as 'exact' | 'contains' | 'regex') ?? 'exact',
           entryNodeId,
         });
         break;

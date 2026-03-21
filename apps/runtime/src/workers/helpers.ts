@@ -29,8 +29,18 @@ export function matchTrigger(triggers: TriggerMapping[], text: string): string |
   // Message triggers
   for (const trigger of triggers) {
     if (trigger.type !== 'message') continue;
-    // Simple exact match
-    if (trigger.pattern === text) return trigger.entryNodeId;
+    const matchType = trigger.matchType ?? 'exact';
+    switch (matchType) {
+      case 'exact':
+        if (trigger.pattern === text) return trigger.entryNodeId;
+        break;
+      case 'contains':
+        if (text.includes(trigger.pattern)) return trigger.entryNodeId;
+        break;
+      case 'regex':
+        if (new RegExp(trigger.pattern).test(text)) return trigger.entryNodeId;
+        break;
+    }
   }
 
   return null;

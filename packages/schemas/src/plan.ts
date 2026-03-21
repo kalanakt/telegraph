@@ -19,6 +19,7 @@ export const TriggerMapping = z.object({
   type: z.enum(['command', 'message', 'callback_query']),
   pattern: z.string(),
   entryNodeId: z.string().min(1),
+  matchType: z.enum(['exact', 'contains', 'regex']).optional(),
 });
 export type TriggerMapping = z.infer<typeof TriggerMapping>;
 
