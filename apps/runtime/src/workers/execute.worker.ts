@@ -73,6 +73,13 @@ export function createExecuteWorker(
         // Store incoming data in variables
         if (updateData['userInput'] !== undefined) {
           session.variables['_lastInput'] = updateData['userInput'];
+          // Copy user input to the named variable set by wait_for_input
+          const waitVar = session.variables['_waitVariable'] as string | undefined;
+          if (waitVar) {
+            session.variables[waitVar] = updateData['userInput'];
+            delete session.variables['_waitVariable'];
+            delete session.variables['_lastInput'];
+          }
         }
         if (updateData['callbackData'] !== undefined) {
           session.variables['_callbackData'] = updateData['callbackData'];

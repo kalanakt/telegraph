@@ -76,7 +76,7 @@ export function evaluateCondition(
     }
 
     if (matched) {
-      return edges.find((e) => e.targetNodeId === rule.targetEdgeId) ?? null;
+      return edges.find((e) => e.condition === rule.targetEdgeId) ?? null;
     }
   }
 
