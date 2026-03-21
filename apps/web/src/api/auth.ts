@@ -4,6 +4,7 @@ import { apiFetch } from "./client";
 interface LoginInput {
   email: string;
   password: string;
+  tenantSlug: string;
 }
 
 interface RegisterInput {

@@ -4,6 +4,7 @@ import { useLogin } from "../api/auth";
 import { useAuth } from "../contexts/AuthContext";
 
 export function Login() {
+  const [tenantSlug, setTenantSlug] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
@@ -13,7 +14,7 @@ export function Login() {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     loginMutation.mutate(
-      { email, password },
+      { email, password, tenantSlug },
       {
         onSuccess: (data) => {
           auth.login(data.token, data.user);
@@ -30,6 +31,19 @@ export function Login() {
           Sign in to Telegraph
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Tenant Slug
+            </label>
+            <input
+              type="text"
+              value={tenantSlug}
+              onChange={(e) => setTenantSlug(e.target.value)}
+              required
+              placeholder="your-org-slug"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
               Email

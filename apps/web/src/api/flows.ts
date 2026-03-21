@@ -61,7 +61,7 @@ export function useSaveFlow() {
     mutationFn: ({ botId, flowId, nodes, edges }: SaveFlowInput) =>
       apiFetch<Flow>(`/bots/${botId}/flows/${flowId}`, {
         method: "PUT",
-        body: JSON.stringify({ nodes, edges }),
+        body: JSON.stringify({ graphJson: { nodes, edges } }),
       }),
     onSuccess: (_data, vars) =>
       qc.invalidateQueries({ queryKey: ["flows", vars.botId, vars.flowId] }),

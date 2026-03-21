@@ -9,7 +9,7 @@ export function WaitForInputNode({ data }: NodeProps) {
         ⏳ Wait for Input
       </div>
       <div className="max-w-[200px] truncate px-3 py-2 text-sm text-gray-700">
-        → {(d["varName"] as string) || "input"}
+        → {(d["variable"] as string) || "input"}
       </div>
       <Handle type="source" position={Position.Bottom} />
     </div>

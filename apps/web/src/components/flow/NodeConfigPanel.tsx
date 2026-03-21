@@ -161,8 +161,8 @@ export function NodeConfigPanel({ node, onChange }: NodeConfigPanelProps) {
             </Field>
             <Field label="Prompt">
               <textarea
-                value={(data["prompt"] as string) ?? ""}
-                onChange={(e) => update("prompt", e.target.value)}
+                value={(data["userPromptTemplate"] as string) ?? ""}
+                onChange={(e) => update("userPromptTemplate", e.target.value)}
                 rows={4}
                 className="input"
               />
@@ -170,8 +170,8 @@ export function NodeConfigPanel({ node, onChange }: NodeConfigPanelProps) {
             <Field label="Result Variable">
               <input
                 type="text"
-                value={(data["resultVar"] as string) ?? ""}
-                onChange={(e) => update("resultVar", e.target.value)}
+                value={(data["responseVariable"] as string) ?? ""}
+                onChange={(e) => update("responseVariable", e.target.value)}
                 className="input"
               />
             </Field>
@@ -219,16 +219,16 @@ export function NodeConfigPanel({ node, onChange }: NodeConfigPanelProps) {
             <Field label="Variable Name">
               <input
                 type="text"
-                value={(data["varName"] as string) ?? ""}
-                onChange={(e) => update("varName", e.target.value)}
+                value={(data["variable"] as string) ?? ""}
+                onChange={(e) => update("variable", e.target.value)}
                 className="input"
               />
             </Field>
             <Field label="Expression">
               <input
                 type="text"
-                value={(data["expression"] as string) ?? ""}
-                onChange={(e) => update("expression", e.target.value)}
+                value={(data["valueExpression"] as string) ?? ""}
+                onChange={(e) => update("valueExpression", e.target.value)}
                 className="input"
               />
             </Field>
@@ -249,8 +249,21 @@ export function NodeConfigPanel({ node, onChange }: NodeConfigPanelProps) {
             <Field label="Variable Name">
               <input
                 type="text"
-                value={(data["varName"] as string) ?? ""}
-                onChange={(e) => update("varName", e.target.value)}
+                value={(data["variable"] as string) ?? ""}
+                onChange={(e) => update("variable", e.target.value)}
+                className="input"
+              />
+            </Field>
+            <Field label="Timeout (seconds)">
+              <input
+                type="number"
+                value={(data["timeoutSecs"] as number) ?? ""}
+                onChange={(e) =>
+                  update(
+                    "timeoutSecs",
+                    e.target.value ? Number(e.target.value) : undefined,
+                  )
+                }
                 className="input"
               />
             </Field>

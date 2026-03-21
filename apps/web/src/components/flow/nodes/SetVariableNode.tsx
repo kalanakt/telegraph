@@ -9,8 +9,8 @@ export function SetVariableNode({ data }: NodeProps) {
         📝 Set Variable
       </div>
       <div className="px-3 py-2 text-sm text-gray-700">
-        {(d["varName"] as string) || "var"} ={" "}
-        {(d["expression"] as string) || "value"}
+        {(d["variable"] as string) || "var"} ={" "}
+        {(d["valueExpression"] as string) || "value"}
       </div>
       <Handle type="source" position={Position.Bottom} />
     </div>
