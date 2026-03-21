@@ -88,12 +88,12 @@ export async function publishFlow(db: Database, tenantId: string, flowId: string
   }
 
   // Validate graph through JSON Schema
-  const valid = validateFlowGraph(flow.graphJson);
-  if (!valid) {
-    throw Object.assign(new Error('Invalid flow graph schema'), { statusCode: 400 });
+  const validationResult = validateFlowGraph(flow.graphJson);
+  if (!validationResult.success) {
+    throw Object.assign(new Error(`Invalid flow graph: ${validationResult.error}`), { statusCode: 400 });
   }
 
-  const graph = flow.graphJson as unknown as FlowGraph;
+  const graph = validationResult.data;
   const newVersion = flow.version + 1;
 
   // Compile — may throw CompileValidationError

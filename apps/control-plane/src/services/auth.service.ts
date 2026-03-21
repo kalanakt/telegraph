@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 
 import type { Database } from '@telegraph/db/client';
@@ -67,13 +67,11 @@ export async function login(db: Database, input: LoginInput) {
   }
 
   // Find user by tenantId + email
-  const allUsers = await db
+  const [user] = await db
     .select()
     .from(users)
-    .where(eq(users.tenantId, tenant.id))
-    .limit(100);
-
-  const user = allUsers.find((u) => u.email === input.email);
+    .where(and(eq(users.tenantId, tenant.id), eq(users.email, input.email)))
+    .limit(1);
   if (!user) {
     throw Object.assign(new Error('Invalid credentials'), { statusCode: 401 });
   }
