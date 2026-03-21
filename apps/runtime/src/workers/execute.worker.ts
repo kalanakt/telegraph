@@ -14,6 +14,7 @@ import { loadPlan } from '../cache/plan-loader.js';
 import type { RuntimeConfig } from '../config.js';
 import { getSession, setSession } from '../session/manager.js';
 import { evaluateCondition, evaluateExpression, renderTemplate } from './helpers.js';
+import { validateUrl } from './url-validator.js';
 
 const logger = createLogger('execute-worker');
 
@@ -159,6 +160,12 @@ export function createExecuteWorker(
                 responseVariable: string;
               };
               const url = renderTemplate(cfg.url, session.variables);
+              if (!await validateUrl(url)) {
+                logger.warn({ botId, chatId, url }, 'Blocked SSRF attempt');
+                session.variables[cfg.responseVariable] = null;
+                currentNodeId = node.edges[0]?.targetNodeId ?? null;
+                break;
+              }
               try {
                 const fetchOpts: RequestInit = {
                   method: cfg.method ?? 'GET',
