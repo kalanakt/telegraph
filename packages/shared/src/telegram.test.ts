@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { verifyWebhookSecret, telegramApiUrl } from './telegram';
+import { verifyWebhookSecret, telegramApiUrl } from './telegram.js';
 
 describe('verifyWebhookSecret', () => {
   it('returns true for matching secrets', () => {

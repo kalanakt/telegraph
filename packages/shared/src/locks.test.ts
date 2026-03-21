@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { Redis } from 'ioredis';
-import { acquireLock } from './locks';
+import { acquireLock } from './locks.js';
 
 const createMockRedis = () => {
   const store = new Map<string, string>();

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { Redis } from 'ioredis';
-import { TokenBucketLimiter } from './rate-limiter';
+import { TokenBucketLimiter } from './rate-limiter.js';
 
 describe('TokenBucketLimiter', () => {
   it('allows within budget', async () => {
@@ -36,6 +36,6 @@ describe('TokenBucketLimiter', () => {
     // The 3rd argument (index 2) to eval should be the full key
     expect(redis.eval).toHaveBeenCalledTimes(1);
     const callArgs = vi.mocked(redis.eval).mock.calls[0];
-    expect(callArgs[2]).toBe('myprefix:somekey');
+    expect(callArgs![2]).toBe('myprefix:somekey');
   });
 });
