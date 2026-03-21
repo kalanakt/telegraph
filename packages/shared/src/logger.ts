@@ -9,7 +9,8 @@ export function createLogger(
   name: string,
   opts?: LoggerOptions,
 ): pino.Logger {
-  const logger = pino({ name });
+  const level = process.env['LOG_LEVEL'] ?? 'info';
+  const logger = pino({ name, level });
 
   const bindings: Record<string, string> = {};
   if (opts?.tenantId !== undefined) bindings['tenantId'] = opts.tenantId;

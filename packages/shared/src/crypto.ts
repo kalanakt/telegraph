@@ -14,6 +14,9 @@ export function encryptBotToken(
   masterKeyBase64: string,
 ): EncryptedToken {
   const key = Buffer.from(masterKeyBase64, 'base64');
+  if (key.length !== 32) {
+    throw new Error(`Invalid master key length: expected 32 bytes, got ${key.length}`);
+  }
   const iv = randomBytes(IV_LENGTH);
   const cipher = createCipheriv(ALGORITHM, key, iv);
 
@@ -35,6 +38,9 @@ export function decryptBotToken(
   masterKeyBase64: string,
 ): string {
   const key = Buffer.from(masterKeyBase64, 'base64');
+  if (key.length !== 32) {
+    throw new Error(`Invalid master key length: expected 32 bytes, got ${key.length}`);
+  }
   const decipher = createDecipheriv(
     ALGORITHM,
     key,

@@ -20,12 +20,7 @@
       "@telegraph/db/*": ["./packages/db/src/*"],
       "@telegraph/schemas": ["./packages/schemas/src/index.ts"],
       "@telegraph/flow-compiler": ["./packages/flow-compiler/src/index.ts"],
-      "@telegraph/telemetry": ["./packages/telemetry/src/index.ts"],
-      "@shared": ["./packages/shared/src/index.ts"],
-      "@db": ["./packages/db/src/index.ts"],
-      "@schemas": ["./packages/schemas/src/index.ts"],
-      "@compiler": ["./packages/flow-compiler/src/index.ts"],
-      "@telemetry": ["./packages/telemetry/src/index.ts"]
+      "@telegraph/telemetry": ["./packages/telemetry/src/index.ts"]
     }
   }
 }

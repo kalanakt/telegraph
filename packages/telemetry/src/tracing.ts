@@ -4,14 +4,19 @@ import { NodeSDK } from '@opentelemetry/sdk-node';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 
 export function initTracing(serviceName: string): NodeSDK {
-  const sdk = new NodeSDK({
+  const endpoint = process.env['OTEL_EXPORTER_OTLP_ENDPOINT'];
+
+  const config: ConstructorParameters<typeof NodeSDK>[0] = {
     resource: new Resource({
       [ATTR_SERVICE_NAME]: serviceName,
     }),
-    traceExporter: new OTLPTraceExporter({
-      url: process.env['OTEL_EXPORTER_OTLP_ENDPOINT'] ?? 'http://localhost:4317',
-    }),
-  });
+  };
+
+  if (endpoint) {
+    config.traceExporter = new OTLPTraceExporter({ url: endpoint });
+  }
+
+  const sdk = new NodeSDK(config);
 
   sdk.start();
   return sdk;
