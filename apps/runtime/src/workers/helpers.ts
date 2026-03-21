@@ -66,13 +66,20 @@ export function evaluateCondition(
       case 'lt':
         matched = Number(actual) < Number(expected);
         break;
-      case 'regex':
+      case 'regex': {
+        // Reject dangerous patterns (nested quantifiers) and overly long patterns
+        if (/([+*])\??[^)]*\1/.test(expected) || expected.length > 200) {
+          matched = false;
+          break;
+        }
         try {
-          matched = new RegExp(expected).test(String(actual));
+          const str = String(actual).slice(0, 10_000); // limit input length
+          matched = new RegExp(expected).test(str);
         } catch {
           matched = false;
         }
         break;
+      }
     }
 
     if (matched) {
