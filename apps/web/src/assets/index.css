@@ -1,6 +1,6 @@
-@import 'tailwindcss';
-@import '@vue-flow/core/dist/style.css';
-@import '@vue-flow/core/dist/theme-default.css';
+@import "tailwindcss";
+@import "@vue-flow/core/dist/style.css";
+@import "@vue-flow/core/dist/theme-default.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -40,74 +40,76 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-sans:
+    "Sora", "Avenir Next", "Segoe UI", ui-sans-serif, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.005 285.823);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.141 0.005 285.823);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.141 0.005 285.823);
-  --primary: oklch(0.21 0.006 285.885);
-  --primary-foreground: oklch(0.985 0.002 247.839);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.21 0.006 285.885);
+  --background: oklch(0.986 0.01 92.5);
+  --foreground: oklch(0.26 0.035 248.6);
+  --card: oklch(0.998 0.003 89.7);
+  --card-foreground: oklch(0.26 0.035 248.6);
+  --popover: oklch(0.998 0.003 89.7);
+  --popover-foreground: oklch(0.26 0.035 248.6);
+  --primary: oklch(0.59 0.164 224.8);
+  --primary-foreground: oklch(0.99 0.004 95.7);
+  --secondary: oklch(0.942 0.016 217.9);
+  --secondary-foreground: oklch(0.32 0.038 249.2);
+  --muted: oklch(0.954 0.011 230.4);
+  --muted-foreground: oklch(0.526 0.03 245.8);
+  --accent: oklch(0.946 0.03 84.6);
+  --accent-foreground: oklch(0.31 0.04 248.3);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.705 0.015 286.067);
+  --border: oklch(0.902 0.012 243.8);
+  --input: oklch(0.902 0.012 243.8);
+  --ring: oklch(0.728 0.118 224.1);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0.002 247.839);
-  --sidebar-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.705 0.015 286.067);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.99 0.006 93.1);
+  --sidebar-foreground: oklch(0.26 0.035 248.6);
+  --sidebar-accent: oklch(0.948 0.014 219.5);
+  --sidebar-accent-foreground: oklch(0.32 0.038 249.2);
+  --sidebar-border: oklch(0.902 0.012 243.8);
+  --sidebar-ring: oklch(0.728 0.118 224.1);
+  --chart-1: oklch(0.63 0.185 31.3);
+  --chart-2: oklch(0.62 0.143 214.9);
+  --chart-3: oklch(0.71 0.153 164.3);
+  --chart-4: oklch(0.67 0.188 282.6);
+  --chart-5: oklch(0.72 0.166 80.8);
 }
 
 .dark {
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.985 0.002 247.839);
-  --card: oklch(0.141 0.005 285.823);
-  --card-foreground: oklch(0.985 0.002 247.839);
-  --popover: oklch(0.141 0.005 285.823);
-  --popover-foreground: oklch(0.985 0.002 247.839);
-  --primary: oklch(0.985 0.002 247.839);
-  --primary-foreground: oklch(0.21 0.006 285.885);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0.002 247.839);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground: oklch(0.985 0.002 247.839);
+  --background: oklch(0.188 0.018 252.1);
+  --foreground: oklch(0.962 0.009 92.3);
+  --card: oklch(0.22 0.018 252.2);
+  --card-foreground: oklch(0.962 0.009 92.3);
+  --popover: oklch(0.2 0.018 252.2);
+  --popover-foreground: oklch(0.962 0.009 92.3);
+  --primary: oklch(0.74 0.136 215.7);
+  --primary-foreground: oklch(0.24 0.03 249.7);
+  --secondary: oklch(0.295 0.023 252.4);
+  --secondary-foreground: oklch(0.952 0.011 93.1);
+  --muted: oklch(0.295 0.023 252.4);
+  --muted-foreground: oklch(0.763 0.02 236.7);
+  --accent: oklch(0.322 0.029 82.7);
+  --accent-foreground: oklch(0.952 0.011 93.1);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.274 0.006 286.033);
-  --input: oklch(0.274 0.006 286.033);
-  --ring: oklch(0.442 0.017 285.786);
-  --sidebar: oklch(0.18 0.005 285.823);
-  --sidebar-foreground: oklch(0.985 0.002 247.839);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground: oklch(0.985 0.002 247.839);
-  --sidebar-border: oklch(0.274 0.006 286.033);
-  --sidebar-ring: oklch(0.442 0.017 285.786);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
+  --border: oklch(0.33 0.02 252.5);
+  --input: oklch(0.33 0.02 252.5);
+  --ring: oklch(0.684 0.123 215.3);
+  --sidebar: oklch(0.22 0.018 252.2);
+  --sidebar-foreground: oklch(0.952 0.011 93.1);
+  --sidebar-accent: oklch(0.295 0.023 252.4);
+  --sidebar-accent-foreground: oklch(0.952 0.011 93.1);
+  --sidebar-border: oklch(0.33 0.02 252.5);
+  --sidebar-ring: oklch(0.684 0.123 215.3);
+  --chart-1: oklch(0.61 0.19 28.4);
+  --chart-2: oklch(0.69 0.152 214.3);
+  --chart-3: oklch(0.72 0.147 163.7);
+  --chart-4: oklch(0.67 0.17 282.2);
+  --chart-5: oklch(0.73 0.16 79.4);
 }
 
 @layer base {
@@ -115,6 +117,38 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(
+        1200px 620px at -10% -10%,
+        rgb(14 165 233 / 0.14),
+        transparent 60%
+      ),
+      radial-gradient(
+        920px 520px at 108% 6%,
+        rgb(249 115 22 / 0.14),
+        transparent 64%
+      ),
+      linear-gradient(180deg, rgb(248 250 252 / 0.76), transparent 38%);
+    background-attachment: fixed;
+    font-feature-settings: "ss01", "cv10", "cv11";
+  }
+}
+
+@layer utilities {
+  .animate-fade-up {
+    animation: fade-up 520ms cubic-bezier(0.21, 1.05, 0.5, 1) both;
+  }
+}
+
+@keyframes fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.987);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }

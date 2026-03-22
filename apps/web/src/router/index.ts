@@ -1,15 +1,19 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHistory } from "vue-router";
 
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
-      path: '/',
-      redirect: '/login',
+      path: "/",
+      redirect: "/studio",
     },
     {
-      path: '/login',
-      component: () => import('@/pages/auth/LoginPage.vue'),
+      path: "/studio",
+      component: () => import("@/pages/studio/FlowStudioPage.vue"),
+    },
+    {
+      path: "/login",
+      redirect: "/studio",
     },
   ],
 });
