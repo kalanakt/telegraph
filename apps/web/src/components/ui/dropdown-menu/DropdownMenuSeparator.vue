@@ -1,0 +1,18 @@
+<script setup lang="ts">
+import { cn } from '@/lib/utils';
+import {
+  DropdownMenuSeparator as DropdownMenuSeparatorPrimitive,
+  type DropdownMenuSeparatorProps,
+} from 'radix-vue';
+import type { HTMLAttributes } from 'vue';
+
+interface Props extends DropdownMenuSeparatorProps {
+  class?: HTMLAttributes['class'];
+}
+
+const props = defineProps<Props>();
+</script>
+
+<template>
+  <DropdownMenuSeparatorPrimitive :class="cn('-mx-1 my-1 h-px bg-muted', props.class)" />
+</template>
