@@ -1,5 +1,16 @@
 import { z } from "zod";
 
+const httpsUrlSchema = z
+  .string()
+  .url()
+  .refine((value) => {
+    try {
+      return new URL(value).protocol === "https:";
+    } catch {
+      return false;
+    }
+  }, "URL must use https");
+
 // Auth schemas
 export const RegisterBody = z.object({
   email: z.string().email(),
@@ -16,6 +27,7 @@ export const LoginBody = z.object({
 export const CreateBotBody = z.object({
   name: z.string().min(1).max(100),
   token: z.string().min(1).max(200),
+  webhookBaseUrl: httpsUrlSchema.optional(),
 });
 
 export const UpdateBotBody = z.object({
@@ -23,7 +35,12 @@ export const UpdateBotBody = z.object({
 });
 
 export const RegisterWebhookBody = z.object({
-  webhookBaseUrl: z.string().url(),
+  webhookBaseUrl: httpsUrlSchema,
+});
+
+export const SendTestMessageBody = z.object({
+  chatId: z.union([z.number().int(), z.string().min(1).max(64)]),
+  text: z.string().min(1).max(4096),
 });
 
 // Flow schemas

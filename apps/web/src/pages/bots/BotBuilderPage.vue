@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { toast } from "@/components/ui/sonner";
 import {
   Select,
   SelectContent,
@@ -147,7 +148,6 @@ const loading = ref(false);
 const saving = ref(false);
 const publishing = ref(false);
 const errorMessage = ref("");
-const infoMessage = ref("");
 
 const editorCommand = ref("/start");
 const editorPattern = ref("");
@@ -157,6 +157,7 @@ const editorMessageButtons = ref("");
 const editorParseMode = ref<ParseMode | "">("");
 const editorConditionOperator = ref<ConditionOperator>("eq");
 const editorConditionValue = ref("");
+const NONE_PARSE_MODE = "__none__";
 
 const palette = [
   { type: "command_trigger" as const, title: "Command Trigger" },
@@ -168,6 +169,16 @@ const palette = [
 const selectedNode = computed(() => {
   if (!selectedNodeId.value) return null;
   return nodes.value.find((node) => node.id === selectedNodeId.value) ?? null;
+});
+
+const parseModeSelectValue = computed<string>({
+  get() {
+    return editorParseMode.value || NONE_PARSE_MODE;
+  },
+  set(value: string) {
+    editorParseMode.value =
+      value === NONE_PARSE_MODE ? "" : (value as ParseMode);
+  },
 });
 
 const triggerCount = computed(
@@ -823,7 +834,6 @@ async function loadBuilder() {
 
   loading.value = true;
   errorMessage.value = "";
-  infoMessage.value = "";
 
   try {
     await botsStore.fetchBots(token);
@@ -854,6 +864,7 @@ async function saveDraft(): Promise<boolean> {
   const token = authStore.token;
   if (!token || !flowId.value) {
     errorMessage.value = "Missing auth session or flow id.";
+    toast.error("Missing auth session or flow id.");
     return false;
   }
 
@@ -863,11 +874,14 @@ async function saveDraft(): Promise<boolean> {
   try {
     const graph = toFlowGraph(nodes.value, edges.value);
     await botsStore.saveFlowGraph(token, botId.value, flowId.value, graph);
-    infoMessage.value = "Draft flow saved.";
+    toast.success("Draft saved.");
     return true;
   } catch (error) {
     errorMessage.value =
       error instanceof Error ? error.message : "Unable to save draft.";
+    toast.error("Unable to save draft.", {
+      description: errorMessage.value,
+    });
     return false;
   } finally {
     saving.value = false;
@@ -878,6 +892,7 @@ async function publishFlow() {
   const token = authStore.token;
   if (!token || !flowId.value) {
     errorMessage.value = "Missing auth session or flow id.";
+    toast.error("Missing auth session or flow id.");
     return;
   }
 
@@ -889,10 +904,13 @@ async function publishFlow() {
 
   try {
     await botsStore.publishFlow(token, botId.value, flowId.value);
-    infoMessage.value = "Bot flow published.";
+    toast.success("Flow published.");
   } catch (error) {
     errorMessage.value =
       error instanceof Error ? error.message : "Unable to publish flow.";
+    toast.error("Unable to publish flow.", {
+      description: errorMessage.value,
+    });
   } finally {
     publishing.value = false;
   }
@@ -946,12 +964,6 @@ onMounted(async () => {
         class="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
       >
         {{ errorMessage }}
-      </p>
-      <p
-        v-if="infoMessage"
-        class="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
-      >
-        {{ infoMessage }}
       </p>
 
       <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -1119,14 +1131,14 @@ onMounted(async () => {
                   <label class="text-sm font-medium text-slate-700"
                     >Parse Mode</label
                   >
-                  <Select v-model:model-value="editorParseMode">
+                  <Select v-model:model-value="parseModeSelectValue">
                     <SelectTrigger
                       class="border-slate-200 bg-white shadow-none"
                     >
                       <SelectValue placeholder="None" />
                     </SelectTrigger>
                     <SelectContent class="shadow-none">
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem :value="NONE_PARSE_MODE">None</SelectItem>
                       <SelectItem value="HTML">HTML</SelectItem>
                       <SelectItem value="Markdown">Markdown</SelectItem>
                       <SelectItem value="MarkdownV2">MarkdownV2</SelectItem>

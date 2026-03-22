@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { RegisterBody, LoginBody, parseBody } from "./validation.js";
+import {
+  CreateBotBody,
+  LoginBody,
+  RegisterBody,
+  SendTestMessageBody,
+  parseBody,
+} from "./validation.js";
 
 describe("parseBody + Zod schemas", () => {
   it("RegisterBody accepts valid input and returns parsed data", () => {
@@ -80,5 +86,38 @@ describe("parseBody + Zod schemas", () => {
       expect(err.statusCode).toBe(400);
       expect(err.validation).toBeDefined();
     }
+  });
+
+  it("CreateBotBody accepts optional https webhookBaseUrl", () => {
+    const input = {
+      name: "Support Bot",
+      token: "123:ABC",
+      webhookBaseUrl: "https://demo.ngrok-free.app",
+    };
+
+    const result = parseBody(CreateBotBody, input);
+    expect(result).toEqual(input);
+  });
+
+  it("CreateBotBody rejects non-https webhookBaseUrl", () => {
+    expect(() =>
+      parseBody(CreateBotBody, {
+        name: "Support Bot",
+        token: "123:ABC",
+        webhookBaseUrl: "http://localhost:3002",
+      }),
+    ).toThrowError("Validation failed");
+  });
+
+  it("SendTestMessageBody accepts numeric-string chat IDs", () => {
+    const result = parseBody(SendTestMessageBody, {
+      chatId: "123456789",
+      text: "hello",
+    });
+
+    expect(result).toEqual({
+      chatId: "123456789",
+      text: "hello",
+    });
   });
 });

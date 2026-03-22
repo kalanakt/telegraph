@@ -3,6 +3,8 @@ import AppShell from "@/components/layout/AppShell.vue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/components/ui/sonner";
 import { useAuthStore } from "@/stores/auth";
 import { useBotsStore } from "@/stores/bots";
 import { computed, onMounted, ref, watch } from "vue";
@@ -16,11 +18,13 @@ const botId = computed(() => String(route.params["botId"] ?? ""));
 const bot = computed(() => botsStore.getBotById(botId.value));
 
 const name = ref("");
-const webhookBaseUrl = ref("");
+const webhookBaseUrl = ref(localStorage.getItem("telegraph-webhook-url") ?? "");
 const webhookUrl = ref("");
-const message = ref("");
+const testChatId = ref("");
+const testText = ref("Hello from Telegraph test message.");
 const saving = ref(false);
 const webhookUpdating = ref(false);
+const testSending = ref(false);
 
 watch(
   bot,
@@ -41,20 +45,20 @@ async function saveName() {
   const token = authStore.token;
   if (!token || !bot.value) return;
   if (!name.value.trim()) {
-    message.value = "Bot display name is required.";
+    toast.error("Bot display name is required.");
     return;
   }
 
   saving.value = true;
-  message.value = "";
   try {
     await botsStore.updateBot(token, bot.value.id, {
       name: name.value.trim(),
     });
-    message.value = "Bot name saved.";
+    toast.success("Bot name saved.");
   } catch (error) {
-    message.value =
-      error instanceof Error ? error.message : "Unable to save bot.";
+    toast.error("Unable to save bot.", {
+      description: error instanceof Error ? error.message : undefined,
+    });
   } finally {
     saving.value = false;
   }
@@ -64,12 +68,11 @@ async function registerWebhook() {
   const token = authStore.token;
   if (!token || !bot.value) return;
   if (!webhookBaseUrl.value.trim()) {
-    message.value = "Webhook base URL is required.";
+    toast.error("Webhook base URL is required.");
     return;
   }
 
   webhookUpdating.value = true;
-  message.value = "";
   try {
     const result = await botsStore.registerWebhook(
       token,
@@ -77,10 +80,14 @@ async function registerWebhook() {
       webhookBaseUrl.value.trim(),
     );
     webhookUrl.value = result.webhookUrl;
-    message.value = "Webhook registered.";
+    localStorage.setItem("telegraph-webhook-url", webhookBaseUrl.value.trim());
+    toast.success("Webhook registered.", {
+      description: result.webhookUrl,
+    });
   } catch (error) {
-    message.value =
-      error instanceof Error ? error.message : "Unable to register webhook.";
+    toast.error("Unable to register webhook.", {
+      description: error instanceof Error ? error.message : undefined,
+    });
   } finally {
     webhookUpdating.value = false;
   }
@@ -91,16 +98,44 @@ async function removeWebhook() {
   if (!token || !bot.value) return;
 
   webhookUpdating.value = true;
-  message.value = "";
   try {
     await botsStore.removeWebhook(token, bot.value.id);
     webhookUrl.value = "";
-    message.value = "Webhook removed.";
+    toast.success("Webhook removed.");
   } catch (error) {
-    message.value =
-      error instanceof Error ? error.message : "Unable to remove webhook.";
+    toast.error("Unable to remove webhook.", {
+      description: error instanceof Error ? error.message : undefined,
+    });
   } finally {
     webhookUpdating.value = false;
+  }
+}
+
+async function sendTestMessage() {
+  const token = authStore.token;
+  if (!token || !bot.value) return;
+  if (!testChatId.value.trim()) {
+    toast.error("Chat ID is required.");
+    return;
+  }
+  if (!testText.value.trim()) {
+    toast.error("Test message text is required.");
+    return;
+  }
+
+  testSending.value = true;
+  try {
+    await botsStore.sendTestMessage(token, bot.value.id, {
+      chatId: testChatId.value.trim(),
+      text: testText.value.trim(),
+    });
+    toast.success("Test message sent.");
+  } catch (error) {
+    toast.error("Unable to send test message.", {
+      description: error instanceof Error ? error.message : undefined,
+    });
+  } finally {
+    testSending.value = false;
   }
 }
 
@@ -211,13 +246,44 @@ onMounted(async () => {
           </Button>
         </div>
       </div>
-    </div>
 
-    <p
-      v-if="message"
-      class="mt-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
-    >
-      {{ message }}
-    </p>
+      <div class="rounded-xl border border-slate-200 bg-white p-4">
+        <p class="text-sm font-semibold text-slate-900">Test Message</p>
+        <p class="mt-1 text-xs text-slate-500">
+          Send a direct Telegram message to verify token + webhook flow quickly.
+        </p>
+
+        <div class="mt-4 space-y-1.5">
+          <label class="text-sm font-medium text-slate-700">Chat ID</label>
+          <Input
+            v-model:model-value="testChatId"
+            placeholder="123456789"
+            class="border-slate-200 bg-white shadow-none"
+          />
+          <p class="text-xs text-slate-500">
+            Use <code>@userinfobot</code> to get your personal chat ID.
+          </p>
+        </div>
+
+        <div class="mt-4 space-y-1.5">
+          <label class="text-sm font-medium text-slate-700">Message Text</label>
+          <Textarea
+            v-model:model-value="testText"
+            class="min-h-[88px] border-slate-200 bg-white shadow-none"
+            placeholder="Hello from Telegraph."
+          />
+        </div>
+
+        <div class="mt-4">
+          <Button
+            class="bg-slate-900 text-white shadow-none hover:bg-slate-800"
+            :disabled="testSending"
+            @click="sendTestMessage"
+          >
+            {{ testSending ? "Sending..." : "Send Test Message" }}
+          </Button>
+        </div>
+      </div>
+    </div>
   </AppShell>
 </template>

@@ -10,11 +10,11 @@ A multi-tenant platform for building Telegram bots with a visual flow editor. De
 
 Build bot logic without writing code. The React Flow-based editor supports **10 node types** across three categories:
 
-| Category | Nodes |
-|----------|-------|
-| **Triggers** | `/command`, message pattern (exact / contains / regex), inline callback button |
-| **Actions** | Send text message (HTML / Markdown), send media (photo / video / document / audio), HTTP request, AI prompt (OpenAI-compatible) |
-| **Flow Control** | Conditional branching (eq / neq / contains / gt / lt / regex), set session variable, wait for user input |
+| Category         | Nodes                                                                                                                           |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **Triggers**     | `/command`, message pattern (exact / contains / regex), inline callback button                                                  |
+| **Actions**      | Send text message (HTML / Markdown), send media (photo / video / document / audio), HTTP request, AI prompt (OpenAI-compatible) |
+| **Flow Control** | Conditional branching (eq / neq / contains / gt / lt / regex), set session variable, wait for user input                        |
 
 Drag nodes from the palette, connect them with edges, configure properties in the side panel, and hit **Publish** to compile and deploy.
 
@@ -90,20 +90,20 @@ infra/               docker-compose for Postgres, Redis, OTEL Collector, Prometh
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Language | TypeScript (ES2022, strict mode) |
-| Monorepo | pnpm 9.15 workspaces + Turborepo |
-| Runtime | Node.js ≥ 22 |
-| Backend | Fastify 5 |
-| Frontend | React 18, Vite 6, Tailwind CSS 4, React Flow, TanStack Query |
-| Database | PostgreSQL 16, Drizzle ORM |
-| Queue & Cache | Redis 7, ioredis, BullMQ |
-| Telegram | grammY |
-| AI | OpenAI-compatible REST API (default model: `gpt-4o-mini`) |
-| Telemetry | OpenTelemetry, Prometheus, prom-client |
-| Testing | Vitest |
-| Linting | ESLint 9 (typescript-eslint + Prettier) |
+| Layer         | Technology                                                   |
+| ------------- | ------------------------------------------------------------ |
+| Language      | TypeScript (ES2022, strict mode)                             |
+| Monorepo      | pnpm 9.15 workspaces + Turborepo                             |
+| Runtime       | Node.js ≥ 22                                                 |
+| Backend       | Fastify 5                                                    |
+| Frontend      | React 18, Vite 6, Tailwind CSS 4, React Flow, TanStack Query |
+| Database      | PostgreSQL 16, Drizzle ORM                                   |
+| Queue & Cache | Redis 7, ioredis, BullMQ                                     |
+| Telegram      | grammY                                                       |
+| AI            | OpenAI-compatible REST API (default model: `gpt-4o-mini`)    |
+| Telemetry     | OpenTelemetry, Prometheus, prom-client                       |
+| Testing       | Vitest                                                       |
+| Linting       | ESLint 9 (typescript-eslint + Prettier)                      |
 
 ---
 
@@ -141,15 +141,16 @@ cp apps/web/.env.example             apps/web/.env
 
 Key variables:
 
-| Variable | App | Description |
-|----------|-----|-------------|
-| `DATABASE_URL` | control-plane, runtime | Postgres connection string |
-| `REDIS_URL` | control-plane, runtime | Redis connection string |
-| `JWT_SECRET` | control-plane | Secret for signing JWTs |
-| `BOT_TOKEN_MASTER_KEY` | control-plane, runtime | Base64-encoded 32-byte key for AES-256-GCM token encryption |
-| `OPENAI_API_KEY` | runtime | API key for AI prompt nodes |
-| `OPENAI_BASE_URL` | runtime | OpenAI-compatible endpoint (default: `https://api.openai.com`) |
-| `VITE_API_URL` | web | Control-plane URL (default: `http://localhost:3001`) |
+| Variable                   | App                    | Description                                                                         |
+| -------------------------- | ---------------------- | ----------------------------------------------------------------------------------- |
+| `DATABASE_URL`             | control-plane, runtime | Postgres connection string                                                          |
+| `REDIS_URL`                | control-plane, runtime | Redis connection string                                                             |
+| `JWT_SECRET`               | control-plane          | Secret for signing JWTs                                                             |
+| `BOT_TOKEN_MASTER_KEY`     | control-plane, runtime | Base64-encoded 32-byte key for AES-256-GCM token encryption                         |
+| `DEFAULT_WEBHOOK_BASE_URL` | control-plane          | Optional HTTPS base URL for auto webhook registration on bot create (`https://...`) |
+| `OPENAI_API_KEY`           | runtime                | API key for AI prompt nodes                                                         |
+| `OPENAI_BASE_URL`          | runtime                | OpenAI-compatible endpoint (default: `https://api.openai.com`)                      |
+| `VITE_API_URL`             | web                    | Control-plane URL (default: `http://localhost:3001`)                                |
 
 ### 4. Run database migrations
 
@@ -163,12 +164,12 @@ pnpm db:migrate
 pnpm dev
 ```
 
-| Service | URL |
-|---------|-----|
-| Web UI | http://localhost:5173 |
-| Control Plane API | http://localhost:3001 |
+| Service                  | URL                   |
+| ------------------------ | --------------------- |
+| Web UI                   | http://localhost:5173 |
+| Control Plane API        | http://localhost:3001 |
 | Runtime (webhook server) | http://localhost:3002 |
-| Prometheus | http://localhost:9090 |
+| Prometheus               | http://localhost:9090 |
 
 To run a single app:
 
@@ -178,19 +179,32 @@ pnpm --filter @telegraph/runtime dev
 pnpm --filter @telegraph/web dev
 ```
 
-### 6. Register a webhook (for Telegram integration)
+### 6. ngrok + Telegram webhook setup (HTTPS required)
 
-After creating a bot via the UI, register its webhook. The runtime must be publicly reachable (use a tunnel like [ngrok](https://ngrok.com/) or [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) for local dev):
+Telegram requires an HTTPS webhook URL. For local development, use [ngrok](https://ngrok.com/) to expose the runtime:
 
 ```bash
-# Expose runtime on a public URL
+# Expose runtime server on a public HTTPS URL
 ngrok http 3002
+```
 
-# Then register via the UI or API
-curl -X POST http://localhost:3001/bots/<botId>/webhook/register \
+Then choose one of these options:
+
+1. **Auto-connect on bot creation (recommended)**  
+   Set `DEFAULT_WEBHOOK_BASE_URL` in `apps/control-plane/.env` to your ngrok HTTPS URL.  
+   New bots will auto-register to `<ngrok-url>/webhook/<botId>`.
+2. **Per-bot webhook URL**  
+   Enter the ngrok URL in the create-bot form (`Webhook Base URL`) and it will auto-register right after bot creation.
+3. **Manual registration from Manage Bot**  
+   Use the bot manage screen to register/remove webhooks anytime.
+
+Quick API example for manual registration:
+
+```bash
+curl -X POST http://localhost:3001/api/bots/<botId>/webhook/register \
   -H "Authorization: Bearer <jwt>" \
   -H "Content-Type: application/json" \
-  -d '{"webhookBaseUrl": "https://<your-tunnel>.ngrok.io"}'
+  -d '{"webhookBaseUrl": "https://<your-subdomain>.ngrok-free.app"}'
 ```
 
 ---
@@ -201,34 +215,35 @@ All routes except auth require a `Bearer` JWT in the `Authorization` header.
 
 ### Auth
 
-| Method | Path | Description |
-|--------|------|-------------|
+| Method | Path        | Description                                        |
+| ------ | ----------- | -------------------------------------------------- |
 | `POST` | `/register` | Create account (email, password, tenant name/slug) |
-| `POST` | `/login` | Login (email, password, tenant slug) → JWT |
-| `GET` | `/me` | Current user info |
+| `POST` | `/login`    | Login (email, password, tenant slug) → JWT         |
+| `GET`  | `/me`       | Current user info                                  |
 
 ### Bots
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/bots` | List bots (paginated) |
-| `POST` | `/bots` | Create bot (name, Telegram token) |
-| `GET` | `/bots/:botId` | Get bot details |
-| `PATCH` | `/bots/:botId` | Update bot |
-| `DELETE` | `/bots/:botId` | Delete bot |
-| `POST` | `/bots/:botId/webhook/register` | Register Telegram webhook |
-| `POST` | `/bots/:botId/webhook/remove` | Remove Telegram webhook |
+| Method   | Path                            | Description                                                  |
+| -------- | ------------------------------- | ------------------------------------------------------------ |
+| `GET`    | `/bots`                         | List bots (paginated)                                        |
+| `POST`   | `/bots`                         | Create bot (name, Telegram token, optional `webhookBaseUrl`) |
+| `GET`    | `/bots/:botId`                  | Get bot details                                              |
+| `PATCH`  | `/bots/:botId`                  | Update bot                                                   |
+| `DELETE` | `/bots/:botId`                  | Delete bot                                                   |
+| `POST`   | `/bots/:botId/webhook/register` | Register Telegram webhook                                    |
+| `POST`   | `/bots/:botId/webhook/remove`   | Remove Telegram webhook                                      |
+| `POST`   | `/bots/:botId/test-message`     | Send Telegram test message (`chatId`, `text`)                |
 
 ### Flows
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/bots/:botId/flows` | List flows |
-| `POST` | `/bots/:botId/flows` | Create flow |
-| `GET` | `/bots/:botId/flows/:flowId` | Get flow (includes graph JSON) |
-| `PUT` | `/bots/:botId/flows/:flowId` | Save flow graph |
-| `DELETE` | `/bots/:botId/flows/:flowId` | Delete flow |
-| `POST` | `/bots/:botId/flows/:flowId/publish` | Compile & deploy flow |
+| Method   | Path                                 | Description                    |
+| -------- | ------------------------------------ | ------------------------------ |
+| `GET`    | `/bots/:botId/flows`                 | List flows                     |
+| `POST`   | `/bots/:botId/flows`                 | Create flow                    |
+| `GET`    | `/bots/:botId/flows/:flowId`         | Get flow (includes graph JSON) |
+| `PUT`    | `/bots/:botId/flows/:flowId`         | Save flow graph                |
+| `DELETE` | `/bots/:botId/flows/:flowId`         | Delete flow                    |
+| `POST`   | `/bots/:botId/flows/:flowId/publish` | Compile & deploy flow          |
 
 ---
 
@@ -236,15 +251,15 @@ All routes except auth require a `Bearer` JWT in the `Authorization` header.
 
 Managed with Drizzle ORM. Tables:
 
-| Table | Purpose |
-|-------|---------|
-| `tenants` | Organizations / workspaces |
-| `users` | Users scoped to a tenant (email unique per tenant) |
-| `bots` | Telegram bots with encrypted tokens |
-| `flows` | Flow graphs (JSON) linked to a bot |
-| `published_plans` | Compiled execution plans (versioned) |
-| `raw_updates` | Idempotent Telegram update storage |
-| `webhook_configs` | Per-bot webhook URL and secret |
+| Table             | Purpose                                            |
+| ----------------- | -------------------------------------------------- |
+| `tenants`         | Organizations / workspaces                         |
+| `users`           | Users scoped to a tenant (email unique per tenant) |
+| `bots`            | Telegram bots with encrypted tokens                |
+| `flows`           | Flow graphs (JSON) linked to a bot                 |
+| `published_plans` | Compiled execution plans (versioned)               |
+| `raw_updates`     | Idempotent Telegram update storage                 |
+| `webhook_configs` | Per-bot webhook URL and secret                     |
 
 ### Running Migrations
 
@@ -271,11 +286,11 @@ docker build -f apps/runtime/Dockerfile        -t telegraph-runtime .
 docker build -f apps/web/Dockerfile             -t telegraph-web .
 ```
 
-| Image | Base | Entrypoint | Port |
-|-------|------|-----------|------|
-| `telegraph-control-plane` | `node:22-alpine` | `node apps/control-plane/dist/server.js` | 3001 |
-| `telegraph-runtime` | `node:22-alpine` | `node apps/runtime/dist/server.js` | 3002 |
-| `telegraph-web` | `nginx:alpine` | nginx serving SPA + reverse-proxying `/api` | 80 |
+| Image                     | Base             | Entrypoint                                  | Port |
+| ------------------------- | ---------------- | ------------------------------------------- | ---- |
+| `telegraph-control-plane` | `node:22-alpine` | `node apps/control-plane/dist/server.js`    | 3001 |
+| `telegraph-runtime`       | `node:22-alpine` | `node apps/runtime/dist/server.js`          | 3002 |
+| `telegraph-web`           | `nginx:alpine`   | nginx serving SPA + reverse-proxying `/api` | 80   |
 
 ### Production Requirements
 
@@ -298,6 +313,7 @@ docker build -f apps/web/Dockerfile             -t telegraph-web .
 ### Nginx Configuration
 
 The web app ships with an `nginx.conf` that:
+
 - Serves the SPA with `try_files $uri $uri/ /index.html` fallback for client-side routing.
 - Proxies `/api` to `http://control-plane:3001` (assumes Docker service discovery; update the upstream for your setup).
 
@@ -320,18 +336,18 @@ pnpm --filter @telegraph/shared test
 
 ## Scripts Reference
 
-| Command | Description |
-|---------|-------------|
-| `pnpm install` | Install all workspace dependencies |
-| `pnpm dev` | Start all dev servers (Turborepo) |
-| `pnpm build` | Build all packages and apps |
-| `pnpm typecheck` | Type-check the entire monorepo |
-| `pnpm lint` | Lint all packages |
-| `pnpm format` | Format with Prettier |
-| `pnpm test` | Run all tests |
-| `pnpm infra:up` | Start Postgres, Redis, OTEL Collector, Prometheus |
-| `pnpm infra:down` | Tear down infrastructure + volumes |
-| `pnpm db:migrate` | Run database migrations |
+| Command           | Description                                       |
+| ----------------- | ------------------------------------------------- |
+| `pnpm install`    | Install all workspace dependencies                |
+| `pnpm dev`        | Start all dev servers (Turborepo)                 |
+| `pnpm build`      | Build all packages and apps                       |
+| `pnpm typecheck`  | Type-check the entire monorepo                    |
+| `pnpm lint`       | Lint all packages                                 |
+| `pnpm format`     | Format with Prettier                              |
+| `pnpm test`       | Run all tests                                     |
+| `pnpm infra:up`   | Start Postgres, Redis, OTEL Collector, Prometheus |
+| `pnpm infra:down` | Tear down infrastructure + volumes                |
+| `pnpm db:migrate` | Run database migrations                           |
 
 ---
 

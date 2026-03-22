@@ -42,10 +42,16 @@ interface BotsState {
 interface CreateBotInput {
   name: string;
   token: string;
+  webhookBaseUrl?: string;
 }
 
 interface UpdateBotInput {
   name?: string;
+}
+
+export interface CreateBotResponse extends TelegramBot {
+  webhookUrl?: string;
+  webhookError?: string;
 }
 
 function upsertBot(list: TelegramBot[], bot: TelegramBot): TelegramBot[] {
@@ -96,13 +102,16 @@ export const useBotsStore = defineStore("bots", {
     async createBot(
       token: string,
       input: CreateBotInput,
-    ): Promise<TelegramBot> {
-      const bot = await apiRequest<TelegramBot>("/api/bots", {
+    ): Promise<CreateBotResponse> {
+      const bot = await apiRequest<CreateBotResponse>("/api/bots", {
         method: "POST",
         token,
         body: {
           name: input.name.trim(),
           token: input.token.trim(),
+          ...(input.webhookBaseUrl != null && {
+            webhookBaseUrl: input.webhookBaseUrl.trim(),
+          }),
         },
       });
 
@@ -145,6 +154,24 @@ export const useBotsStore = defineStore("bots", {
         method: "POST",
         token,
       });
+    },
+
+    async sendTestMessage(
+      token: string,
+      botId: string,
+      input: { chatId: string; text: string },
+    ): Promise<{ ok: boolean; messageId: number }> {
+      return apiRequest<{ ok: boolean; messageId: number }>(
+        `/api/bots/${botId}/test-message`,
+        {
+          method: "POST",
+          token,
+          body: {
+            chatId: input.chatId.trim(),
+            text: input.text,
+          },
+        },
+      );
     },
 
     async listFlows(token: string, botId: string): Promise<FlowRecord[]> {

@@ -2,6 +2,7 @@
 import AppShell from "@/components/layout/AppShell.vue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/components/ui/sonner";
 import { useAuthStore } from "@/stores/auth";
 import { useBotsStore } from "@/stores/bots";
 import { computed, ref } from "vue";
@@ -13,7 +14,7 @@ const router = useRouter();
 
 const name = ref("");
 const telegramToken = ref("");
-const errorMessage = ref("");
+const webhookBaseUrl = ref(localStorage.getItem("telegraph-webhook-url") ?? "");
 const creating = ref(false);
 
 const canCreate = computed(
@@ -21,27 +22,48 @@ const canCreate = computed(
 );
 
 async function createBot() {
-  errorMessage.value = "";
   const token = authStore.token;
   if (!token) {
-    errorMessage.value = "Your session has expired. Sign in again.";
+    toast.error("Your session has expired. Sign in again.");
     return;
   }
   if (!canCreate.value) {
-    errorMessage.value = "Display name and Telegram API token are required.";
+    toast.error("Display name and Telegram API token are required.");
     return;
   }
 
   creating.value = true;
   try {
-    const bot = await botsStore.createBot(token, {
+    const result = await botsStore.createBot(token, {
       name: name.value,
       token: telegramToken.value,
+      webhookBaseUrl: webhookBaseUrl.value.trim() || undefined,
     });
-    await router.push(`/bots/${bot.id}/builder`);
+
+    if (webhookBaseUrl.value.trim()) {
+      localStorage.setItem(
+        "telegraph-webhook-url",
+        webhookBaseUrl.value.trim(),
+      );
+    }
+
+    if (result.webhookUrl) {
+      toast.success("Bot created and webhook connected.", {
+        description: result.webhookUrl,
+      });
+    } else if (result.webhookError) {
+      toast.error("Bot created, but webhook auto-connect failed.", {
+        description: result.webhookError,
+      });
+    } else {
+      toast.success("Bot created.");
+    }
+
+    await router.push(`/bots/${result.id}/builder`);
   } catch (error) {
-    errorMessage.value =
-      error instanceof Error ? error.message : "Unable to create bot.";
+    toast.error("Unable to create bot.", {
+      description: error instanceof Error ? error.message : undefined,
+    });
   } finally {
     creating.value = false;
   }
@@ -83,14 +105,22 @@ async function createBot() {
               class="border-slate-200 bg-white shadow-none"
             />
           </div>
-        </div>
 
-        <p
-          v-if="errorMessage"
-          class="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
-        >
-          {{ errorMessage }}
-        </p>
+          <div class="space-y-1.5">
+            <label class="text-sm font-medium text-slate-700">
+              Webhook Base URL (optional)
+            </label>
+            <Input
+              v-model:model-value="webhookBaseUrl"
+              placeholder="https://abcd-1234.ngrok-free.app"
+              class="border-slate-200 bg-white shadow-none"
+            />
+            <p class="text-xs text-slate-500">
+              If set, we auto-register Telegram webhook to
+              <code>/webhook/&lt;botId&gt;</code> after bot creation.
+            </p>
+          </div>
+        </div>
 
         <div class="mt-5 flex items-center gap-2">
           <Button
@@ -118,11 +148,10 @@ async function createBot() {
             1. Create your bot in BotFather and copy its token.
           </li>
           <li class="rounded-lg border border-slate-200 px-3 py-2">
-            2. Build the flow in Builder and publish it.
+            2. Add your HTTPS runtime URL (ngrok) to auto-connect webhook.
           </li>
           <li class="rounded-lg border border-slate-200 px-3 py-2">
-            3. Register webhook manually from Manage Bot when runtime URL is
-            ready.
+            3. Build the flow in Builder and publish it.
           </li>
         </ul>
       </div>
