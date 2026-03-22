@@ -119,19 +119,7 @@
   body {
     @apply bg-background text-foreground antialiased;
     min-height: 100vh;
-    background-image:
-      radial-gradient(
-        1200px 620px at -10% -10%,
-        rgb(14 165 233 / 0.14),
-        transparent 60%
-      ),
-      radial-gradient(
-        920px 520px at 108% 6%,
-        rgb(249 115 22 / 0.14),
-        transparent 64%
-      ),
-      linear-gradient(180deg, rgb(248 250 252 / 0.76), transparent 38%);
-    background-attachment: fixed;
+    background: rgb(248 250 252);
     font-feature-settings: "ss01", "cv10", "cv11";
   }
 }

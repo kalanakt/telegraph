@@ -1,6 +1,12 @@
+import { fileURLToPath } from 'node:url';
 import { initTracing } from '@telegraph/telemetry';
 
 import { buildApp } from './app.js';
+
+const maybeLoadEnvFile = (
+  process as NodeJS.Process & { loadEnvFile?: (path: string) => void }
+).loadEnvFile;
+maybeLoadEnvFile?.(fileURLToPath(new URL('../.env', import.meta.url)));
 
 const sdk = initTracing('control-plane');
 

@@ -70,9 +70,9 @@ const nodeChips = computed(() => props.data.chips.slice(0, 3));
   <div
     :class="
       cn(
-        'group relative w-64 overflow-hidden rounded-2xl border border-white/60 bg-white/85 text-slate-900 shadow-[0_24px_50px_-28px_rgba(15,23,42,0.45)] backdrop-blur-sm transition-all duration-300',
+        'group relative w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 transition-all duration-200',
         selected &&
-          'ring-2 ring-sky-400/75 ring-offset-2 ring-offset-transparent',
+          'ring-2 ring-sky-300/80 ring-offset-2 ring-offset-transparent',
       )
     "
   >
@@ -95,7 +95,7 @@ const nodeChips = computed(() => props.data.chips.slice(0, 3));
     <div class="space-y-3 p-4">
       <div class="flex items-center justify-between">
         <div
-          class="flex h-8 w-8 items-center justify-center rounded-lg shadow-sm"
+          class="flex h-8 w-8 items-center justify-center rounded-lg"
           :class="kindMeta.iconBg"
         >
           <component :is="kindMeta.icon" class="h-4 w-4" />
@@ -142,13 +142,10 @@ const nodeChips = computed(() => props.data.chips.slice(0, 3));
 
 <style scoped>
 .studio-handle {
-  transition:
-    transform 180ms ease,
-    box-shadow 180ms ease;
+  transition: transform 180ms ease;
 }
 
 .studio-handle:hover {
   transform: scale(1.15);
-  box-shadow: 0 0 0 4px rgb(56 189 248 / 0.2);
 }
 </style>

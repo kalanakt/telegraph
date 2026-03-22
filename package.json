@@ -13,8 +13,8 @@
     "test": "turbo test",
     "typecheck": "turbo typecheck",
     "format": "prettier --write .",
-    "infra:up": "docker compose -f infra/docker-compose.yml up -d",
-    "infra:down": "docker compose -f infra/docker-compose.yml down -v",
+    "infra:up": "sh -c 'if docker compose version >/dev/null 2>&1; then docker compose -f infra/docker-compose.yml up -d; elif command -v docker-compose >/dev/null 2>&1; then docker-compose -f infra/docker-compose.yml up -d; else echo \"Docker Compose not found. Install Docker Compose v2 plugin or docker-compose.\"; exit 1; fi'",
+    "infra:down": "sh -c 'if docker compose version >/dev/null 2>&1; then docker compose -f infra/docker-compose.yml down -v; elif command -v docker-compose >/dev/null 2>&1; then docker-compose -f infra/docker-compose.yml down -v; else echo \"Docker Compose not found. Install Docker Compose v2 plugin or docker-compose.\"; exit 1; fi'",
     "db:migrate": "pnpm --filter @telegraph/db migrate"
   },
   "devDependencies": {

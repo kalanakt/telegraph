@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { createDb, createPool } from '@telegraph/db/client';
 import { createLogger, createRedisClient } from '@telegraph/shared';
 import { initTracing } from '@telegraph/telemetry';
@@ -5,6 +6,11 @@ import { initTracing } from '@telegraph/telemetry';
 import { buildApp } from './app.js';
 import { loadConfig } from './config.js';
 import { startWorkers } from './workers/index.js';
+
+const maybeLoadEnvFile = (
+  process as NodeJS.Process & { loadEnvFile?: (path: string) => void }
+).loadEnvFile;
+maybeLoadEnvFile?.(fileURLToPath(new URL('../.env', import.meta.url)));
 
 const logger = createLogger('runtime');
 const config = loadConfig();
