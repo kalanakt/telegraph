@@ -1,5 +1,4 @@
 
-
 > @telegraph/schemas@0.0.1 lint /Users/kalanakt/Dev/netronk/telegraph/packages/schemas
 > eslint src/
 

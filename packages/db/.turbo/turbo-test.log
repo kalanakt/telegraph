@@ -1,13 +1,11 @@
 
-
 > @telegraph/db@0.0.1 test /Users/kalanakt/Dev/netronk/telegraph/packages/db
 > vitest run --passWithNoTests
 
 
-[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90m/Users/kalanakt/Dev/netronk/telegraph/packages/db[39m
+ RUN  v2.1.9 /Users/kalanakt/Dev/netronk/telegraph/packages/db
 
-[2minclude: [22m[33m**/*.{test,spec}.?(c|m)[jt]s?(x)[39m
-[2mexclude:  [22m[33m**/node_modules/**[2m, [22m**/dist/**[2m, [22m**/cypress/**[2m, [22m**/.{idea,git,cache,output,temp}/**[2m, [22m**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*[39m
+include: **/*.{test,spec}.?(c|m)[jt]s?(x)
+exclude:  **/node_modules/**, **/dist/**, **/cypress/**, **/.{idea,git,cache,output,temp}/**, **/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*
 No test files found, exiting with code 0
 
-[?25h

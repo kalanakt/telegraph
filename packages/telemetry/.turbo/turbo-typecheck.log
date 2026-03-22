@@ -1,4 +1,4 @@
 
-> @telegraph/telemetry@0.0.1 typecheck /Users/kalanakt/.mux/src/telegraph/agent_exec_d034f06e46/packages/telemetry
+> @telegraph/telemetry@0.0.1 typecheck /Users/kalanakt/Dev/netronk/telegraph/packages/telemetry
 > tsc --noEmit
 

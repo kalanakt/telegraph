@@ -2,8 +2,15 @@
 -- Initial schema for Telegraph
 
 -- Enums
-CREATE TYPE IF NOT EXISTS "user_role" AS ENUM ('owner', 'admin', 'member');
-CREATE TYPE IF NOT EXISTS "bot_status" AS ENUM ('active', 'paused', 'deleted');
+DO $$ BEGIN
+  CREATE TYPE "user_role" AS ENUM ('owner', 'admin', 'member');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE "bot_status" AS ENUM ('active', 'paused', 'deleted');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
 
 -- tenants
 CREATE TABLE IF NOT EXISTS "tenants" (
