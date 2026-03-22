@@ -3,6 +3,7 @@ import type { PlanNode } from '@telegraph/schemas';
 import type { Redis } from '@telegraph/shared';
 import {
   acquireLock,
+  type ExecuteJobData,
   createLogger,
   createQueue,
   createWorker,
@@ -14,6 +15,7 @@ import { loadPlan } from '../cache/plan-loader.js';
 import type { RuntimeConfig } from '../config.js';
 import { getSession, setSession } from '../session/manager.js';
 import { evaluateCondition, evaluateExpression, renderTemplate } from './helpers.js';
+import { instrumentProcessor } from './instrumentation.js';
 import { validateUrl } from './url-validator.js';
 
 const logger = createLogger('execute-worker');
@@ -24,14 +26,6 @@ const MEDIA_METHOD_MAP: Record<string, string> = {
   document: 'sendDocument',
   audio: 'sendAudio',
 };
-
-interface ExecuteJobData {
-  botId: string;
-  chatId: string;
-  planId: string;
-  entryNodeId: string;
-  updateData: Record<string, unknown>;
-}
 
 const MAX_STEPS = 50;
 
@@ -45,7 +39,7 @@ export function createExecuteWorker(
 
   return createWorker<ExecuteJobData>(
     QUEUE_NAMES.EXECUTE,
-    async (job) => {
+    instrumentProcessor(QUEUE_NAMES.EXECUTE, logger, async (job) => {
       const { botId, chatId, planId, entryNodeId, updateData } = job.data;
 
       // 1. Acquire distributed lock
@@ -260,7 +254,7 @@ export function createExecuteWorker(
       } finally {
         await lock.release();
       }
-    },
+    }),
     redis,
     { concurrency: 5 },
   );

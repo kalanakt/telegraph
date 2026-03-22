@@ -16,8 +16,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { ApiError } from "@/lib/api";
+import { normalizeFlowGraph } from "@/lib/flow-graph";
 import { useAuthStore } from "@/stores/auth";
 import { useBotsStore } from "@/stores/bots";
+import type { FlowGraph } from "@telegraph/schemas";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
 import { MarkerType, VueFlow, type Connection } from "@vue-flow/core";
@@ -29,11 +32,17 @@ import { useRoute } from "vue-router";
 type BuilderNodeType =
   | "command_trigger"
   | "message_trigger"
+  | "callback_trigger"
   | "send_message"
-  | "condition";
+  | "send_media"
+  | "http_request"
+  | "ai_prompt"
+  | "condition"
+  | "set_variable"
+  | "wait_for_input";
 
 type MessageMatchType = "exact" | "contains" | "regex";
-type ConditionOperator = "eq" | "contains";
+type ConditionOperator = "eq" | "neq" | "contains" | "gt" | "lt" | "regex";
 
 type ParseMode = "HTML" | "Markdown" | "MarkdownV2";
 
@@ -52,16 +61,62 @@ interface SendMessageConfig {
   parseMode: ParseMode | "";
 }
 
+type MediaType = "photo" | "video" | "document" | "audio";
+
+interface CallbackTriggerConfig {
+  callbackData: string;
+}
+
+interface SendMediaConfig {
+  mediaType: MediaType;
+  url: string;
+  fileId: string;
+  caption: string;
+}
+
+type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+
+interface HttpRequestConfig {
+  method: HttpMethod;
+  url: string;
+  headers: string;
+  body: string;
+  responseVariable: string;
+}
+
+interface AiPromptConfig {
+  systemPrompt: string;
+  userPromptTemplate: string;
+  model: string;
+  responseVariable: string;
+}
+
 interface ConditionConfig {
   operator: ConditionOperator;
   value: string;
 }
 
+interface SetVariableConfig {
+  variable: string;
+  valueExpression: string;
+}
+
+interface WaitForInputConfig {
+  variable: string;
+  timeoutSecs: number;
+}
+
 type BuilderNodeConfig =
   | CommandTriggerConfig
   | MessageTriggerConfig
+  | CallbackTriggerConfig
   | SendMessageConfig
-  | ConditionConfig;
+  | SendMediaConfig
+  | HttpRequestConfig
+  | AiPromptConfig
+  | ConditionConfig
+  | SetVariableConfig
+  | WaitForInputConfig;
 
 interface BuilderNodeData extends StudioNodeData {
   nodeType: BuilderNodeType;
@@ -98,7 +153,7 @@ interface StudioEdge {
   targetHandle?: string;
 }
 
-interface FlowGraphNode {
+interface BuilderGraphNode {
   id: string;
   type: BuilderNodeType;
   config: Record<string, unknown>;
@@ -109,7 +164,7 @@ interface FlowGraphNode {
   label?: string;
 }
 
-interface FlowGraphEdge {
+interface BuilderGraphEdge {
   id: string;
   source: string;
   target: string;
@@ -118,9 +173,10 @@ interface FlowGraphEdge {
   label?: string;
 }
 
-interface FlowGraph {
-  nodes: FlowGraphNode[];
-  edges: FlowGraphEdge[];
+interface BuilderGraph {
+  schemaVersion: 2;
+  nodes: BuilderGraphNode[];
+  edges: BuilderGraphEdge[];
 }
 
 interface MiniMapNodeLike {
@@ -152,18 +208,42 @@ const errorMessage = ref("");
 const editorCommand = ref("/start");
 const editorPattern = ref("");
 const editorMatchType = ref<MessageMatchType>("exact");
+const editorCallbackData = ref("help");
 const editorMessageText = ref("");
 const editorMessageButtons = ref("");
 const editorParseMode = ref<ParseMode | "">("");
+const editorMediaType = ref<MediaType>("photo");
+const editorMediaUrl = ref("");
+const editorMediaFileId = ref("");
+const editorMediaCaption = ref("");
+const editorHttpMethod = ref<HttpMethod>("GET");
+const editorHttpUrl = ref("");
+const editorHttpHeaders = ref("");
+const editorHttpBody = ref("");
+const editorHttpResponseVariable = ref("http_response");
+const editorAiSystemPrompt = ref("");
+const editorAiUserPrompt = ref("");
+const editorAiModel = ref("gpt-4o-mini");
+const editorAiResponseVariable = ref("ai_response");
 const editorConditionOperator = ref<ConditionOperator>("eq");
 const editorConditionValue = ref("");
+const editorSetVariableName = ref("");
+const editorSetVariableExpr = ref("");
+const editorWaitVariable = ref("user_input");
+const editorWaitTimeout = ref("300");
 const NONE_PARSE_MODE = "__none__";
 
 const palette = [
   { type: "command_trigger" as const, title: "Command Trigger" },
   { type: "message_trigger" as const, title: "Message Trigger" },
+  { type: "callback_trigger" as const, title: "Callback Trigger" },
   { type: "send_message" as const, title: "Send Message" },
+  { type: "send_media" as const, title: "Send Media" },
+  { type: "http_request" as const, title: "HTTP Request" },
+  { type: "ai_prompt" as const, title: "AI Prompt" },
   { type: "condition" as const, title: "Condition" },
+  { type: "set_variable" as const, title: "Set Variable" },
+  { type: "wait_for_input" as const, title: "Wait For Input" },
 ];
 
 const selectedNode = computed(() => {
@@ -188,7 +268,11 @@ const triggerCount = computed(
 
 const actionCount = computed(
   () =>
-    nodes.value.filter((node) => node.data.nodeType === "send_message").length,
+    nodes.value.filter((node) =>
+      ["send_message", "send_media", "http_request", "ai_prompt"].includes(
+        node.data.nodeType,
+      ),
+    ).length,
 );
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -210,7 +294,16 @@ function asMessageMatchType(value: unknown): MessageMatchType {
 }
 
 function asConditionOperator(value: unknown): ConditionOperator {
-  if (value === "eq" || value === "contains") return value;
+  if (
+    value === "eq" ||
+    value === "neq" ||
+    value === "contains" ||
+    value === "gt" ||
+    value === "lt" ||
+    value === "regex"
+  ) {
+    return value;
+  }
   return "eq";
 }
 
@@ -218,6 +311,20 @@ function asParseMode(value: unknown): ParseMode | "" {
   if (value === "HTML" || value === "Markdown" || value === "MarkdownV2")
     return value;
   return "";
+}
+
+function asMediaType(value: unknown): MediaType {
+  if (value === "photo" || value === "video" || value === "document" || value === "audio") {
+    return value;
+  }
+  return "photo";
+}
+
+function asHttpMethod(value: unknown): HttpMethod {
+  if (value === "GET" || value === "POST" || value === "PUT" || value === "PATCH" || value === "DELETE") {
+    return value;
+  }
+  return "GET";
 }
 
 function metadataForNodeType(
@@ -229,7 +336,7 @@ function metadataForNodeType(
       title: "Command Trigger",
       subtitle: "Runs when a command like /start is received.",
       chips: ["trigger", "command"],
-      metric: "MVP",
+      metric: "live",
     };
   }
 
@@ -239,7 +346,17 @@ function metadataForNodeType(
       title: "Message Trigger",
       subtitle: "Matches user text by exact/contains/regex.",
       chips: ["trigger", "message"],
-      metric: "MVP",
+      metric: "live",
+    };
+  }
+
+  if (nodeType === "callback_trigger") {
+    return {
+      kind: "trigger",
+      title: "Callback Trigger",
+      subtitle: "Starts from inline button callback payload.",
+      chips: ["trigger", "callback"],
+      metric: "ready",
     };
   }
 
@@ -249,7 +366,57 @@ function metadataForNodeType(
       title: "Condition",
       subtitle: "Routes true/false based on _text.",
       chips: ["branch", "_text"],
-      metric: "MVP",
+      metric: "live",
+    };
+  }
+
+  if (nodeType === "send_media") {
+    return {
+      kind: "action",
+      title: "Send Media",
+      subtitle: "Sends photo/video/document/audio with optional caption.",
+      chips: ["action", "media"],
+      metric: "ready",
+    };
+  }
+
+  if (nodeType === "http_request") {
+    return {
+      kind: "action",
+      title: "HTTP Request",
+      subtitle: "Calls external APIs and stores the response variable.",
+      chips: ["action", "http"],
+      metric: "ready",
+    };
+  }
+
+  if (nodeType === "ai_prompt") {
+    return {
+      kind: "ai",
+      title: "AI Prompt",
+      subtitle: "Generates model output and resumes execution flow.",
+      chips: ["ai", "llm"],
+      metric: "ready",
+    };
+  }
+
+  if (nodeType === "set_variable") {
+    return {
+      kind: "action",
+      title: "Set Variable",
+      subtitle: "Writes derived values to session variables.",
+      chips: ["state", "variable"],
+      metric: "ready",
+    };
+  }
+
+  if (nodeType === "wait_for_input") {
+    return {
+      kind: "condition",
+      title: "Wait For Input",
+      subtitle: "Pauses flow until user responds.",
+      chips: ["state", "input"],
+      metric: "ready",
     };
   }
 
@@ -258,7 +425,7 @@ function metadataForNodeType(
     title: "Send Message",
     subtitle: "Sends text with optional inline buttons.",
     chips: ["action", "message"],
-    metric: "MVP",
+    metric: "live",
   };
 }
 
@@ -276,10 +443,58 @@ function defaultConfigForNodeType(
     };
   }
 
+  if (nodeType === "callback_trigger") {
+    return {
+      callbackData: "help",
+    };
+  }
+
   if (nodeType === "condition") {
     return {
       operator: "contains",
       value: "help",
+    };
+  }
+
+  if (nodeType === "send_media") {
+    return {
+      mediaType: "photo",
+      url: "",
+      fileId: "",
+      caption: "",
+    };
+  }
+
+  if (nodeType === "http_request") {
+    return {
+      method: "GET",
+      url: "",
+      headers: "",
+      body: "",
+      responseVariable: "http_response",
+    };
+  }
+
+  if (nodeType === "ai_prompt") {
+    return {
+      systemPrompt: "",
+      userPromptTemplate: "Summarize {{_text}}",
+      model: "gpt-4o-mini",
+      responseVariable: "ai_response",
+    };
+  }
+
+  if (nodeType === "set_variable") {
+    return {
+      variable: "key",
+      valueExpression: "{{_text}}",
+    };
+  }
+
+  if (nodeType === "wait_for_input") {
+    return {
+      variable: "user_input",
+      timeoutSecs: 300,
     };
   }
 
@@ -330,6 +545,12 @@ function normalizeNodeConfig(
     };
   }
 
+  if (nodeType === "callback_trigger") {
+    return {
+      callbackData: asString(config["callbackData"], ""),
+    };
+  }
+
   if (nodeType === "condition") {
     const rules = Array.isArray(config["rules"]) ? config["rules"] : [];
     const firstRule = rules.find(isRecord);
@@ -337,6 +558,48 @@ function normalizeNodeConfig(
     return {
       operator: asConditionOperator(firstRule?.["operator"]),
       value: asString(firstRule?.["value"], ""),
+    };
+  }
+
+  if (nodeType === "send_media") {
+    return {
+      mediaType: asMediaType(config["mediaType"]),
+      url: asString(config["url"], ""),
+      fileId: asString(config["fileId"], ""),
+      caption: asString(config["caption"], ""),
+    };
+  }
+
+  if (nodeType === "http_request") {
+    return {
+      method: asHttpMethod(config["method"]),
+      url: asString(config["url"], ""),
+      headers: JSON.stringify(config["headers"] ?? {}, null, 2),
+      body: asString(config["body"], ""),
+      responseVariable: asString(config["responseVariable"], "http_response"),
+    };
+  }
+
+  if (nodeType === "ai_prompt") {
+    return {
+      systemPrompt: asString(config["systemPrompt"], ""),
+      userPromptTemplate: asString(config["userPromptTemplate"], ""),
+      model: asString(config["model"], "gpt-4o-mini"),
+      responseVariable: asString(config["responseVariable"], "ai_response"),
+    };
+  }
+
+  if (nodeType === "set_variable") {
+    return {
+      variable: asString(config["variable"], ""),
+      valueExpression: asString(config["valueExpression"], ""),
+    };
+  }
+
+  if (nodeType === "wait_for_input") {
+    return {
+      variable: asString(config["variable"], "user_input"),
+      timeoutSecs: asNumber(config["timeoutSecs"], 300),
     };
   }
 
@@ -411,21 +674,28 @@ function createDefaultCanvas(): {
   };
 }
 
-function parseStoredGraph(graphJson: unknown): FlowGraph | null {
-  if (!isRecord(graphJson)) return null;
+function parseStoredGraph(graphJson: unknown): BuilderGraph | null {
+  const normalized = normalizeFlowGraph(graphJson);
+  if (!normalized.ok) return null;
 
-  const rawNodes = graphJson["nodes"];
-  const rawEdges = graphJson["edges"];
+  const rawNodes = normalized.graph.nodes;
+  const rawEdges = normalized.graph.edges;
   if (!Array.isArray(rawNodes) || !Array.isArray(rawEdges)) return null;
 
   const supportedNodeTypes = new Set<BuilderNodeType>([
     "command_trigger",
     "message_trigger",
+    "callback_trigger",
     "send_message",
+    "send_media",
+    "http_request",
+    "ai_prompt",
     "condition",
+    "set_variable",
+    "wait_for_input",
   ]);
 
-  const nodes: FlowGraphNode[] = [];
+  const nodes: BuilderGraphNode[] = [];
   for (const rawNode of rawNodes) {
     if (!isRecord(rawNode)) continue;
 
@@ -435,8 +705,8 @@ function parseStoredGraph(graphJson: unknown): FlowGraph | null {
     if (!supportedNodeTypes.has(typeValue as BuilderNodeType)) continue;
 
     const rawPosition = isRecord(rawNode["position"])
-      ? rawNode["position"]
-      : {};
+      ? (rawNode["position"] as Record<string, unknown>)
+      : ({} as Record<string, unknown>);
     nodes.push({
       id,
       type: typeValue as BuilderNodeType,
@@ -453,7 +723,7 @@ function parseStoredGraph(graphJson: unknown): FlowGraph | null {
   }
 
   const nodeIds = new Set(nodes.map((node) => node.id));
-  const edges: FlowGraphEdge[] = [];
+  const edges: BuilderGraphEdge[] = [];
   for (const rawEdge of rawEdges) {
     if (!isRecord(rawEdge)) continue;
 
@@ -480,10 +750,14 @@ function parseStoredGraph(graphJson: unknown): FlowGraph | null {
     });
   }
 
-  return { nodes, edges };
+  return {
+    schemaVersion: 2,
+    nodes,
+    edges,
+  };
 }
 
-function toCanvasGraph(graph: FlowGraph): {
+function toCanvasGraph(graph: BuilderGraph): {
   nodes: BuilderCanvasNode[];
   edges: StudioEdge[];
 } {
@@ -599,7 +873,7 @@ function toFlowGraph(
   canvasNodes: BuilderCanvasNode[],
   canvasEdges: StudioEdge[],
 ): FlowGraph {
-  const nodesGraph: FlowGraphNode[] = canvasNodes.map((node) => {
+  const nodesGraph: FlowGraph["nodes"] = canvasNodes.map((node) => {
     let config: Record<string, unknown>;
 
     switch (node.data.nodeType) {
@@ -618,8 +892,76 @@ function toFlowGraph(
         };
         break;
       }
+      case "callback_trigger": {
+        const currentConfig = node.data.config as CallbackTriggerConfig;
+        config = {
+          callbackData: currentConfig.callbackData,
+        };
+        break;
+      }
       case "condition": {
         config = buildConditionConfig(node, canvasEdges);
+        break;
+      }
+      case "send_media": {
+        const currentConfig = node.data.config as SendMediaConfig;
+        config = {
+          mediaType: currentConfig.mediaType,
+          ...(currentConfig.url.trim() && { url: currentConfig.url.trim() }),
+          ...(currentConfig.fileId.trim() && { fileId: currentConfig.fileId.trim() }),
+          ...(currentConfig.caption.trim() && { caption: currentConfig.caption }),
+        };
+        break;
+      }
+      case "http_request": {
+        const currentConfig = node.data.config as HttpRequestConfig;
+        let parsedHeaders: Record<string, string> | undefined;
+        if (currentConfig.headers.trim()) {
+          try {
+            const parsed = JSON.parse(currentConfig.headers);
+            if (isRecord(parsed)) {
+              parsedHeaders = Object.fromEntries(
+                Object.entries(parsed).map(([key, value]) => [key, String(value)]),
+              );
+            }
+          } catch {
+            parsedHeaders = undefined;
+          }
+        }
+
+        config = {
+          method: currentConfig.method,
+          url: currentConfig.url,
+          ...(parsedHeaders && { headers: parsedHeaders }),
+          ...(currentConfig.body.trim() && { body: currentConfig.body }),
+          responseVariable: currentConfig.responseVariable.trim() || "http_response",
+        };
+        break;
+      }
+      case "ai_prompt": {
+        const currentConfig = node.data.config as AiPromptConfig;
+        config = {
+          ...(currentConfig.systemPrompt.trim() && { systemPrompt: currentConfig.systemPrompt }),
+          userPromptTemplate: currentConfig.userPromptTemplate,
+          model: currentConfig.model.trim() || "gpt-4o-mini",
+          responseVariable: currentConfig.responseVariable.trim() || "ai_response",
+        };
+        break;
+      }
+      case "set_variable": {
+        const currentConfig = node.data.config as SetVariableConfig;
+        config = {
+          variable: currentConfig.variable.trim(),
+          valueExpression: currentConfig.valueExpression,
+        };
+        break;
+      }
+      case "wait_for_input": {
+        const currentConfig = node.data.config as WaitForInputConfig;
+        config = {
+          variable: currentConfig.variable.trim() || "user_input",
+          timeoutSecs: Math.max(1, Math.floor(currentConfig.timeoutSecs)),
+        };
         break;
       }
       default: {
@@ -652,7 +994,7 @@ function toFlowGraph(
     };
   });
 
-  const edgesGraph: FlowGraphEdge[] = canvasEdges.map((edge) => ({
+  const edgesGraph: FlowGraph["edges"] = canvasEdges.map((edge) => ({
     id: edge.id,
     source: edge.source,
     target: edge.target,
@@ -662,6 +1004,7 @@ function toFlowGraph(
   }));
 
   return {
+    schemaVersion: 2,
     nodes: nodesGraph,
     edges: edgesGraph,
   };
@@ -735,9 +1078,16 @@ function onNodeClick(payload: { node: { id: string } }): void {
 
 function miniMapColor(node: MiniMapNodeLike): string {
   const nodeType = node.data?.nodeType;
-  if (nodeType === "command_trigger" || nodeType === "message_trigger")
+  if (
+    nodeType === "command_trigger" ||
+    nodeType === "message_trigger" ||
+    nodeType === "callback_trigger"
+  )
     return "#f59e0b";
-  if (nodeType === "send_message") return "#0ea5e9";
+  if (nodeType === "send_message" || nodeType === "send_media") return "#0ea5e9";
+  if (nodeType === "http_request" || nodeType === "set_variable") return "#14b8a6";
+  if (nodeType === "ai_prompt") return "#10b981";
+  if (nodeType === "wait_for_input") return "#8b5cf6";
   if (nodeType === "condition") return "#d946ef";
   return "#64748b";
 }
@@ -764,10 +1114,58 @@ watch(
       return;
     }
 
+    if (node.data.nodeType === "callback_trigger") {
+      const cfg = node.data.config as CallbackTriggerConfig;
+      editorCallbackData.value = cfg.callbackData;
+      return;
+    }
+
+    if (node.data.nodeType === "send_media") {
+      const cfg = node.data.config as SendMediaConfig;
+      editorMediaType.value = cfg.mediaType;
+      editorMediaUrl.value = cfg.url;
+      editorMediaFileId.value = cfg.fileId;
+      editorMediaCaption.value = cfg.caption;
+      return;
+    }
+
+    if (node.data.nodeType === "http_request") {
+      const cfg = node.data.config as HttpRequestConfig;
+      editorHttpMethod.value = cfg.method;
+      editorHttpUrl.value = cfg.url;
+      editorHttpHeaders.value = cfg.headers;
+      editorHttpBody.value = cfg.body;
+      editorHttpResponseVariable.value = cfg.responseVariable;
+      return;
+    }
+
+    if (node.data.nodeType === "ai_prompt") {
+      const cfg = node.data.config as AiPromptConfig;
+      editorAiSystemPrompt.value = cfg.systemPrompt;
+      editorAiUserPrompt.value = cfg.userPromptTemplate;
+      editorAiModel.value = cfg.model;
+      editorAiResponseVariable.value = cfg.responseVariable;
+      return;
+    }
+
     if (node.data.nodeType === "condition") {
       const cfg = node.data.config as ConditionConfig;
       editorConditionOperator.value = cfg.operator;
       editorConditionValue.value = cfg.value;
+      return;
+    }
+
+    if (node.data.nodeType === "set_variable") {
+      const cfg = node.data.config as SetVariableConfig;
+      editorSetVariableName.value = cfg.variable;
+      editorSetVariableExpr.value = cfg.valueExpression;
+      return;
+    }
+
+    if (node.data.nodeType === "wait_for_input") {
+      const cfg = node.data.config as WaitForInputConfig;
+      editorWaitVariable.value = cfg.variable;
+      editorWaitTimeout.value = String(cfg.timeoutSecs);
       return;
     }
 
@@ -784,11 +1182,29 @@ watch(
     editorCommand,
     editorPattern,
     editorMatchType,
+    editorCallbackData,
     editorMessageText,
     editorMessageButtons,
     editorParseMode,
+    editorMediaType,
+    editorMediaUrl,
+    editorMediaFileId,
+    editorMediaCaption,
+    editorHttpMethod,
+    editorHttpUrl,
+    editorHttpHeaders,
+    editorHttpBody,
+    editorHttpResponseVariable,
+    editorAiSystemPrompt,
+    editorAiUserPrompt,
+    editorAiModel,
+    editorAiResponseVariable,
     editorConditionOperator,
     editorConditionValue,
+    editorSetVariableName,
+    editorSetVariableExpr,
+    editorWaitVariable,
+    editorWaitTimeout,
   ],
   () => {
     const node = selectedNode.value;
@@ -809,10 +1225,64 @@ watch(
       return;
     }
 
+    if (node.data.nodeType === "callback_trigger") {
+      node.data.config = {
+        callbackData: editorCallbackData.value,
+      };
+      return;
+    }
+
+    if (node.data.nodeType === "send_media") {
+      node.data.config = {
+        mediaType: editorMediaType.value,
+        url: editorMediaUrl.value,
+        fileId: editorMediaFileId.value,
+        caption: editorMediaCaption.value,
+      };
+      return;
+    }
+
+    if (node.data.nodeType === "http_request") {
+      node.data.config = {
+        method: editorHttpMethod.value,
+        url: editorHttpUrl.value,
+        headers: editorHttpHeaders.value,
+        body: editorHttpBody.value,
+        responseVariable: editorHttpResponseVariable.value,
+      };
+      return;
+    }
+
+    if (node.data.nodeType === "ai_prompt") {
+      node.data.config = {
+        systemPrompt: editorAiSystemPrompt.value,
+        userPromptTemplate: editorAiUserPrompt.value,
+        model: editorAiModel.value,
+        responseVariable: editorAiResponseVariable.value,
+      };
+      return;
+    }
+
     if (node.data.nodeType === "condition") {
       node.data.config = {
         operator: editorConditionOperator.value,
         value: editorConditionValue.value,
+      };
+      return;
+    }
+
+    if (node.data.nodeType === "set_variable") {
+      node.data.config = {
+        variable: editorSetVariableName.value,
+        valueExpression: editorSetVariableExpr.value,
+      };
+      return;
+    }
+
+    if (node.data.nodeType === "wait_for_input") {
+      node.data.config = {
+        variable: editorWaitVariable.value,
+        timeoutSecs: Number(editorWaitTimeout.value) || 300,
       };
       return;
     }
@@ -840,7 +1310,7 @@ async function loadBuilder() {
     const flow = await botsStore.getOrCreateMainFlow(token, botId.value);
     flowId.value = flow.id;
 
-    const graph = parseStoredGraph(flow.graphJson);
+    const graph = parseStoredGraph(flow.graph);
     if (graph && graph.nodes.length > 0) {
       const canvas = toCanvasGraph(graph);
       nodes.value = canvas.nodes;
@@ -906,8 +1376,27 @@ async function publishFlow() {
     await botsStore.publishFlow(token, botId.value, flowId.value);
     toast.success("Flow published.");
   } catch (error) {
-    errorMessage.value =
-      error instanceof Error ? error.message : "Unable to publish flow.";
+    if (error instanceof ApiError) {
+      const payload = error.payload as
+        | { diagnostics?: Array<{ message?: string; nodeId?: string }> }
+        | undefined;
+      const diagnostics = payload?.diagnostics ?? [];
+      if (diagnostics.length > 0) {
+        errorMessage.value = diagnostics
+          .slice(0, 3)
+          .map((entry) =>
+            entry.nodeId
+              ? `${entry.message ?? "Publish error"} (node: ${entry.nodeId})`
+              : (entry.message ?? "Publish error"),
+          )
+          .join("\n");
+      } else {
+        errorMessage.value = error.message;
+      }
+    } else {
+      errorMessage.value =
+        error instanceof Error ? error.message : "Unable to publish flow.";
+    }
     toast.error("Unable to publish flow.", {
       description: errorMessage.value,
     });
@@ -924,7 +1413,7 @@ onMounted(async () => {
 <template>
   <AppShell
     :title="bot ? `${bot.name} Builder` : 'Bot Builder'"
-    subtitle="Build one publishable flow with triggers, conditions, and send-message actions."
+    subtitle="Design and publish complete bot flows with triggers, actions, AI, and state."
   >
     <template #actions>
       <Button
@@ -958,7 +1447,10 @@ onMounted(async () => {
       </RouterLink>
     </div>
 
-    <div v-else class="space-y-4">
+    <div
+      v-else
+      class="space-y-4 rounded-2xl border border-slate-200/70 bg-gradient-to-b from-white to-slate-50/70 p-3 shadow-[0_10px_40px_-24px_rgba(2,6,23,0.35)]"
+    >
       <p
         v-if="errorMessage"
         class="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
@@ -966,9 +1458,9 @@ onMounted(async () => {
         {{ errorMessage }}
       </p>
 
-      <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <section class="space-y-4">
-          <div class="rounded-xl border border-slate-200 bg-white p-3">
+      <div class="grid gap-4 xl:h-[calc(100vh-12.5rem)] xl:grid-cols-[minmax(0,1fr)_360px]">
+        <section class="flex min-h-0 flex-col gap-4">
+          <div class="rounded-xl border border-slate-200/80 bg-white/95 p-3 backdrop-blur-sm">
             <div class="flex items-center gap-2">
               <Workflow class="h-4 w-4 text-slate-600" />
               <p class="text-sm font-semibold text-slate-900">Node Palette</p>
@@ -978,7 +1470,7 @@ onMounted(async () => {
                 v-for="item in palette"
                 :key="item.type"
                 variant="outline"
-                class="h-8 border-slate-200 bg-white px-2.5 text-xs shadow-none"
+                class="h-8 border-slate-200 bg-white px-2.5 text-xs shadow-none hover:border-slate-300 hover:bg-slate-50"
                 @click="addNode(item.type)"
               >
                 <Plus class="mr-1 h-3.5 w-3.5" />
@@ -987,7 +1479,7 @@ onMounted(async () => {
             </div>
           </div>
 
-          <div class="rounded-xl border border-slate-200 bg-white">
+          <div class="flex-1 min-h-0 rounded-xl border border-slate-200 bg-white py-2 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.85)]">
             <VueFlow
               v-model:nodes="nodes"
               v-model:edges="edges"
@@ -998,7 +1490,7 @@ onMounted(async () => {
               :min-zoom="0.35"
               :snap-to-grid="true"
               :snap-grid="[20, 20]"
-              class="studio-flow h-[62vh] min-h-[530px] w-full"
+              class="studio-flow h-[60vh] w-full xl:h-full"
               @connect="onConnect"
               @node-click="onNodeClick"
             >
@@ -1034,7 +1526,7 @@ onMounted(async () => {
         </section>
 
         <aside class="space-y-4">
-          <div class="rounded-xl border border-slate-200 bg-white p-3">
+          <div class="rounded-xl border border-slate-200/80 bg-white/95 p-3 backdrop-blur-sm">
             <div class="flex items-center justify-between gap-2">
               <p class="text-sm font-semibold text-slate-900">Flow Status</p>
               <Badge
@@ -1052,7 +1544,7 @@ onMounted(async () => {
             </p>
           </div>
 
-          <div class="rounded-xl border border-slate-200 bg-white p-3">
+          <div class="rounded-xl border border-slate-200/80 bg-white/95 p-3 backdrop-blur-sm">
             <p class="text-sm font-semibold text-slate-900">Selected Node</p>
             <p v-if="!selectedNode" class="mt-2 text-sm text-slate-500">
               Click a node to edit its configuration.
@@ -1115,6 +1607,19 @@ onMounted(async () => {
                 </div>
               </template>
 
+              <template v-if="selectedNode.data.nodeType === 'callback_trigger'">
+                <div class="space-y-1.5">
+                  <label class="text-sm font-medium text-slate-700"
+                    >Callback Data</label
+                  >
+                  <Input
+                    v-model:model-value="editorCallbackData"
+                    placeholder="help"
+                    class="border-slate-200 bg-white shadow-none"
+                  />
+                </div>
+              </template>
+
               <template v-if="selectedNode.data.nodeType === 'send_message'">
                 <div class="space-y-1.5">
                   <label class="text-sm font-medium text-slate-700"
@@ -1161,6 +1666,132 @@ onMounted(async () => {
                 </div>
               </template>
 
+              <template v-if="selectedNode.data.nodeType === 'send_media'">
+                <div class="space-y-1.5">
+                  <label class="text-sm font-medium text-slate-700"
+                    >Media Type</label
+                  >
+                  <Select v-model:model-value="editorMediaType">
+                    <SelectTrigger class="border-slate-200 bg-white shadow-none">
+                      <SelectValue placeholder="Media type" />
+                    </SelectTrigger>
+                    <SelectContent class="shadow-none">
+                      <SelectItem value="photo">Photo</SelectItem>
+                      <SelectItem value="video">Video</SelectItem>
+                      <SelectItem value="document">Document</SelectItem>
+                      <SelectItem value="audio">Audio</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-sm font-medium text-slate-700">URL</label>
+                  <Input
+                    v-model:model-value="editorMediaUrl"
+                    placeholder="https://..."
+                    class="border-slate-200 bg-white shadow-none"
+                  />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-sm font-medium text-slate-700">File ID</label>
+                  <Input
+                    v-model:model-value="editorMediaFileId"
+                    placeholder="Telegram file_id"
+                    class="border-slate-200 bg-white shadow-none"
+                  />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-sm font-medium text-slate-700">Caption</label>
+                  <Textarea
+                    v-model:model-value="editorMediaCaption"
+                    class="min-h-[80px] border-slate-200 bg-white shadow-none"
+                  />
+                </div>
+              </template>
+
+              <template v-if="selectedNode.data.nodeType === 'http_request'">
+                <div class="space-y-1.5">
+                  <label class="text-sm font-medium text-slate-700">Method</label>
+                  <Select v-model:model-value="editorHttpMethod">
+                    <SelectTrigger class="border-slate-200 bg-white shadow-none">
+                      <SelectValue placeholder="Method" />
+                    </SelectTrigger>
+                    <SelectContent class="shadow-none">
+                      <SelectItem value="GET">GET</SelectItem>
+                      <SelectItem value="POST">POST</SelectItem>
+                      <SelectItem value="PUT">PUT</SelectItem>
+                      <SelectItem value="PATCH">PATCH</SelectItem>
+                      <SelectItem value="DELETE">DELETE</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-sm font-medium text-slate-700">URL</label>
+                  <Input
+                    v-model:model-value="editorHttpUrl"
+                    placeholder="https://api.example.com"
+                    class="border-slate-200 bg-white shadow-none"
+                  />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-sm font-medium text-slate-700">Headers JSON</label>
+                  <Textarea
+                    v-model:model-value="editorHttpHeaders"
+                    class="min-h-[90px] border-slate-200 bg-white font-mono text-xs shadow-none"
+                    placeholder='{"Authorization":"Bearer {{token}}"}'
+                  />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-sm font-medium text-slate-700">Body</label>
+                  <Textarea
+                    v-model:model-value="editorHttpBody"
+                    class="min-h-[80px] border-slate-200 bg-white shadow-none"
+                    placeholder='{"query":"{{_text}}"}'
+                  />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-sm font-medium text-slate-700">Response Variable</label>
+                  <Input
+                    v-model:model-value="editorHttpResponseVariable"
+                    placeholder="http_response"
+                    class="border-slate-200 bg-white shadow-none"
+                  />
+                </div>
+              </template>
+
+              <template v-if="selectedNode.data.nodeType === 'ai_prompt'">
+                <div class="space-y-1.5">
+                  <label class="text-sm font-medium text-slate-700">Model</label>
+                  <Input
+                    v-model:model-value="editorAiModel"
+                    placeholder="gpt-4o-mini"
+                    class="border-slate-200 bg-white shadow-none"
+                  />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-sm font-medium text-slate-700">System Prompt</label>
+                  <Textarea
+                    v-model:model-value="editorAiSystemPrompt"
+                    class="min-h-[80px] border-slate-200 bg-white shadow-none"
+                  />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-sm font-medium text-slate-700">User Prompt Template</label>
+                  <Textarea
+                    v-model:model-value="editorAiUserPrompt"
+                    class="min-h-[100px] border-slate-200 bg-white shadow-none"
+                    placeholder="Summarize {{_text}}"
+                  />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-sm font-medium text-slate-700">Response Variable</label>
+                  <Input
+                    v-model:model-value="editorAiResponseVariable"
+                    placeholder="ai_response"
+                    class="border-slate-200 bg-white shadow-none"
+                  />
+                </div>
+              </template>
+
               <template v-if="selectedNode.data.nodeType === 'condition'">
                 <div class="space-y-1.5">
                   <label class="text-sm font-medium text-slate-700"
@@ -1174,7 +1805,11 @@ onMounted(async () => {
                     </SelectTrigger>
                     <SelectContent class="shadow-none">
                       <SelectItem value="eq">Equals</SelectItem>
+                      <SelectItem value="neq">Not Equals</SelectItem>
                       <SelectItem value="contains">Contains</SelectItem>
+                      <SelectItem value="gt">Greater Than</SelectItem>
+                      <SelectItem value="lt">Lower Than</SelectItem>
+                      <SelectItem value="regex">Regex</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1194,10 +1829,48 @@ onMounted(async () => {
                   <code>true</code>, second is <code>false</code>.
                 </p>
               </template>
+
+              <template v-if="selectedNode.data.nodeType === 'set_variable'">
+                <div class="space-y-1.5">
+                  <label class="text-sm font-medium text-slate-700">Variable</label>
+                  <Input
+                    v-model:model-value="editorSetVariableName"
+                    placeholder="customer_name"
+                    class="border-slate-200 bg-white shadow-none"
+                  />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-sm font-medium text-slate-700">Value Expression</label>
+                  <Input
+                    v-model:model-value="editorSetVariableExpr"
+                    placeholder="{{_text}}"
+                    class="border-slate-200 bg-white shadow-none"
+                  />
+                </div>
+              </template>
+
+              <template v-if="selectedNode.data.nodeType === 'wait_for_input'">
+                <div class="space-y-1.5">
+                  <label class="text-sm font-medium text-slate-700">Variable</label>
+                  <Input
+                    v-model:model-value="editorWaitVariable"
+                    placeholder="user_input"
+                    class="border-slate-200 bg-white shadow-none"
+                  />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-sm font-medium text-slate-700">Timeout (secs)</label>
+                  <Input
+                    v-model:model-value="editorWaitTimeout"
+                    placeholder="300"
+                    class="border-slate-200 bg-white shadow-none"
+                  />
+                </div>
+              </template>
             </div>
           </div>
 
-          <div class="rounded-xl border border-slate-200 bg-white p-3">
+          <div class="rounded-xl border border-slate-200/80 bg-white/95 p-3 backdrop-blur-sm">
             <p class="text-sm font-semibold text-slate-900">Node Guide</p>
             <ScrollArea class="mt-2 h-44 pr-3">
               <ul class="space-y-2 text-xs text-slate-600">
@@ -1210,12 +1883,30 @@ onMounted(async () => {
                   patterns.
                 </li>
                 <li class="rounded border border-slate-200 px-2 py-1.5">
+                  <strong>Callback Trigger</strong>: starts on inline button callbacks.
+                </li>
+                <li class="rounded border border-slate-200 px-2 py-1.5">
                   <strong>Send Message</strong>: replies with text and inline
                   buttons.
                 </li>
                 <li class="rounded border border-slate-200 px-2 py-1.5">
+                  <strong>Send Media</strong>: sends media from URL or Telegram file id.
+                </li>
+                <li class="rounded border border-slate-200 px-2 py-1.5">
+                  <strong>HTTP Request</strong>: fetches API data and stores response variable.
+                </li>
+                <li class="rounded border border-slate-200 px-2 py-1.5">
+                  <strong>AI Prompt</strong>: runs LLM prompt and stores answer.
+                </li>
+                <li class="rounded border border-slate-200 px-2 py-1.5">
                   <strong>Condition</strong>: checks <code>_text</code> and
                   branches.
+                </li>
+                <li class="rounded border border-slate-200 px-2 py-1.5">
+                  <strong>Set Variable</strong>: writes derived state values.
+                </li>
+                <li class="rounded border border-slate-200 px-2 py-1.5">
+                  <strong>Wait For Input</strong>: pauses execution until next user message.
                 </li>
               </ul>
             </ScrollArea>

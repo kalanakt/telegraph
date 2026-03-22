@@ -6,6 +6,7 @@ import { compile, CompileValidationError } from './compiler.js';
 describe('flow compiler', () => {
   it('compiles a simple flow (command trigger → send_message)', () => {
     const graph: FlowGraph = {
+      schemaVersion: 2,
       nodes: [
         {
           id: 'trigger',
@@ -45,6 +46,7 @@ describe('flow compiler', () => {
 
   it('compiles a branching flow (condition → 2 send_messages)', () => {
     const graph: FlowGraph = {
+      schemaVersion: 2,
       nodes: [
         {
           id: 'trigger',
@@ -97,13 +99,14 @@ describe('flow compiler', () => {
   });
 
   it('rejects an empty graph', () => {
-    const graph: FlowGraph = { nodes: [], edges: [] };
+    const graph: FlowGraph = { schemaVersion: 2, nodes: [], edges: [] };
 
     expect(() => compile('flow-empty', 1, graph)).toThrow(CompileValidationError);
   });
 
   it('rejects a graph with orphan nodes', () => {
     const graph: FlowGraph = {
+      schemaVersion: 2,
       nodes: [
         {
           id: 'trigger',
@@ -139,6 +142,7 @@ describe('flow compiler', () => {
 
   it('rejects a graph with no triggers', () => {
     const graph: FlowGraph = {
+      schemaVersion: 2,
       nodes: [
         {
           id: 'msg1',
@@ -188,6 +192,7 @@ describe('flow compiler', () => {
 
   it('rejects a graph with cycles', () => {
     const graph: FlowGraph = {
+      schemaVersion: 2,
       nodes: [
         { id: 'trigger', type: 'command_trigger', config: { command: '/loop' }, position: { x: 0, y: 0 } },
         { id: 'a', type: 'send_message', config: { text: 'A' }, position: { x: 0, y: 100 } },
@@ -210,6 +215,7 @@ describe('flow compiler', () => {
 
   it('compiles condition node edges with correct condition fields', () => {
     const graph: FlowGraph = {
+      schemaVersion: 2,
       nodes: [
         { id: 'trigger', type: 'command_trigger', config: { command: '/decide' }, position: { x: 0, y: 0 } },
         {
@@ -254,6 +260,7 @@ describe('flow compiler', () => {
 
   it('compiles a multi-trigger flow with two command triggers', () => {
     const graph: FlowGraph = {
+      schemaVersion: 2,
       nodes: [
         { id: 'tA', type: 'command_trigger', config: { command: '/a' }, position: { x: 0, y: 0 } },
         { id: 'tB', type: 'command_trigger', config: { command: '/b' }, position: { x: 200, y: 0 } },
@@ -278,6 +285,7 @@ describe('flow compiler', () => {
 
   it('compiles a message_trigger with pattern and matchType', () => {
     const graph: FlowGraph = {
+      schemaVersion: 2,
       nodes: [
         {
           id: 'mt',
@@ -303,6 +311,7 @@ describe('flow compiler', () => {
 
   it('rejects a self-referencing edge', () => {
     const graph: FlowGraph = {
+      schemaVersion: 2,
       nodes: [
         { id: 'trigger', type: 'command_trigger', config: { command: '/self' }, position: { x: 0, y: 0 } },
         { id: 'loop', type: 'send_message', config: { text: 'Loop' }, position: { x: 0, y: 100 } },

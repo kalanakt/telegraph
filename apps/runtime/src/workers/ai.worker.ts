@@ -1,27 +1,21 @@
 import type { Database } from '@telegraph/db/client';
 import type { Redis } from '@telegraph/shared';
-import { acquireLock, createLogger, createQueue, createWorker, QUEUE_NAMES } from '@telegraph/shared';
+import {
+  acquireLock,
+  type AiJobData,
+  createLogger,
+  createQueue,
+  createWorker,
+  QUEUE_NAMES,
+} from '@telegraph/shared';
 import type { Worker } from 'bullmq';
 
 import type { RuntimeConfig } from '../config.js';
 import { getSession, setSession } from '../session/manager.js';
 import { renderTemplate } from './helpers.js';
+import { instrumentProcessor } from './instrumentation.js';
 
 const logger = createLogger('ai-worker');
-
-interface AiJobData {
-  botId: string;
-  chatId: string;
-  planId: string;
-  nodeId: string;
-  resumeNodeId: string | null;
-  config: {
-    systemPrompt?: string;
-    userPromptTemplate: string;
-    model?: string;
-    responseVariable: string;
-  };
-}
 
 export function createAiWorker(
   redis: Redis,
@@ -30,7 +24,7 @@ export function createAiWorker(
 ): Worker<AiJobData> {
   return createWorker<AiJobData>(
     QUEUE_NAMES.AI,
-    async (job) => {
+    instrumentProcessor(QUEUE_NAMES.AI, logger, async (job) => {
       const { botId, chatId, resumeNodeId, config: nodeConfig } = job.data;
 
       const lock = await acquireLock(redis, `lock:session:${botId}:${chatId}`, 30_000);
@@ -98,7 +92,7 @@ export function createAiWorker(
       } finally {
         await lock.release();
       }
-    },
+    }),
     redis,
     { concurrency: 3 },
   );

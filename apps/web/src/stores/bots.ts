@@ -1,5 +1,6 @@
 import { apiRequest } from "@/lib/api";
 import { defineStore } from "pinia";
+import type { FlowGraph } from "@telegraph/schemas";
 
 export interface TelegramBot {
   id: string;
@@ -17,11 +18,12 @@ export interface FlowRecord {
   tenantId: string;
   name: string;
   description: string | null;
-  graphJson: unknown;
+  graph?: FlowGraph | null;
   isPublished: boolean;
   version: number;
   createdAt: string;
   updatedAt: string;
+  graphJson?: unknown;
 }
 
 interface PublishPlanRecord {
@@ -208,23 +210,24 @@ export const useBotsStore = defineStore("bots", {
     ): Promise<FlowRecord> {
       const flows = await this.listFlows(token, botId);
       const main = flows.find((flow) => flow.name.toLowerCase() === "main");
-      if (main) return main;
+      if (main) return this.getFlow(token, botId, main.id);
 
-      if (flows[0]) return flows[0];
+      if (flows[0]) return this.getFlow(token, botId, flows[0].id);
 
-      return this.createFlow(token, botId, "Main");
+      const created = await this.createFlow(token, botId, "Main");
+      return this.getFlow(token, botId, created.id);
     },
 
     async saveFlowGraph(
       token: string,
       botId: string,
       flowId: string,
-      graphJson: unknown,
+      graph: FlowGraph,
     ): Promise<FlowRecord> {
       return apiRequest<FlowRecord>(`/api/bots/${botId}/flows/${flowId}`, {
         method: "PUT",
         token,
-        body: { graphJson },
+        body: { graph },
       });
     },
 

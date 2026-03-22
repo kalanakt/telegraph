@@ -50,7 +50,7 @@ export const CreateFlowBody = z.object({
 });
 
 export const UpdateFlowGraphBody = z.object({
-  graphJson: z.unknown(),
+  graph: z.unknown(),
 });
 
 /** Type-safe body parser that throws 400 on validation failure */

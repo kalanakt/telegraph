@@ -12,8 +12,18 @@ export const FlowEdge = z.object({
 });
 export type FlowEdge = z.infer<typeof FlowEdge>;
 
-export const FlowGraph = z.object({
+export const FlowGraphV1 = z.object({
   nodes: z.array(FlowNode),
   edges: z.array(FlowEdge),
 });
-export type FlowGraph = z.infer<typeof FlowGraph>;
+export type FlowGraphV1 = z.infer<typeof FlowGraphV1>;
+
+export const FlowGraphV2 = z.object({
+  schemaVersion: z.literal(2),
+  nodes: z.array(FlowNode),
+  edges: z.array(FlowEdge),
+});
+export type FlowGraphV2 = z.infer<typeof FlowGraphV2>;
+
+// Canonical graph contract moving forward.
+export type FlowGraph = FlowGraphV2;

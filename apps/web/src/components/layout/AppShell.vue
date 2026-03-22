@@ -15,6 +15,8 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   PlusSquare,
 } from "lucide-vue-next";
 import { computed, ref, type Component } from "vue";
@@ -58,6 +60,13 @@ const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const mobileNavOpen = ref(false);
+const sidebarExpanded = ref(true);
+
+const shellGridClass = computed(() =>
+  sidebarExpanded.value
+    ? "lg:grid-cols-[240px_1fr]"
+    : "lg:grid-cols-[78px_1fr]",
+);
 
 const activeLabel = computed(() => {
   if (route.path.startsWith("/bots/new")) return "Create Bot";
@@ -82,59 +91,94 @@ function itemClass(item: NavItem): string {
     (item.label === "Create Bot" && route.path.startsWith("/bots/new"));
 
   if (active) {
-    return "flex w-full items-center gap-2.5 rounded-lg border border-slate-900 bg-slate-900 px-3 py-2 text-left text-white";
+    return sidebarExpanded.value
+      ? "flex w-full items-center gap-2.5 rounded-lg border border-slate-900 bg-slate-900 px-3 py-2 text-left text-white"
+      : "flex w-full items-center justify-center rounded-lg border border-slate-900 bg-slate-900 px-2 py-2 text-white";
   }
-  return "flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2 text-left text-slate-700 hover:border-slate-200 hover:bg-white";
+  return sidebarExpanded.value
+    ? "flex w-full items-center gap-2.5 rounded-lg border border-transparent px-3 py-2 text-left text-slate-700 hover:border-slate-200 hover:bg-white"
+    : "flex w-full items-center justify-center rounded-lg border border-transparent px-2 py-2 text-slate-700 hover:border-slate-200 hover:bg-white";
 }
 
 function closeMobileNav() {
   mobileNavOpen.value = false;
 }
+
+function toggleSidebar() {
+  sidebarExpanded.value = !sidebarExpanded.value;
+}
 </script>
 
 <template>
   <div class="min-h-screen bg-background text-foreground">
-    <div class="grid min-h-screen lg:grid-cols-[240px_1fr]">
+    <div
+      class="grid min-h-screen transition-all duration-200"
+      :class="shellGridClass"
+    >
       <aside
         class="hidden border-r border-border bg-sidebar lg:flex lg:flex-col"
       >
         <div class="border-b border-border px-4 py-4">
-          <div class="flex items-center gap-2.5">
+          <div class="flex items-center justify-between gap-2.5">
             <div
+              v-if="sidebarExpanded"
               class="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white"
             >
               <Bot class="h-4.5 w-4.5 text-slate-700" />
             </div>
-            <div>
+            <div v-if="sidebarExpanded">
               <p class="text-xs uppercase tracking-[0.16em] text-slate-500">
                 Telegraph
               </p>
               <p class="text-sm font-semibold text-slate-900">Bot Builder</p>
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              class="ml-auto h-8 w-8 text-slate-600 hover:bg-slate-100"
+              @click="toggleSidebar"
+            >
+              <PanelLeftClose v-if="sidebarExpanded" class="h-4 w-4" />
+              <PanelLeftOpen v-else class="h-4 w-4" />
+            </Button>
           </div>
         </div>
 
-        <nav class="space-y-1 px-3 py-3">
+        <nav class="space-y-1 py-3" :class="sidebarExpanded ? 'px-3' : 'px-2'">
           <RouterLink
             v-for="item in navItems"
             :key="item.label"
             :class="itemClass(item)"
             :to="item.to"
+            :title="item.label"
           >
             <component :is="item.icon" class="h-4 w-4" />
-            <span class="text-sm font-medium">{{ item.label }}</span>
+            <span v-if="sidebarExpanded" class="text-sm font-medium">{{
+              item.label
+            }}</span>
           </RouterLink>
         </nav>
 
-        <div class="mt-auto border-t border-border px-4 py-3">
-          <p class="text-xs text-slate-500">{{ authStore.user?.email }}</p>
+        <div
+          class="mt-auto border-t border-border py-3"
+          :class="sidebarExpanded ? 'px-4' : 'px-2'"
+        >
+          <p v-if="sidebarExpanded" class="text-xs text-slate-500">
+            {{ authStore.user?.email }}
+          </p>
           <Button
             variant="outline"
-            class="mt-2 w-full border-slate-200 bg-white shadow-none"
+            :size="sidebarExpanded ? 'default' : 'icon'"
+            :class="
+              sidebarExpanded
+                ? 'mt-2 w-full border-slate-200 bg-white shadow-none'
+                : 'w-full border-slate-200 bg-white shadow-none'
+            "
+            :title="sidebarExpanded ? undefined : 'Sign Out'"
             @click="signOut"
           >
-            <LogOut class="mr-2 h-4 w-4" />
-            Sign Out
+            <LogOut class="h-4 w-4" :class="sidebarExpanded ? 'mr-2' : ''" />
+            <span v-if="sidebarExpanded">Sign Out</span>
           </Button>
         </div>
       </aside>

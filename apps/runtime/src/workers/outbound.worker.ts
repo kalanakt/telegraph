@@ -5,6 +5,7 @@ import {
   createLogger,
   createWorker,
   decryptBotToken,
+  type OutboundJobData,
   QUEUE_NAMES,
   TokenBucketLimiter,
 } from '@telegraph/shared';
@@ -14,15 +15,9 @@ import { eq } from 'drizzle-orm';
 import { Api, GrammyError } from 'grammy';
 
 import type { RuntimeConfig } from '../config.js';
+import { instrumentProcessor } from './instrumentation.js';
 
 const logger = createLogger('outbound-worker');
-
-interface OutboundJobData {
-  botId: string;
-  chatId: string;
-  method: string;
-  params: Record<string, unknown>;
-}
 
 interface TokenEntry {
   token: string;
@@ -40,7 +35,7 @@ export function createOutboundWorker(
 
   return createWorker<OutboundJobData>(
     QUEUE_NAMES.OUTBOUND,
-    async (job) => {
+    instrumentProcessor(QUEUE_NAMES.OUTBOUND, logger, async (job) => {
       const { botId, chatId, method, params } = job.data;
 
       // 1. Rate limit check
@@ -128,7 +123,7 @@ export function createOutboundWorker(
         outboundMessagesTotal.inc({ bot_id: botId, status: 'error' });
         throw err;
       }
-    },
+    }),
     redis,
     { concurrency: 10 },
   );

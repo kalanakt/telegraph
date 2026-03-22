@@ -56,7 +56,10 @@ export default async function flowRoutes(fastify: FastifyInstance) {
     if (!flow) {
       return reply.notFound('Flow not found');
     }
-    return reply.send(flow);
+    return reply.send({
+      ...flow,
+      graph: flow.graphJson,
+    });
   });
 
   fastify.put<{
@@ -67,9 +70,12 @@ export default async function flowRoutes(fastify: FastifyInstance) {
       fastify.db,
       request.user.tenantId,
       request.params.flowId,
-      body.graphJson,
+      body.graph,
     );
-    return reply.send(flow);
+    return reply.send({
+      ...flow,
+      graph: flow.graphJson,
+    });
   });
 
   fastify.delete<{
@@ -82,7 +88,23 @@ export default async function flowRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Params: { botId: string; flowId: string };
   }>('/:flowId/publish', async (request, reply) => {
-    const plan = await publishFlow(fastify.db, fastify.redis, request.user.tenantId, request.params.flowId);
-    return reply.send(plan);
+    try {
+      const plan = await publishFlow(fastify.db, fastify.redis, request.user.tenantId, request.params.flowId);
+      return reply.send(plan);
+    } catch (error) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'statusCode' in error &&
+        (error as { statusCode?: number }).statusCode === 400 &&
+        'diagnostics' in error
+      ) {
+        return reply.code(400).send({
+          message: (error as { message?: string }).message ?? 'Publish failed',
+          diagnostics: (error as { diagnostics?: unknown }).diagnostics,
+        });
+      }
+      throw error;
+    }
   });
 }

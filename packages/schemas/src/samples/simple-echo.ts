@@ -4,6 +4,7 @@ import type { FlowGraph } from '../flow-graph.js';
  * Sample flow: /start → greeting → wait for input → echo back.
  */
 export const simpleEchoFlow: FlowGraph = {
+  schemaVersion: 2,
   nodes: [
     {
       id: 'trigger-start',

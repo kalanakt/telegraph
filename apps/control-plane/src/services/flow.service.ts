@@ -4,11 +4,20 @@ import type { Database } from '@telegraph/db/client';
 import { flows, publishedPlans } from '@telegraph/db/schema';
 import { compile, CompileValidationError } from '@telegraph/flow-compiler';
 import type { Redis } from 'ioredis';
-import { validateFlowGraph } from '@telegraph/schemas';
+import { migrateFlowGraph, validateFlowGraph } from '@telegraph/schemas';
 
 interface CreateFlowInput {
   name: string;
   description?: string;
+}
+
+function isGraphV2(value: unknown): boolean {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'schemaVersion' in value &&
+    (value as { schemaVersion?: number }).schemaVersion === 2
+  );
 }
 
 export async function listFlows(db: Database, tenantId: string, botId: string, limit = 50, offset = 0) {
@@ -46,13 +55,41 @@ export async function getFlow(db: Database, tenantId: string, flowId: string) {
     .where(and(eq(flows.id, flowId), eq(flows.tenantId, tenantId)))
     .limit(1);
 
-  return flow ?? null;
+  if (!flow || !flow.graphJson) {
+    return flow ?? null;
+  }
+
+  const migration = migrateFlowGraph(flow.graphJson);
+  if (!migration.success) {
+    throw Object.assign(new Error(`Flow graph cannot be migrated to v2: ${migration.error}`), {
+      statusCode: 400,
+    });
+  }
+
+  if (!isGraphV2(flow.graphJson)) {
+    await db
+      .update(flows)
+      .set({ graphJson: migration.data, updatedAt: new Date() })
+      .where(and(eq(flows.id, flowId), eq(flows.tenantId, tenantId)));
+  }
+
+  return {
+    ...flow,
+    graphJson: migration.data,
+  };
 }
 
-export async function updateFlowGraph(db: Database, tenantId: string, flowId: string, graphJson: unknown) {
+export async function updateFlowGraph(db: Database, tenantId: string, flowId: string, graph: unknown) {
+  const migration = migrateFlowGraph(graph);
+  if (!migration.success) {
+    throw Object.assign(new Error(`Flow graph cannot be migrated to v2: ${migration.error}`), {
+      statusCode: 400,
+    });
+  }
+
   const [flow] = await db
     .update(flows)
-    .set({ graphJson, updatedAt: new Date() })
+    .set({ graphJson: migration.data, updatedAt: new Date() })
     .where(and(eq(flows.id, flowId), eq(flows.tenantId, tenantId)))
     .returning();
 
@@ -94,8 +131,20 @@ export async function publishFlow(db: Database, redis: Redis, tenantId: string, 
     throw Object.assign(new Error('Flow has no graph to publish'), { statusCode: 400 });
   }
 
-  // Validate graph through JSON Schema
-  const validationResult = validateFlowGraph(flow.graphJson);
+  const migration = migrateFlowGraph(flow.graphJson);
+  if (!migration.success) {
+    throw Object.assign(new Error(`Flow graph cannot be migrated to v2: ${migration.error}`), {
+      statusCode: 400,
+    });
+  }
+  if (!isGraphV2(flow.graphJson)) {
+    await db
+      .update(flows)
+      .set({ graphJson: migration.data, updatedAt: new Date() })
+      .where(eq(flows.id, flowId));
+  }
+
+  const validationResult = validateFlowGraph(migration.data);
   if (!validationResult.success) {
     throw Object.assign(new Error(`Invalid flow graph: ${validationResult.error}`), { statusCode: 400 });
   }
@@ -109,7 +158,10 @@ export async function publishFlow(db: Database, redis: Redis, tenantId: string, 
     result = compile(flowId, newVersion, graph);
   } catch (err) {
     if (err instanceof CompileValidationError) {
-      throw Object.assign(new Error(err.message), { statusCode: 400 });
+      throw Object.assign(new Error(err.message), {
+        statusCode: 400,
+        diagnostics: err.errors,
+      });
     }
     throw err;
   }

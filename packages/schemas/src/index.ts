@@ -15,7 +15,8 @@ export {
   WaitForInputConfig,
 } from './node-types.js';
 
-export { FlowEdge, FlowGraph } from './flow-graph.js';
+export { FlowEdge, FlowGraphV1, FlowGraphV2 } from './flow-graph.js';
+export type { FlowGraph } from './flow-graph.js';
 
 export {
   CallbackTokenMap,
@@ -25,6 +26,11 @@ export {
   TriggerMapping,
 } from './plan.js';
 
-export { validateExecutionPlan, validateFlowGraph } from './validators.js';
+export {
+  migrateFlowGraph,
+  validateExecutionPlan,
+  validateFlowGraph,
+  validateFlowGraphV2,
+} from './validators.js';
 
 export { simpleEchoFlow } from './samples/simple-echo.js';

@@ -8,7 +8,7 @@ A multi-tenant platform for building Telegram bots with a visual flow editor. De
 
 ### Visual Flow Editor
 
-Build bot logic without writing code. The React Flow-based editor supports **10 node types** across three categories:
+Build bot logic without writing code. The Vue Flow-based editor supports **10 node types** across three categories:
 
 | Category         | Nodes                                                                                                                           |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------- |
@@ -57,7 +57,7 @@ OpenTelemetry traces and metrics are exported via gRPC to an OTEL Collector, whi
 ```
 ┌──────────────┐       ┌──────────────────┐       ┌───────────────┐
 │   Web SPA    │──────▶│  Control Plane   │──────▶│  PostgreSQL   │
-│  (React/     │  API  │  (Fastify :3001) │       │  (Drizzle ORM)│
+│  (Vue 3/     │  API  │  (Fastify :3001) │       │  (Drizzle ORM)│
 │   Vite)      │       └──────────────────┘       └───────────────┘
 └──────────────┘               │                         ▲
                                │ publish                 │
@@ -76,7 +76,7 @@ OpenTelemetry traces and metrics are exported via gRPC to an OTEL Collector, whi
 apps/
   control-plane/     Fastify API — auth, bot CRUD, flow management, publish
   runtime/           Webhook server + BullMQ workers
-  web/               React SPA — dashboard & visual flow editor
+  web/               Vue SPA — dashboard & visual flow editor
 packages/
   db/                Drizzle schema, migrations, client
   schemas/           Zod schemas for flow graphs, node types, execution plans
@@ -96,7 +96,7 @@ infra/               docker-compose for Postgres, Redis, OTEL Collector, Prometh
 | Monorepo      | pnpm 9.15 workspaces + Turborepo                             |
 | Runtime       | Node.js ≥ 22                                                 |
 | Backend       | Fastify 5                                                    |
-| Frontend      | React 18, Vite 6, Tailwind CSS 4, React Flow, TanStack Query |
+| Frontend      | Vue 3, Vite 6, Tailwind CSS 4, Vue Flow, TanStack Query |
 | Database      | PostgreSQL 16, Drizzle ORM                                   |
 | Queue & Cache | Redis 7, ioredis, BullMQ                                     |
 | Telegram      | grammY                                                       |

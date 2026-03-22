@@ -1,10 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { validateFlowGraph, validateExecutionPlan } from './validators.js';
+import {
+  migrateFlowGraph,
+  validateExecutionPlan,
+  validateFlowGraph,
+  validateFlowGraphV2,
+} from './validators.js';
 import { simpleEchoFlow } from './samples/simple-echo.js';
 
 describe('validateFlowGraph', () => {
   it('accepts a minimal valid graph (1 trigger + 1 message + 1 edge)', () => {
     const graph = {
+      schemaVersion: 2,
       nodes: [
         { id: 'n1', type: 'command_trigger', config: { command: '/go' }, position: { x: 0, y: 0 } },
         { id: 'n2', type: 'send_message', config: { text: 'hi' }, position: { x: 0, y: 100 } },
@@ -27,6 +33,7 @@ describe('validateFlowGraph', () => {
 
   it('rejects a node with an invalid type', () => {
     const graph = {
+      schemaVersion: 2,
       nodes: [
         { id: 'n1', type: 'not_real', config: {}, position: { x: 0, y: 0 } },
       ],
@@ -34,6 +41,30 @@ describe('validateFlowGraph', () => {
     };
     const result = validateFlowGraph(graph);
     expect(result.success).toBe(false);
+  });
+});
+
+describe('migrateFlowGraph', () => {
+  it('migrates legacy v1 graphs by adding schemaVersion', () => {
+    const graphV1 = {
+      nodes: [{ id: 'n1', type: 'send_message', config: { text: 'hi' }, position: { x: 0, y: 0 } }],
+      edges: [],
+    };
+    const result = migrateFlowGraph(graphV1);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.schemaVersion).toBe(2);
+    }
+  });
+
+  it('validates strict v2 graph shape when requested', () => {
+    const graphV2 = {
+      schemaVersion: 2,
+      nodes: [{ id: 'n1', type: 'send_message', config: { text: 'hi' }, position: { x: 0, y: 0 } }],
+      edges: [],
+    };
+    const result = validateFlowGraphV2(graphV2);
+    expect(result.success).toBe(true);
   });
 });
 

@@ -1,21 +1,21 @@
 import type { Database } from '@telegraph/db/client';
 import { bots } from '@telegraph/db/schema';
 import type { Redis } from '@telegraph/shared';
-import { createLogger, createWorker, decryptBotToken, QUEUE_NAMES } from '@telegraph/shared';
+import {
+  createLogger,
+  createWorker,
+  decryptBotToken,
+  type PaymentJobData,
+  QUEUE_NAMES,
+} from '@telegraph/shared';
 import type { Worker } from 'bullmq';
 import { eq } from 'drizzle-orm';
 import { Api } from 'grammy';
 
 import type { RuntimeConfig } from '../config.js';
+import { instrumentProcessor } from './instrumentation.js';
 
 const logger = createLogger('payment-worker');
-
-interface PaymentJobData {
-  botId: string;
-  chatId?: string;
-  update: Record<string, unknown>;
-  type: 'pre_checkout' | 'successful_payment';
-}
 
 export function createPaymentWorker(
   redis: Redis,
@@ -24,7 +24,7 @@ export function createPaymentWorker(
 ): Worker<PaymentJobData> {
   return createWorker<PaymentJobData>(
     QUEUE_NAMES.PAYMENTS,
-    async (job) => {
+    instrumentProcessor(QUEUE_NAMES.PAYMENTS, logger, async (job) => {
       const { botId, update, type } = job.data;
 
       // Get bot token
@@ -65,7 +65,7 @@ export function createPaymentWorker(
         );
         // Future: persist transaction to DB
       }
-    },
+    }),
     redis,
     { concurrency: 5 },
   );

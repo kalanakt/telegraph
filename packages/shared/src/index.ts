@@ -11,6 +11,13 @@ export {
   createWorker,
   QUEUE_NAMES,
 } from './queues.js';
+export type {
+  AiJobData,
+  ExecuteJobData,
+  OutboundJobData,
+  PaymentJobData,
+  UpdateJobData,
+} from './queue-jobs.js';
 export {
   TokenBucketLimiter,
   type RateLimitResult,

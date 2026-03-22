@@ -1,21 +1,22 @@
 import type { Database } from '@telegraph/db/client';
 import { rawUpdates } from '@telegraph/db/schema';
 import type { Redis } from '@telegraph/shared';
-import { createLogger, createQueue, createWorker, QUEUE_NAMES } from '@telegraph/shared';
+import {
+  createLogger,
+  createQueue,
+  createWorker,
+  QUEUE_NAMES,
+  type UpdateJobData,
+} from '@telegraph/shared';
 import type { Worker } from 'bullmq';
 import { eq } from 'drizzle-orm';
 
 import { loadPlan } from '../cache/plan-loader.js';
 import { getSession } from '../session/manager.js';
 import { matchTrigger } from './helpers.js';
+import { instrumentProcessor } from './instrumentation.js';
 
 const logger = createLogger('update-worker');
-
-interface UpdateJobData {
-  botId: string;
-  rawUpdateId: string;
-  telegramUpdateId: number;
-}
 
 export function createUpdateWorker(redis: Redis, db: Database): Worker<UpdateJobData> {
   const executeQueue = createQueue(QUEUE_NAMES.EXECUTE, redis);
@@ -23,7 +24,7 @@ export function createUpdateWorker(redis: Redis, db: Database): Worker<UpdateJob
 
   return createWorker<UpdateJobData>(
     QUEUE_NAMES.UPDATES,
-    async (job) => {
+    instrumentProcessor(QUEUE_NAMES.UPDATES, logger, async (job) => {
       const { botId, rawUpdateId } = job.data;
 
       // 1. Load raw update from DB
@@ -111,7 +112,7 @@ export function createUpdateWorker(redis: Redis, db: Database): Worker<UpdateJob
         entryNodeId,
         updateData,
       });
-    },
+    }),
     redis,
     { concurrency: 10 },
   );
