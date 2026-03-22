@@ -4,7 +4,6 @@ import App from "./App.vue";
 import "./assets/index.css";
 import { router } from "./router";
 import { useAuthStore } from "./stores/auth";
-import { useBotsStore } from "./stores/bots";
 import { pinia } from "./stores";
 
 const app = createApp(App);
@@ -20,6 +19,5 @@ app.use(VueQueryPlugin, {
 app.use(router);
 
 useAuthStore(pinia).hydrate();
-useBotsStore(pinia).hydrate();
 
 app.mount("#app");

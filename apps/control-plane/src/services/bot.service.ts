@@ -1,21 +1,66 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from "drizzle-orm";
 
-import type { Database } from '@telegraph/db/client';
-import { bots, webhookConfigs } from '@telegraph/db/schema';
-import { decryptBotToken, encryptBotToken, generateId, telegramApiUrl } from '@telegraph/shared';
+import type { Database } from "@telegraph/db/client";
+import { bots, flows, webhookConfigs } from "@telegraph/db/schema";
+import {
+  decryptBotToken,
+  encryptBotToken,
+  generateId,
+  telegramApiUrl,
+} from "@telegraph/shared";
 
 interface CreateBotInput {
   name: string;
   token: string;
-  username?: string;
 }
 
 interface UpdateBotInput {
   name?: string;
-  username?: string;
 }
 
-export async function listBots(db: Database, tenantId: string, limit = 50, offset = 0) {
+interface TelegramGetMePayload {
+  ok?: boolean;
+  result?: {
+    username?: string;
+  };
+}
+
+export async function fetchTelegramBotIdentity(
+  token: string,
+): Promise<{ username: string | null }> {
+  let response: Response;
+  try {
+    response = await fetch(telegramApiUrl(token, "getMe"));
+  } catch {
+    throw Object.assign(new Error("Telegram API is unreachable"), {
+      statusCode: 502,
+    });
+  }
+
+  let payload: TelegramGetMePayload | undefined;
+  try {
+    payload = (await response.json()) as TelegramGetMePayload;
+  } catch {
+    throw Object.assign(new Error("Unexpected response from Telegram API"), {
+      statusCode: 502,
+    });
+  }
+
+  if (!response.ok || payload.ok !== true) {
+    throw Object.assign(new Error("Invalid Telegram bot token"), {
+      statusCode: 400,
+    });
+  }
+
+  return { username: payload.result?.username ?? null };
+}
+
+export async function listBots(
+  db: Database,
+  tenantId: string,
+  limit = 50,
+  offset = 0,
+) {
   return db
     .select({
       id: bots.id,
@@ -27,32 +72,50 @@ export async function listBots(db: Database, tenantId: string, limit = 50, offse
       updatedAt: bots.updatedAt,
     })
     .from(bots)
-    .where(and(eq(bots.tenantId, tenantId), eq(bots.status, 'active')))
+    .where(and(eq(bots.tenantId, tenantId), eq(bots.status, "active")))
     .limit(limit)
     .offset(offset)
     .orderBy(desc(bots.createdAt));
 }
 
-export async function createBot(db: Database, tenantId: string, input: CreateBotInput, masterKey: string) {
+export async function createBot(
+  db: Database,
+  tenantId: string,
+  input: CreateBotInput,
+  masterKey: string,
+) {
+  const identity = await fetchTelegramBotIdentity(input.token);
   const encrypted = encryptBotToken(input.token, masterKey);
   const webhookSecret = generateId();
 
-  const [bot] = await db
-    .insert(bots)
-    .values({
-      tenantId,
-      name: input.name,
-      username: input.username ?? null,
-      encryptedToken: encrypted.ciphertext,
-      tokenIv: encrypted.iv,
-      tokenTag: encrypted.tag,
-      webhookSecret,
-    })
-    .returning();
+  const bot = await db.transaction(async (tx) => {
+    const [createdBot] = await tx
+      .insert(bots)
+      .values({
+        tenantId,
+        name: input.name,
+        username: identity.username,
+        encryptedToken: encrypted.ciphertext,
+        tokenIv: encrypted.iv,
+        tokenTag: encrypted.tag,
+        webhookSecret,
+      })
+      .returning();
 
-  if (!bot) {
-    throw new Error('Failed to create bot');
-  }
+    if (!createdBot) {
+      throw new Error("Failed to create bot");
+    }
+
+    await tx.insert(flows).values({
+      botId: createdBot.id,
+      tenantId,
+      name: "Main",
+      description: "Default flow",
+      graphJson: null,
+    });
+
+    return createdBot;
+  });
 
   return {
     id: bot.id,
@@ -83,10 +146,14 @@ export async function getBot(db: Database, tenantId: string, botId: string) {
   return bot ?? null;
 }
 
-export async function updateBot(db: Database, tenantId: string, botId: string, input: UpdateBotInput) {
+export async function updateBot(
+  db: Database,
+  tenantId: string,
+  botId: string,
+  input: UpdateBotInput,
+) {
   const values: Record<string, unknown> = { updatedAt: new Date() };
-  if (input.name !== undefined) values['name'] = input.name;
-  if (input.username !== undefined) values['username'] = input.username;
+  if (input.name !== undefined) values["name"] = input.name;
 
   const [bot] = await db
     .update(bots)
@@ -95,7 +162,7 @@ export async function updateBot(db: Database, tenantId: string, botId: string, i
     .returning();
 
   if (!bot) {
-    throw Object.assign(new Error('Bot not found'), { statusCode: 404 });
+    throw Object.assign(new Error("Bot not found"), { statusCode: 404 });
   }
 
   return {
@@ -112,12 +179,12 @@ export async function updateBot(db: Database, tenantId: string, botId: string, i
 export async function deleteBot(db: Database, tenantId: string, botId: string) {
   const [bot] = await db
     .update(bots)
-    .set({ status: 'deleted', updatedAt: new Date() })
+    .set({ status: "deleted", updatedAt: new Date() })
     .where(and(eq(bots.id, botId), eq(bots.tenantId, tenantId)))
     .returning();
 
   if (!bot) {
-    throw Object.assign(new Error('Bot not found'), { statusCode: 404 });
+    throw Object.assign(new Error("Bot not found"), { statusCode: 404 });
   }
 }
 
@@ -136,15 +203,20 @@ export async function registerWebhook(
     .limit(1);
 
   if (!bot) {
-    throw Object.assign(new Error('Bot not found'), { statusCode: 404 });
+    throw Object.assign(new Error("Bot not found"), { statusCode: 404 });
   }
 
-  const token = decryptBotToken(bot.encryptedToken, bot.tokenIv, bot.tokenTag, masterKey);
+  const token = decryptBotToken(
+    bot.encryptedToken,
+    bot.tokenIv,
+    bot.tokenTag,
+    masterKey,
+  );
   const webhookUrl = `${webhookBaseUrl}/webhook/${botId}`;
 
-  const response = await fetch(telegramApiUrl(token, 'setWebhook'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const response = await fetch(telegramApiUrl(token, "setWebhook"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       url: webhookUrl,
       secret_token: bot.webhookSecret,
@@ -177,7 +249,12 @@ export async function registerWebhook(
   return { webhookUrl };
 }
 
-export async function removeWebhook(db: Database, tenantId: string, botId: string, masterKey: string) {
+export async function removeWebhook(
+  db: Database,
+  tenantId: string,
+  botId: string,
+  masterKey: string,
+) {
   const [bot] = await db
     .select()
     .from(bots)
@@ -185,14 +262,19 @@ export async function removeWebhook(db: Database, tenantId: string, botId: strin
     .limit(1);
 
   if (!bot) {
-    throw Object.assign(new Error('Bot not found'), { statusCode: 404 });
+    throw Object.assign(new Error("Bot not found"), { statusCode: 404 });
   }
 
-  const token = decryptBotToken(bot.encryptedToken, bot.tokenIv, bot.tokenTag, masterKey);
+  const token = decryptBotToken(
+    bot.encryptedToken,
+    bot.tokenIv,
+    bot.tokenTag,
+    masterKey,
+  );
 
-  const response = await fetch(telegramApiUrl(token, 'deleteWebhook'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const response = await fetch(telegramApiUrl(token, "deleteWebhook"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
   });
 
   if (!response.ok) {

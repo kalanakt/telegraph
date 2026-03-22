@@ -62,6 +62,7 @@ const mobileNavOpen = ref(false);
 const activeLabel = computed(() => {
   if (route.path.startsWith("/bots/new")) return "Create Bot";
   if (route.path.startsWith("/bots")) return "Bots";
+  if (route.path.startsWith("/accounts")) return "Accounts";
   if (route.path.startsWith("/dashboard")) return "Dashboard";
   return "Dashboard";
 });

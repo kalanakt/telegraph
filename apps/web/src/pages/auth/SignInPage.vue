@@ -19,7 +19,7 @@ async function submit() {
 
   try {
     loading.value = true;
-    authStore.signIn(email.value, password.value);
+    await authStore.signIn(email.value, password.value);
     const redirect = route.query["redirect"];
     const path = typeof redirect === "string" ? redirect : "/dashboard";
     await router.push(path);

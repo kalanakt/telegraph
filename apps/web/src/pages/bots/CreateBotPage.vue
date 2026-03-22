@@ -2,90 +2,69 @@
 import AppShell from "@/components/layout/AppShell.vue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { useAuthStore } from "@/stores/auth";
 import { useBotsStore } from "@/stores/bots";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 
+const authStore = useAuthStore();
 const botsStore = useBotsStore();
 const router = useRouter();
 
-const accountId = ref(botsStore.accounts[0]?.id ?? "");
 const name = ref("");
-const username = ref("");
 const telegramToken = ref("");
-const webhookSecret = ref("");
-const description = ref("");
 const errorMessage = ref("");
 const creating = ref(false);
 
+const canCreate = computed(
+  () => name.value.trim().length > 0 && telegramToken.value.trim().length > 0,
+);
+
 async function createBot() {
   errorMessage.value = "";
-
-  if (
-    !accountId.value ||
-    !name.value.trim() ||
-    !username.value.trim() ||
-    !telegramToken.value.trim() ||
-    !webhookSecret.value.trim()
-  ) {
-    errorMessage.value = "Please complete all required fields.";
+  const token = authStore.token;
+  if (!token) {
+    errorMessage.value = "Your session has expired. Sign in again.";
+    return;
+  }
+  if (!canCreate.value) {
+    errorMessage.value = "Display name and Telegram API token are required.";
     return;
   }
 
   creating.value = true;
-  const bot = botsStore.createBot({
-    accountId: accountId.value,
-    name: name.value,
-    username: username.value,
-    telegramToken: telegramToken.value,
-    webhookSecret: webhookSecret.value,
-    description: description.value,
-  });
-  await router.push(`/bots/${bot.id}/builder`);
+  try {
+    const bot = await botsStore.createBot(token, {
+      name: name.value,
+      token: telegramToken.value,
+    });
+    await router.push(`/bots/${bot.id}/builder`);
+  } catch (error) {
+    errorMessage.value =
+      error instanceof Error ? error.message : "Unable to create bot.";
+  } finally {
+    creating.value = false;
+  }
 }
 </script>
 
 <template>
   <AppShell
     title="Create Telegram Bot"
-    subtitle="Add API credentials and set up your first bot flow."
+    subtitle="Add display name and API token. We validate the token from Telegram on the backend."
   >
     <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div class="rounded-xl border border-slate-200 bg-white p-4">
         <p class="text-sm font-semibold text-slate-900">Bot Configuration</p>
         <p class="mt-1 text-xs text-slate-500">
-          Required fields are needed to save and start building.
+          We fetch bot username/details from Telegram using this token.
         </p>
 
-        <div class="mt-4 grid gap-4 md:grid-cols-2">
+        <div class="mt-4 space-y-4">
           <div class="space-y-1.5">
-            <label class="text-sm font-medium text-slate-700">Account</label>
-            <Select v-model:model-value="accountId">
-              <SelectTrigger class="border-slate-200 bg-white shadow-none">
-                <SelectValue placeholder="Select account" />
-              </SelectTrigger>
-              <SelectContent class="shadow-none">
-                <SelectItem
-                  v-for="account in botsStore.accounts"
-                  :key="account.id"
-                  :value="account.id"
-                >
-                  {{ account.name }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div class="space-y-1.5">
-            <label class="text-sm font-medium text-slate-700">Bot Name</label>
+            <label class="text-sm font-medium text-slate-700"
+              >Display Name</label
+            >
             <Input
               v-model:model-value="name"
               placeholder="Support Assistant"
@@ -95,46 +74,15 @@ async function createBot() {
 
           <div class="space-y-1.5">
             <label class="text-sm font-medium text-slate-700"
-              >Bot Username</label
+              >Telegram Bot Token</label
             >
             <Input
-              v-model:model-value="username"
-              placeholder="@support_assistant_bot"
+              v-model:model-value="telegramToken"
+              type="password"
+              placeholder="123456:telegram-token"
               class="border-slate-200 bg-white shadow-none"
             />
           </div>
-
-          <div class="space-y-1.5">
-            <label class="text-sm font-medium text-slate-700"
-              >Webhook Secret</label
-            >
-            <Input
-              v-model:model-value="webhookSecret"
-              placeholder="webhook-secret"
-              class="border-slate-200 bg-white shadow-none"
-            />
-          </div>
-        </div>
-
-        <div class="mt-4 space-y-1.5">
-          <label class="text-sm font-medium text-slate-700"
-            >Telegram Bot Token</label
-          >
-          <Input
-            v-model:model-value="telegramToken"
-            type="password"
-            placeholder="123456:telegram-token"
-            class="border-slate-200 bg-white shadow-none"
-          />
-        </div>
-
-        <div class="mt-4 space-y-1.5">
-          <label class="text-sm font-medium text-slate-700">Description</label>
-          <Textarea
-            v-model:model-value="description"
-            class="min-h-[110px] border-slate-200 bg-white shadow-none"
-            placeholder="What this bot should do for users..."
-          />
         </div>
 
         <p
@@ -167,16 +115,14 @@ async function createBot() {
         <p class="text-sm font-semibold text-slate-900">Setup Notes</p>
         <ul class="mt-3 space-y-2 text-sm text-slate-700">
           <li class="rounded-lg border border-slate-200 px-3 py-2">
-            1. Create bot in BotFather and copy bot token.
+            1. Create your bot in BotFather and copy its token.
           </li>
           <li class="rounded-lg border border-slate-200 px-3 py-2">
-            2. Add a webhook secret for secure runtime validation.
+            2. Build the flow in Builder and publish it.
           </li>
           <li class="rounded-lg border border-slate-200 px-3 py-2">
-            3. Build triggers, conditions, and actions in flow builder.
-          </li>
-          <li class="rounded-lg border border-slate-200 px-3 py-2">
-            4. Test, publish, and monitor bot status from dashboard.
+            3. Register webhook manually from Manage Bot when runtime URL is
+            ready.
           </li>
         </ul>
       </div>

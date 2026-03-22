@@ -8,7 +8,7 @@ import { useRouter } from "vue-router";
 const authStore = useAuthStore();
 const router = useRouter();
 
-const name = ref("");
+const tenantName = ref("");
 const email = ref("");
 const password = ref("");
 const errorMessage = ref("");
@@ -19,7 +19,7 @@ async function submit() {
 
   try {
     loading.value = true;
-    authStore.signUp(name.value, email.value, password.value);
+    await authStore.signUp(tenantName.value, email.value, password.value);
     await router.push("/dashboard");
   } catch (error) {
     errorMessage.value =
@@ -49,10 +49,12 @@ async function submit() {
 
       <form class="mt-5 space-y-4" @submit.prevent="submit">
         <div class="space-y-1.5">
-          <label class="text-sm font-medium text-slate-700">Name</label>
+          <label class="text-sm font-medium text-slate-700"
+            >Workspace Name</label
+          >
           <Input
-            v-model:model-value="name"
-            placeholder="Your name"
+            v-model:model-value="tenantName"
+            placeholder="Acme Workspace"
             class="border-slate-200 bg-white shadow-none"
           />
         </div>

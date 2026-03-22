@@ -39,7 +39,6 @@ export default async function botRoutes(fastify: FastifyInstance) {
     const bot = await createBot(fastify.db, request.user.tenantId, {
       name: body.name,
       token: body.token,
-      ...(body.username != null && { username: body.username }),
     }, getMasterKey());
     return reply.code(201).send(bot);
   });
@@ -58,7 +57,6 @@ export default async function botRoutes(fastify: FastifyInstance) {
     const body = parseBody(UpdateBotBody, request.body);
     const bot = await updateBot(fastify.db, request.user.tenantId, request.params.botId, {
       ...(body.name != null && { name: body.name }),
-      ...(body.username != null && { username: body.username }),
     });
     return reply.send(bot);
   });
