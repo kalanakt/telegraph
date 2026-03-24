@@ -10,7 +10,7 @@
     "build:shared": "pnpm --filter @telegram-builder/shared build",
     "railway:build:web": "pnpm build:shared && pnpm --filter web build",
     "railway:start:web": "pnpm --filter web start",
-    "railway:build:worker": "pnpm build:shared && pnpm --filter worker build",
+    "railway:build:worker": "pnpm exec prisma generate && pnpm build:shared && pnpm --filter worker build",
     "railway:start:worker": "pnpm --filter worker start",
     "test": "vitest run",
     "test:watch": "vitest",
