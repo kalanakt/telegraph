@@ -1,0 +1,30 @@
+{
+  "name": "telegram-bot-builder",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.2.0",
+  "scripts": {
+    "dev:web": "pnpm --filter web dev",
+    "dev:worker": "pnpm --filter worker dev",
+    "build": "pnpm -r build",
+    "build:shared": "pnpm --filter @telegram-builder/shared build",
+    "railway:build:web": "pnpm build:shared && pnpm --filter web build",
+    "railway:start:web": "pnpm --filter web start",
+    "railway:build:worker": "pnpm build:shared && pnpm --filter worker build",
+    "railway:start:worker": "pnpm --filter worker start",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:push": "prisma db push",
+    "migrate:flow-backfill": "pnpm tsx scripts/backfill-rule-flow-definitions.ts"
+  },
+  "devDependencies": {
+    "@prisma/client": "^6.19.2",
+    "@types/node": "^24.0.0",
+    "prisma": "^6.6.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.1"
+  }
+}

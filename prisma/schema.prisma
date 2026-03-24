@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SubscriptionPlan {
+  FREE
+  PRO
+}
+
+enum BotStatus {
+  active
+  invalid_token
+  webhook_error
+  paused
+}
+
+enum WorkflowTrigger {
+  message_received
+  message_edited
+  command_received
+  callback_query_received
+  inline_query_received
+  chat_member_updated
+}
+
+enum ActionStatus {
+  pending
+  succeeded
+  failed
+}
+
+model User {
+  id            String         @id @default(cuid())
+  clerkUserId   String         @unique
+  email         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  subscription  Subscription?
+  bots          Bot[]
+  workflowRules WorkflowRule[]
+  workflowRuns  WorkflowRun[]
+}
+
+model Subscription {
+  id                 String           @id @default(cuid())
+  userId             String           @unique
+  clerkSubscriptionId String?         @unique
+  clerkPayerId        String?         @unique
+  clerkPlanSlug       String?
+  plan               SubscriptionPlan @default(FREE)
+  status             String           @default("inactive")
+  activeAt           DateTime?
+  pastDueAt          DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Bot {
+  id                String          @id @default(cuid())
+  userId            String
+  telegramBotId     BigInt
+  username          String?
+  displayName       String?
+  encryptedToken    String
+  status            BotStatus       @default(active)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workflowRules     WorkflowRule[]
+  incomingEvents    IncomingEvent[]
+  workflowRuns      WorkflowRun[]
+
+  @@unique([userId, telegramBotId])
+}
+
+model WorkflowRule {
+  id           String            @id @default(cuid())
+  userId       String
+  botId        String
+  name         String
+  trigger      WorkflowTrigger
+  flowDefinition Json
+  enabled      Boolean           @default(true)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bot          Bot               @relation(fields: [botId], references: [id], onDelete: Cascade)
+  conditions   RuleCondition[]
+  actions      RuleAction[]
+  workflowRuns WorkflowRun[]
+
+  @@index([botId, trigger, enabled])
+}
+
+model RuleCondition {
+  id        String   @id @default(cuid())
+  ruleId    String
+  type      String
+  payload   Json
+  order     Int
+  createdAt DateTime @default(now())
+  rule      WorkflowRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@index([ruleId, order])
+}
+
+model RuleAction {
+  id        String   @id @default(cuid())
+  ruleId    String
+  type      String
+  payload   Json
+  order     Int
+  createdAt DateTime @default(now())
+  rule      WorkflowRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@index([ruleId, order])
+}
+
+model IncomingEvent {
+  id             String   @id @default(cuid())
+  botId          String
+  idempotencyKey String   @unique
+  updateId       Int
+  payload        Json
+  createdAt      DateTime @default(now())
+  bot            Bot      @relation(fields: [botId], references: [id], onDelete: Cascade)
+  workflowRuns   WorkflowRun[]
+
+  @@index([botId, createdAt])
+}
+
+model WorkflowRun {
+  id           String       @id @default(cuid())
+  userId       String
+  botId        String
+  ruleId       String
+  eventId      String
+  status       String       @default("pending")
+  trigger      String
+  eventPayload Json
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bot          Bot          @relation(fields: [botId], references: [id], onDelete: Cascade)
+  rule         WorkflowRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  event        IncomingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  actionRuns   ActionRun[]
+
+  @@index([botId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model ActionRun {
+  id           String       @id @default(cuid())
+  workflowRunId String
+  actionId     String
+  type         String
+  payload      Json
+  status       ActionStatus @default(pending)
+  attempt      Int          @default(0)
+  lastError    String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  workflowRun  WorkflowRun  @relation(fields: [workflowRunId], references: [id], onDelete: Cascade)
+
+  @@index([workflowRunId, createdAt])
+}

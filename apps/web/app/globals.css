@@ -1,0 +1,162 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: "Outfit", "Avenir Next", "Nunito Sans", "Segoe UI", sans-serif;
+    --font-display: "Sora", "Avenir Next", "Segoe UI", sans-serif;
+    --background: 210 33% 97%;
+    --foreground: 219 40% 14%;
+    --card: 0 0% 100%;
+    --card-foreground: 219 40% 14%;
+    --primary: 198 77% 40%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 24% 92%;
+    --secondary-foreground: 221 28% 21%;
+    --muted: 210 28% 94%;
+    --muted-foreground: 220 13% 38%;
+    --accent: 198 44% 90%;
+    --accent-foreground: 219 40% 14%;
+    --border: 214 27% 87%;
+    --input: 214 27% 87%;
+    --ring: 198 77% 40%;
+    --radius: 0.9rem;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply min-h-screen bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+    font-variant-numeric: tabular-nums;
+    background-image:
+      radial-gradient(1100px 420px at 12% -18%, hsl(198 85% 86% / 0.35), transparent 65%),
+      radial-gradient(900px 420px at 88% -12%, hsl(205 66% 88% / 0.3), transparent 60%),
+      linear-gradient(180deg, hsl(210 33% 98%) 0%, hsl(210 30% 96%) 100%);
+    text-rendering: optimizeLegibility;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image: radial-gradient(hsl(215 35% 26% / 0.065) 0.45px, transparent 0.45px);
+    background-size: 3px 3px;
+    opacity: 0.22;
+    z-index: -1;
+  }
+
+  a {
+    @apply text-inherit no-underline;
+  }
+
+  ::selection {
+    background-color: hsl(var(--primary) / 0.2);
+    color: hsl(var(--foreground));
+  }
+}
+
+@layer components {
+  .app-shell {
+    @apply relative mx-auto min-h-screen w-full max-w-[1320px] px-4 pb-14 pt-4 md:px-8 md:pt-6;
+  }
+
+  .page-heading {
+    @apply mb-6 flex flex-col gap-2;
+  }
+
+  .page-title {
+    @apply text-[2rem] font-semibold leading-[1.05] tracking-[-0.03em] md:text-[2.45rem];
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+
+  .page-subtitle {
+    @apply max-w-[65ch] text-sm text-muted-foreground md:text-base;
+    text-wrap: pretty;
+  }
+
+  .surface-panel {
+    @apply rounded-2xl border border-white/70 bg-white/90 backdrop-blur-sm;
+  }
+
+  .skip-link {
+    @apply absolute left-3 top-3 z-[60] -translate-y-16 rounded-md bg-foreground px-3 py-2 text-sm font-medium text-background transition focus-visible:translate-y-0;
+  }
+
+  .blog-prose {
+    @apply mx-auto max-w-[76ch];
+  }
+
+  .blog-h1 {
+    @apply text-3xl font-semibold leading-tight tracking-[-0.025em] md:text-4xl;
+    font-family: var(--font-display);
+  }
+
+  .blog-h2 {
+    @apply mt-10 text-2xl font-semibold tracking-[-0.02em];
+    font-family: var(--font-display);
+  }
+
+  .blog-h3 {
+    @apply mt-8 text-xl font-semibold tracking-[-0.015em];
+    font-family: var(--font-display);
+  }
+
+  .blog-p {
+    @apply mt-4 text-[1.02rem] leading-8 text-foreground/95;
+  }
+
+  .blog-ul {
+    @apply mt-4 list-disc space-y-2 pl-6;
+  }
+
+  .blog-ol {
+    @apply mt-4 list-decimal space-y-2 pl-6;
+  }
+
+  .blog-li {
+    @apply leading-7 text-foreground/95;
+  }
+
+  .blog-link {
+    @apply text-primary underline decoration-primary/45 underline-offset-4 transition hover:decoration-primary;
+  }
+
+  .blog-inline-code {
+    @apply rounded bg-secondary px-1.5 py-0.5 text-[0.9em];
+  }
+
+  .blog-pre {
+    @apply mt-6 overflow-x-auto rounded-xl border bg-foreground px-4 py-4 text-sm text-background;
+  }
+
+  .blog-pre code {
+    @apply bg-transparent p-0 text-inherit;
+  }
+
+  .blog-callout {
+    @apply mt-6 rounded-r-xl border-l-4 border-primary bg-accent/45 px-4 py-3 text-foreground/95;
+  }
+
+  .blog-hr {
+    @apply my-8 border-border/80;
+  }
+}
+
+@layer utilities {
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  .interactive-lift {
+  }
+}

@@ -1,0 +1,26 @@
+---
+title: "Production Checklist for Telegram Bots"
+description: "A repeatable checklist for teams preparing high-volume Telegram workflows in Telegraph."
+publishedAt: "2026-03-20"
+author: "Platform Engineering"
+tags:
+  - engineering
+  - reliability
+  - checklist
+---
+
+Before you scale traffic, lock in a short production checklist.
+
+## Checklist
+
+- Validate each flow before publish.
+- Confirm bot token storage uses encryption.
+- Set webhook URLs over HTTPS only.
+- Verify queue backpressure and retry behavior.
+- Review recent failed runs before launch windows.
+
+## During launch
+
+Use run history to spot bottlenecks by action type.
+
+When a branch underperforms, isolate the condition and action pair first instead of changing multiple nodes at once.
