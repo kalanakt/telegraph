@@ -11,10 +11,34 @@ const isProtectedRoute = createRouteMatcher([
   "/api/runs(.*)",
 ]);
 
+function getAuthorizedParties() {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (!siteUrl) {
+    return undefined;
+  }
+
+  try {
+    return [new URL(siteUrl).origin];
+  } catch {
+    return undefined;
+  }
+}
+
+const isClerkConfigured = Boolean(
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY
+);
+
 export default clerkMiddleware(async (auth, req) => {
+  if (!isClerkConfigured) {
+    return;
+  }
+
   const { userId } = await auth();
 
-  if (userId && req.nextUrl.pathname.startsWith("/sign-in")) {
+  if (
+    userId &&
+    (req.nextUrl.pathname.startsWith("/sign-in") || req.nextUrl.pathname.startsWith("/sign-up"))
+  ) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
@@ -23,7 +47,7 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
 }, {
-  authorizedParties: process.env.NEXT_PUBLIC_SITE_URL ? [process.env.NEXT_PUBLIC_SITE_URL] : undefined
+  authorizedParties: getAuthorizedParties(),
 });
 
 export const config = {

@@ -1,6 +1,6 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
 import { isClerkConfigured } from "./auth-config";
 import { syncSubscriptionMirrorForUser } from "./clerk-billing";
+import { getAuthUserId, getCurrentUserOrNull } from "./clerk-auth";
 import { prisma } from "./prisma";
 
 export async function requireAppUser() {
@@ -24,12 +24,12 @@ export async function requireAppUser() {
     });
   }
 
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) {
     throw new Error("Unauthorized");
   }
 
-  const clerkUser = await currentUser();
+  const clerkUser = await getCurrentUserOrNull();
 
   const user = await prisma.user.upsert({
     where: { clerkUserId: userId },

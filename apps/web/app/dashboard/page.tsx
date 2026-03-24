@@ -1,4 +1,3 @@
-import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { Bot, CalendarCheck2, Rocket, Sparkles } from "lucide-react";
 import { redirect } from "next/navigation";
@@ -7,12 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { isClerkConfigured } from "@/lib/auth-config";
+import { getAuthUserId } from "@/lib/clerk-auth";
 import { requireAppUser } from "@/lib/user";
 import { prisma } from "@/lib/prisma";
 
 export default async function DashboardPage() {
   if (isClerkConfigured()) {
-    const { userId } = await auth();
+    const userId = await getAuthUserId();
     if (!userId) {
       redirect("/sign-in");
     }

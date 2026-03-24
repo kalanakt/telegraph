@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { auth } from "@clerk/nextjs/server";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { isClerkConfigured } from "@/lib/auth-config";
+import { getAuthUserId } from "@/lib/clerk-auth";
 
 function Feature({ text }: { text: string }) {
   return (
@@ -18,7 +18,7 @@ function Feature({ text }: { text: string }) {
 
 export default async function HomePage() {
   if (isClerkConfigured()) {
-    const { userId } = await auth();
+    const userId = await getAuthUserId();
     if (userId) {
       redirect("/dashboard");
     }
@@ -46,7 +46,7 @@ export default async function HomePage() {
 
             <div className="flex flex-wrap gap-3">
               <Button asChild size="lg">
-                <Link href="/sign-in">
+                <Link href="/sign-up">
                   Start building
                   <ArrowRight className="h-4 w-4" />
                 </Link>
@@ -119,6 +119,9 @@ export default async function HomePage() {
           </CardHeader>
           <CardContent className="flex flex-wrap gap-3">
             <Button asChild>
+              <Link href="/sign-up">Create account</Link>
+            </Button>
+            <Button asChild variant="secondary">
               <Link href="/sign-in">Sign in</Link>
             </Button>
             <Button asChild variant="secondary">

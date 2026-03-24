@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
-import { auth } from "@clerk/nextjs/server";
 import { NavLinks } from "@/components/NavLinks";
 import { Button } from "@/components/ui/button";
 import { isClerkConfigured } from "@/lib/auth-config";
+import { getAuthUserId } from "@/lib/clerk-auth";
 
 type SignedInNavItem = { href: string; label: string; icon: "gauge" | "bot" | "sparkles" | "list-checks" | "receipt" };
 type SignedOutNavItem = { href: string; label: string };
@@ -24,7 +24,7 @@ const signedOutNavItems: SignedOutNavItem[] = [
 
 export async function Nav() {
   const hasClerk = isClerkConfigured();
-  const { userId } = hasClerk ? await auth() : { userId: "local-dev-user" };
+  const userId = hasClerk ? await getAuthUserId() : "local-dev-user";
   const isSignedIn = Boolean(userId);
 
   return (
@@ -46,9 +46,14 @@ export async function Nav() {
             {isSignedIn ? (
               <UserButton afterSignOutUrl="/" />
             ) : (
-              <Button asChild type="button" variant="secondary">
-                <Link href="/sign-in">Sign in</Link>
-              </Button>
+              <>
+                <Button asChild type="button" variant="secondary">
+                  <Link href="/sign-in">Sign in</Link>
+                </Button>
+                <Button asChild type="button">
+                  <Link href="/sign-up">Sign up</Link>
+                </Button>
+              </>
             )}
           </div>
         ) : null}

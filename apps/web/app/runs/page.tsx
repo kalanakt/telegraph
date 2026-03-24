@@ -1,10 +1,10 @@
-import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { PageHeading } from "@/components/PageHeading";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { isClerkConfigured } from "@/lib/auth-config";
+import { getAuthUserId } from "@/lib/clerk-auth";
 import { requireAppUser } from "@/lib/user";
 import { prisma } from "@/lib/prisma";
 
@@ -22,7 +22,7 @@ function runStatusBadge(status: string) {
 
 export default async function RunsPage() {
   if (isClerkConfigured()) {
-    const { userId } = await auth();
+    const userId = await getAuthUserId();
     if (!userId) {
       redirect("/sign-in");
     }
