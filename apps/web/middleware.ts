@@ -4,10 +4,10 @@ import { NextResponse } from "next/server";
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
   "/bots(.*)",
-  "/rules(.*)",
+  "/builder(.*)",
   "/runs(.*)",
   "/api/bots(.*)",
-  "/api/rules(.*)",
+  "/api/builder(.*)",
   "/api/runs(.*)",
 ]);
 
@@ -25,34 +25,37 @@ function getAuthorizedParties() {
 }
 
 const isClerkConfigured = Boolean(
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY,
 );
 
-export default clerkMiddleware(async (auth, req) => {
-  if (!isClerkConfigured) {
-    return;
-  }
+export default clerkMiddleware(
+  async (auth, req) => {
+    if (!isClerkConfigured) {
+      return;
+    }
 
-  const { userId } = await auth();
+    const { userId } = await auth();
 
-  if (
-    userId &&
-    (req.nextUrl.pathname.startsWith("/sign-in") || req.nextUrl.pathname.startsWith("/sign-up"))
-  ) {
-    return NextResponse.redirect(new URL("/dashboard", req.url));
-  }
+    if (
+      userId &&
+      (req.nextUrl.pathname.startsWith("/sign-in") ||
+        req.nextUrl.pathname.startsWith("/sign-up"))
+    ) {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
 
-  if (isProtectedRoute(req)) {
-    await auth.protect();
-  }
-
-}, {
-  authorizedParties: getAuthorizedParties(),
-});
+    if (isProtectedRoute(req)) {
+      await auth.protect();
+    }
+  },
+  {
+    authorizedParties: getAuthorizedParties(),
+  },
+);
 
 export const config = {
   matcher: [
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ico|ttf|woff2?|csv|docx?|xlsx?|zip|webmanifest)).*)",
     "/(api|trpc)(.*)",
-  ]
+  ],
 };

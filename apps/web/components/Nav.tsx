@@ -5,21 +5,25 @@ import { Button } from "@/components/ui/button";
 import { isClerkConfigured } from "@/lib/auth-config";
 import { getAuthUserId } from "@/lib/clerk-auth";
 
-type SignedInNavItem = { href: string; label: string; icon: "gauge" | "bot" | "sparkles" | "list-checks" | "receipt" };
+type SignedInNavItem = {
+  href: string;
+  label: string;
+  icon: "gauge" | "bot" | "sparkles" | "list-checks" | "receipt";
+};
 type SignedOutNavItem = { href: string; label: string };
 
 const signedInNavItems: SignedInNavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: "gauge" },
   { href: "/bots", label: "Bots", icon: "bot" },
-  { href: "/rules", label: "Builder", icon: "sparkles" },
+  { href: "/builder", label: "Builder", icon: "sparkles" },
   { href: "/runs", label: "Runs", icon: "list-checks" },
-  { href: "/pricing", label: "Pricing", icon: "receipt" }
+  { href: "/pricing", label: "Pricing", icon: "receipt" },
 ];
 
 const signedOutNavItems: SignedOutNavItem[] = [
   { href: "/", label: "Home" },
   { href: "/blog", label: "Blog" },
-  { href: "/pricing", label: "Pricing" }
+  { href: "/pricing", label: "Pricing" },
 ];
 
 export async function Nav() {
@@ -28,17 +32,23 @@ export async function Nav() {
   const isSignedIn = Boolean(userId);
 
   return (
-    <header className="surface-panel mb-8 p-3 md:p-4">
+    <header className="mb-8">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           <Link
             href="/"
             className="mr-2 inline-flex items-center rounded-md bg-foreground px-3 py-2 text-background"
           >
-            <span className="text-sm font-semibold tracking-[0.04em]">Telegraph</span>
+            <span className="text-sm font-semibold tracking-[0.04em]">
+              Telegraph
+            </span>
           </Link>
 
-          <NavLinks signedInNavItems={signedInNavItems} signedOutNavItems={signedOutNavItems} isSignedIn={isSignedIn} />
+          <NavLinks
+            signedInNavItems={signedInNavItems}
+            signedOutNavItems={signedOutNavItems}
+            isSignedIn={isSignedIn}
+          />
         </div>
 
         {hasClerk ? (

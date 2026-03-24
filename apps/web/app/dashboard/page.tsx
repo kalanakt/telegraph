@@ -35,7 +35,7 @@ export default async function DashboardPage() {
       />
 
       <section className="grid gap-4 lg:grid-cols-12">
-        <Card className="interactive-lift lg:col-span-8">
+        <Card className="interactive-lift lg:col-span-8 2xl:col-span-9">
           <CardHeader>
             <CardTitle className="text-[1.32rem] font-[var(--font-display)] tracking-[-0.02em]">Workspace health</CardTitle>
             <CardDescription>Live snapshot of your current automation capacity and activity.</CardDescription>
@@ -67,7 +67,7 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="interactive-lift lg:col-span-4">
+        <Card className="interactive-lift lg:col-span-4 2xl:col-span-3">
           <CardHeader>
             <CardTitle className="font-[var(--font-display)] tracking-[-0.02em]">Common actions</CardTitle>
             <CardDescription>Jump directly to the pages you use most.</CardDescription>
@@ -80,7 +80,7 @@ export default async function DashboardPage() {
               </Link>
             </Button>
             <Button asChild variant="secondary">
-              <Link href="/rules">Open builder</Link>
+              <Link href="/builder">Open builder</Link>
             </Button>
             <Button asChild variant="outline">
               <Link href="/runs">View runs</Link>
@@ -89,7 +89,7 @@ export default async function DashboardPage() {
         </Card>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+      <section className="grid gap-4 xl:grid-cols-[1.35fr_0.65fr] 2xl:grid-cols-[1.45fr_0.55fr]">
         <Card className="interactive-lift">
           <CardHeader>
             <CardTitle className="font-[var(--font-display)] tracking-[-0.02em]">Quick start</CardTitle>

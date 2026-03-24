@@ -1,18 +1,25 @@
-import { flowDefinitionSchema } from "@telegram-builder/shared";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AddRuleForm } from "@/components/AddRuleForm";
 import { PageHeading } from "@/components/PageHeading";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { isClerkConfigured } from "@/lib/auth-config";
 import { getAuthUserId } from "@/lib/clerk-auth";
+import { coerceFlowDefinition } from "@/lib/flow-builder";
 import { requireAppUser } from "@/lib/user";
 import { prisma } from "@/lib/prisma";
 
 export default async function RulesPage({
-  searchParams
+  searchParams,
 }: {
   searchParams: Promise<{ edit?: string }>;
 }) {
@@ -27,33 +34,42 @@ export default async function RulesPage({
   const params = await searchParams;
 
   const [bots, rules] = await Promise.all([
-    prisma.bot.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" } }),
+    prisma.bot.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+    }),
     prisma.workflowRule.findMany({
       where: { userId: user.id },
       include: { bot: true },
-      orderBy: { createdAt: "desc" }
-    })
+      orderBy: { createdAt: "desc" },
+    }),
   ]);
 
   const flowRules = rules
     .map((rule) => {
-      const parsed = flowDefinitionSchema.safeParse(rule.flowDefinition);
-      if (!parsed.success) {
+      const flowDefinition = coerceFlowDefinition(rule.flowDefinition);
+      if (!flowDefinition) {
         return null;
       }
 
-      const actionCount = parsed.data.nodes.filter((node) => node.type === "action").length;
-      const conditionCount = parsed.data.nodes.filter((node) => node.type === "condition").length;
+      const actionCount = flowDefinition.nodes.filter(
+        (node) => node.type === "action",
+      ).length;
+      const conditionCount = flowDefinition.nodes.filter(
+        (node) => node.type === "condition",
+      ).length;
 
       return {
         id: rule.id,
         botId: rule.botId,
         name: rule.name,
         trigger: rule.trigger,
-        flowDefinition: parsed.data,
+        flowDefinition,
         actionCount,
         conditionCount,
-        botLabel: rule.bot.username ? `@${rule.bot.username}` : rule.bot.displayName ?? "-"
+        botLabel: rule.bot.username
+          ? `@${rule.bot.username}`
+          : (rule.bot.displayName ?? "-"),
       };
     })
     .filter((rule): rule is NonNullable<typeof rule> => Boolean(rule));
@@ -68,21 +84,23 @@ export default async function RulesPage({
       <AddRuleForm
         bots={bots.map((bot) => ({
           id: bot.id,
-          label: `${bot.displayName ?? bot.username ?? bot.id} (${bot.status})`
+          label: `${bot.displayName ?? bot.username ?? bot.id} (${bot.status})`,
         }))}
         rules={flowRules.map((rule) => ({
           id: rule.id,
           botId: rule.botId,
           name: rule.name,
           trigger: rule.trigger,
-          flowDefinition: rule.flowDefinition
+          flowDefinition: rule.flowDefinition,
         }))}
         initialRuleId={params.edit}
       />
 
       <Card>
         <CardHeader>
-          <CardTitle className="font-[var(--font-display)]">Active Builders</CardTitle>
+          <CardTitle className="font-[var(--font-display)]">
+            Active Builders
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -107,7 +125,10 @@ export default async function RulesPage({
                   <TableCell>{rule.conditionCount}</TableCell>
                   <TableCell>{rule.actionCount}</TableCell>
                   <TableCell>
-                    <Link className="text-sm text-primary underline" href={`/rules?edit=${rule.id}`}>
+                    <Link
+                      className="text-sm text-primary underline"
+                      href={`/builder?edit=${rule.id}`}
+                    >
                       Edit Builder
                     </Link>
                   </TableCell>
