@@ -61,7 +61,7 @@ export default async function RulesPage({
   return (
     <div className="space-y-5">
       <PageHeading
-        title="Flows"
+        title="Builder"
         subtitle="Design graph-based automations for incoming Telegram messages with branching conditions."
       />
 
@@ -82,13 +82,13 @@ export default async function RulesPage({
 
       <Card>
         <CardHeader>
-          <CardTitle className="font-[var(--font-display)]">Active Flows</CardTitle>
+          <CardTitle className="font-[var(--font-display)]">Active Builders</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Flow</TableHead>
+                <TableHead>Builder</TableHead>
                 <TableHead>Bot</TableHead>
                 <TableHead>Trigger</TableHead>
                 <TableHead>Conditions</TableHead>
@@ -108,7 +108,7 @@ export default async function RulesPage({
                   <TableCell>{rule.actionCount}</TableCell>
                   <TableCell>
                     <Link className="text-sm text-primary underline" href={`/rules?edit=${rule.id}`}>
-                      Edit Flow
+                      Edit Builder
                     </Link>
                   </TableCell>
                 </TableRow>

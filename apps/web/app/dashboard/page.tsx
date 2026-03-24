@@ -52,7 +52,7 @@ export default async function DashboardPage() {
             <div className="rounded-lg bg-secondary/45 p-4">
               <div className="mb-2 flex items-center gap-2 text-muted-foreground">
                 <Sparkles className="h-4 w-4" />
-                <span className="text-xs tracking-[0.06em]">Active flows</span>
+                <span className="text-xs tracking-[0.06em]">Active builders</span>
               </div>
               <p className="text-3xl font-semibold leading-none tracking-[-0.03em]">{flowCount}</p>
             </div>
@@ -80,7 +80,7 @@ export default async function DashboardPage() {
               </Link>
             </Button>
             <Button asChild variant="secondary">
-              <Link href="/rules">Create flow</Link>
+              <Link href="/rules">Open builder</Link>
             </Button>
             <Button asChild variant="outline">
               <Link href="/runs">View runs</Link>
@@ -97,7 +97,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
             <p>1. Connect your BotFather API token from the Bots page.</p>
-            <p>2. Open Flows and pick a trigger for incoming events.</p>
+            <p>2. Open Builder and pick a trigger for incoming events.</p>
             <p>3. Add condition and action nodes from the inline plus controls.</p>
           </CardContent>
         </Card>

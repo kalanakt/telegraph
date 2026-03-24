@@ -21,7 +21,7 @@ const sora = Sora({
 export const metadata: Metadata = {
   title: "Telegraph | Telegram automation workspace",
   description:
-    "Build and run Telegram automations with a visual flow builder, bot controls, and execution history.",
+    "Build and run Telegram automations with a visual builder studio, bot controls, and execution history.",
   openGraph: {
     title: "Telegraph",
     description:
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Telegraph",
-    description: "Build and run Telegram automations with visual flows.",
+    description: "Build and run Telegram automations with a visual builder.",
   },
 };
 

@@ -1,28 +1,33 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   addEdge,
   Background,
+  BackgroundVariant,
+  ConnectionMode,
   Controls,
   Handle,
+  MarkerType,
   MiniMap,
+  Panel,
   Position,
   ReactFlow,
   type Connection,
   type Edge,
+  type IsValidConnection,
   type Node,
   useEdgesState,
   useNodesState
-} from "reactflow";
-import "reactflow/dist/style.css";
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
 import {
   conditionSchema,
   flowDefinitionSchema,
   type FlowDefinition,
   type TriggerType
 } from "@telegram-builder/shared";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -110,22 +115,31 @@ const CONDITION_OPTIONS = [
   "any"
 ] as const;
 
+const EDGE_STYLE = { stroke: "#4f46e5", strokeWidth: 1.6 };
+
+const defaultEdgeOptions = {
+  type: "smoothstep",
+  style: EDGE_STYLE,
+  markerEnd: { type: MarkerType.ArrowClosed, color: "#4f46e5" },
+  animated: false
+};
+
 function AddButtons({ onAdd, branch = "next" }: { onAdd?: (branch: AddBranch, kind: AddKind) => void; branch?: AddBranch }) {
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1.5">
       <button
         type="button"
-        className="nodrag nopan inline-flex h-5 items-center gap-1 rounded bg-white px-1.5 text-[10px] text-slate-600"
+        className="nodrag nopan inline-flex h-6 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-[10px] font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
         onClick={() => onAdd?.(branch, "condition")}
       >
-        <Plus className="h-3 w-3" /> C
+        <Plus className="h-3 w-3" /> Condition
       </button>
       <button
         type="button"
-        className="nodrag nopan inline-flex h-5 items-center gap-1 rounded bg-white px-1.5 text-[10px] text-slate-600"
+        className="nodrag nopan inline-flex h-6 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-[10px] font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
         onClick={() => onAdd?.(branch, "action")}
       >
-        <Plus className="h-3 w-3" /> A
+        <Plus className="h-3 w-3" /> Action
       </button>
     </div>
   );
@@ -133,10 +147,11 @@ function AddButtons({ onAdd, branch = "next" }: { onAdd?: (branch: AddBranch, ki
 
 function StartNode({ data }: { data: NodeCallbacks }) {
   return (
-    <div className="relative rounded bg-white px-3 py-2 text-xs text-slate-700">
-      <div className="font-medium">Start</div>
-      <Handle type="source" position={Position.Right} />
-      <div className="absolute -right-[74px] top-1/2 -translate-y-1/2">
+    <div className="builder-node builder-node-start relative min-w-[180px] rounded-xl px-3 py-2.5 text-xs text-slate-900">
+      <div className="text-[10px] uppercase tracking-[0.08em] text-slate-500">Entry</div>
+      <div className="font-semibold">Start</div>
+      <Handle type="source" position={Position.Right} className="!h-2.5 !w-2.5 !border-white !bg-indigo-500" />
+      <div className="absolute -right-[188px] top-1/2 -translate-y-1/2">
         <AddButtons onAdd={data.onAdd} branch="next" />
       </div>
     </div>
@@ -145,19 +160,19 @@ function StartNode({ data }: { data: NodeCallbacks }) {
 
 function ConditionNode({ data }: { data: NodeActionData & NodeCallbacks }) {
   return (
-    <div className="relative min-w-[200px] rounded bg-amber-50 px-3 py-2 text-xs text-amber-900">
-      <Handle type="target" position={Position.Left} />
-      <div className="font-medium">Condition</div>
-      <div className="text-[11px] text-amber-800">{data.type}</div>
-      <div className="truncate text-[11px] text-amber-700">{String(data.value ?? data.key ?? "")}</div>
+    <div className="builder-node builder-node-condition relative min-w-[230px] rounded-xl px-3 py-2.5 text-xs text-amber-950">
+      <Handle type="target" position={Position.Left} className="!h-2.5 !w-2.5 !border-white !bg-amber-500" />
+      <div className="text-[10px] uppercase tracking-[0.08em] text-amber-700/80">Condition</div>
+      <div className="font-semibold">{data.type}</div>
+      <div className="truncate text-[11px] text-amber-800/90">{String(data.value ?? data.key ?? "Set value in inspector")}</div>
 
-      <Handle id="true" type="source" position={Position.Right} style={{ top: "35%", background: "#16a34a" }} />
-      <Handle id="false" type="source" position={Position.Right} style={{ top: "70%", background: "#dc2626" }} />
+      <Handle id="true" type="source" position={Position.Right} style={{ top: "37%" }} className="!h-2.5 !w-2.5 !border-white !bg-emerald-500" />
+      <Handle id="false" type="source" position={Position.Right} style={{ top: "72%" }} className="!h-2.5 !w-2.5 !border-white !bg-rose-500" />
 
-      <div className="absolute -right-[74px] top-[27%] -translate-y-1/2">
+      <div className="absolute -right-[188px] top-[35%] -translate-y-1/2">
         <AddButtons onAdd={data.onAdd} branch="true" />
       </div>
-      <div className="absolute -right-[74px] top-[70%] -translate-y-1/2">
+      <div className="absolute -right-[188px] top-[70%] -translate-y-1/2">
         <AddButtons onAdd={data.onAdd} branch="false" />
       </div>
     </div>
@@ -166,12 +181,13 @@ function ConditionNode({ data }: { data: NodeActionData & NodeCallbacks }) {
 
 function ActionNode({ data }: { data: NodeActionData & NodeCallbacks }) {
   return (
-    <div className="relative min-w-[220px] rounded bg-sky-50 px-3 py-2 text-xs text-sky-900">
-      <Handle type="target" position={Position.Left} />
-      <div className="font-medium">{data.type ?? "action"}</div>
-      <div className="line-clamp-2 text-[11px] text-sky-800">{data.text ?? data.caption ?? "Configure action"}</div>
-      <Handle type="source" position={Position.Right} />
-      <div className="absolute -right-[74px] top-1/2 -translate-y-1/2">
+    <div className="builder-node builder-node-action relative min-w-[240px] rounded-xl px-3 py-2.5 text-xs text-sky-950">
+      <Handle type="target" position={Position.Left} className="!h-2.5 !w-2.5 !border-white !bg-sky-500" />
+      <div className="text-[10px] uppercase tracking-[0.08em] text-sky-700/80">Action</div>
+      <div className="font-semibold">{data.type ?? "send_text"}</div>
+      <div className="line-clamp-2 text-[11px] text-sky-900/80">{data.text ?? data.caption ?? "Configure action"}</div>
+      <Handle type="source" position={Position.Right} className="!h-2.5 !w-2.5 !border-white !bg-sky-500" />
+      <div className="absolute -right-[188px] top-1/2 -translate-y-1/2">
         <AddButtons onAdd={data.onAdd} branch="next" />
       </div>
     </div>
@@ -186,7 +202,7 @@ const nodeTypes = {
 
 function defaultFlowDefinition(): FlowDefinition {
   return {
-    nodes: [{ id: "start_1", type: "start", position: { x: 80, y: 200 }, data: {} }],
+    nodes: [{ id: "start_1", type: "start", position: { x: 80, y: 220 }, data: {} }],
     edges: []
   };
 }
@@ -208,7 +224,7 @@ function toCanvasEdges(flow: FlowDefinition): Edge[] {
     sourceHandle: edge.sourceHandle,
     targetHandle: edge.targetHandle,
     label: edge.sourceHandle === "true" || edge.sourceHandle === "false" ? edge.sourceHandle : undefined,
-    animated: false
+    ...defaultEdgeOptions
   }));
 }
 
@@ -407,9 +423,41 @@ function defaultConditionData() {
   return { type: "text_contains", value: "keyword" };
 }
 
+function canCreateConnection(connection: Connection | Edge, nodes: Node[], edges: Edge[]) {
+  if (!connection.source || !connection.target) {
+    return false;
+  }
+
+  if (connection.source === connection.target) {
+    return false;
+  }
+
+  const duplicate = edges.some(
+    (edge) =>
+      edge.source === connection.source &&
+      edge.target === connection.target &&
+      (edge.sourceHandle ?? null) === (connection.sourceHandle ?? null) &&
+      (edge.targetHandle ?? null) === (connection.targetHandle ?? null)
+  );
+
+  if (duplicate) {
+    return false;
+  }
+
+  const sourceNode = nodes.find((node) => node.id === connection.source);
+  if (sourceNode?.type === "condition" && (connection.sourceHandle === "true" || connection.sourceHandle === "false")) {
+    const existingBranch = edges.some((edge) => edge.source === connection.source && edge.sourceHandle === connection.sourceHandle);
+    if (existingBranch) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
   const [botId, setBotId] = useState(bots[0]?.id ?? "");
-  const [name, setName] = useState("Flow");
+  const [name, setName] = useState("Builder");
   const [trigger, setTrigger] = useState<TriggerType>("message_received");
   const [selectedRuleId, setSelectedRuleId] = useState<string>(initialRuleId ?? "new");
   const [status, setStatus] = useState("");
@@ -423,12 +471,12 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
   useEffect(() => {
     const existing = rules.find((rule) => rule.id === selectedRuleId);
     if (!existing) {
-      const flow = defaultFlowDefinition();
+      const builder = defaultFlowDefinition();
       setBotId(bots[0]?.id ?? "");
-      setName("Flow");
+      setName("Builder");
       setTrigger("message_received");
-      setNodes(toCanvasNodes(flow));
-      setEdges(toCanvasEdges(flow));
+      setNodes(toCanvasNodes(builder));
+      setEdges(toCanvasEdges(builder));
       setSelectedNodeId(null);
       return;
     }
@@ -442,39 +490,44 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
   }, [bots, rules, selectedRuleId, setEdges, setNodes]);
 
   const selectedNode = selectedNodeId ? nodes.find((node) => node.id === selectedNodeId) : undefined;
+  const selectedNodeData = (selectedNode?.data as NodeActionData | undefined) ?? {};
+  const selectedConditionType = String(selectedNodeData.type ?? "text_contains");
 
-  function addFromNode(parentId: string, branch: AddBranch, kind: AddKind) {
-    const parent = nodes.find((node) => node.id === parentId);
-    if (!parent) {
-      return;
-    }
+  const addFromNode = useCallback(
+    (parentId: string, branch: AddBranch, kind: AddKind) => {
+      const parent = nodes.find((node) => node.id === parentId);
+      if (!parent) {
+        return;
+      }
 
-    const idPrefix = kind === "condition" ? "condition" : "action";
-    const newId = `${idPrefix}_${Date.now()}`;
+      const idPrefix = kind === "condition" ? "condition" : "action";
+      const newId = `${idPrefix}_${Date.now()}`;
+      const parentX = parent.position.x;
+      const parentY = parent.position.y;
+      const branchOffset = branch === "true" ? -100 : branch === "false" ? 100 : 0;
 
-    const parentX = parent.position.x;
-    const parentY = parent.position.y;
-    const branchOffset = branch === "true" ? -90 : branch === "false" ? 90 : 0;
+      const newNode: Node = {
+        id: newId,
+        type: kind,
+        position: { x: parentX + 320, y: parentY + branchOffset },
+        data: kind === "condition" ? defaultConditionData() : defaultActionData("send_text")
+      };
 
-    const newNode: Node = {
-      id: newId,
-      type: kind,
-      position: { x: parentX + 300, y: parentY + branchOffset },
-      data: kind === "condition" ? defaultConditionData() : defaultActionData("send_text")
-    };
+      const newEdge: Edge = {
+        id: `${parentId}_${branch}_${newId}_${Date.now()}`,
+        source: parentId,
+        target: newId,
+        sourceHandle: parent.type === "condition" && (branch === "true" || branch === "false") ? branch : undefined,
+        label: parent.type === "condition" && (branch === "true" || branch === "false") ? branch : undefined,
+        ...defaultEdgeOptions
+      };
 
-    const newEdge: Edge = {
-      id: `${parentId}_${branch}_${newId}_${Date.now()}`,
-      source: parentId,
-      target: newId,
-      sourceHandle: parent.type === "condition" && (branch === "true" || branch === "false") ? branch : undefined,
-      label: parent.type === "condition" && (branch === "true" || branch === "false") ? branch : undefined
-    };
-
-    setNodes((curr) => [...curr, newNode]);
-    setEdges((curr) => [...curr, newEdge]);
-    setSelectedNodeId(newId);
-  }
+      setNodes((curr) => [...curr, newNode]);
+      setEdges((curr) => [...curr, newEdge]);
+      setSelectedNodeId(newId);
+    },
+    [nodes, setEdges, setNodes]
+  );
 
   const displayNodes = useMemo(
     () =>
@@ -485,53 +538,81 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
           onAdd: (branch: AddBranch, kind: AddKind) => addFromNode(node.id, branch, kind)
         }
       })),
-    [nodes]
+    [addFromNode, nodes]
   );
 
-  function onConnect(connection: Connection) {
-    const edge: Edge = {
-      id: makeEdgeId(connection),
-      source: connection.source ?? "",
-      target: connection.target ?? "",
-      sourceHandle: connection.sourceHandle ?? undefined,
-      targetHandle: connection.targetHandle ?? undefined,
-      label: connection.sourceHandle === "true" || connection.sourceHandle === "false" ? connection.sourceHandle : undefined,
-      animated: false
-    };
+  const isValidConnection: IsValidConnection = useCallback(
+    (connection) => canCreateConnection(connection, nodes, edges),
+    [edges, nodes]
+  );
 
-    setEdges((current) => addEdge(edge, current));
-  }
+  const onConnect = useCallback(
+    (connection: Connection) => {
+      if (!canCreateConnection(connection, nodes, edges)) {
+        setStatus("Connection blocked: branch already used, duplicate edge, or invalid target.");
+        return;
+      }
 
-  function updateSelectedNodeData(partial: Record<string, unknown>) {
+      const edge: Edge = {
+        id: makeEdgeId(connection),
+        source: connection.source ?? "",
+        target: connection.target ?? "",
+        sourceHandle: connection.sourceHandle ?? undefined,
+        targetHandle: connection.targetHandle ?? undefined,
+        label: connection.sourceHandle === "true" || connection.sourceHandle === "false" ? connection.sourceHandle : undefined,
+        ...defaultEdgeOptions
+      };
+
+      setStatus("");
+      setEdges((current) => addEdge(edge, current));
+    },
+    [edges, nodes, setEdges]
+  );
+
+  const updateSelectedNodeData = useCallback(
+    (partial: Record<string, unknown>) => {
+      if (!selectedNodeId) {
+        return;
+      }
+
+      setNodes((current) =>
+        current.map((node) => {
+          if (node.id !== selectedNodeId) {
+            return node;
+          }
+
+          return {
+            ...node,
+            data: {
+              ...(node.data as Record<string, unknown>),
+              ...partial
+            }
+          };
+        })
+      );
+    },
+    [selectedNodeId, setNodes]
+  );
+
+  const deleteSelectedNode = useCallback(() => {
     if (!selectedNodeId) {
       return;
     }
 
-    setNodes((current) =>
-      current.map((node) => {
-        if (node.id !== selectedNodeId) {
-          return node;
-        }
-
-        return {
-          ...node,
-          data: {
-            ...(node.data as Record<string, unknown>),
-            ...partial
-          }
-        };
-      })
-    );
-  }
+    setNodes((current) => current.filter((node) => node.id !== selectedNodeId));
+    setEdges((current) => current.filter((edge) => edge.source !== selectedNodeId && edge.target !== selectedNodeId));
+    setSelectedNodeId(null);
+    setStatus("Node removed.");
+  }, [selectedNodeId, setEdges, setNodes]);
 
   async function saveFlow() {
     setIsSaving(true);
-    setStatus("Validating flow...");
+    setStatus("Validating builder...");
 
     const flowDefinition = toFlowDefinition(nodes, edges);
     const parsed = flowDefinitionSchema.safeParse(flowDefinition);
     if (!parsed.success) {
-      setStatus(parsed.error.issues[0]?.message ?? "Flow is invalid.");
+      setStatus(parsed.error.issues[0]?.message ?? "Builder graph is invalid.");
       setIsSaving(false);
       return;
     }
@@ -548,7 +629,7 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
       body.ruleId = selectedRuleId;
     }
 
-    setStatus(isUpdating ? "Updating flow..." : "Creating flow...");
+    setStatus(isUpdating ? "Updating builder..." : "Creating builder...");
 
     const res = await fetch("/api/rules", {
       method: isUpdating ? "PUT" : "POST",
@@ -560,14 +641,14 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
     if (!res.ok) {
       const issueMessage =
         Array.isArray(json.issues) && json.issues.length > 0
-          ? `${json.issues[0]?.path || "flow"}: ${json.issues[0]?.message || "invalid"}`
+          ? `${json.issues[0]?.path || "builder"}: ${json.issues[0]?.message || "invalid"}`
           : null;
-      setStatus(issueMessage ?? json.error ?? "Could not save flow.");
+      setStatus(issueMessage ?? json.error ?? "Could not save builder.");
       setIsSaving(false);
       return;
     }
 
-    setStatus(isUpdating ? "Flow updated." : "Flow created.");
+    setStatus(isUpdating ? "Builder updated." : "Builder created.");
     setIsSaving(false);
 
     const nextId = (json.rule?.id as string | undefined) ?? selectedRuleId;
@@ -578,31 +659,31 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl">Create Flow</CardTitle>
-          <CardDescription>Add a Telegram bot first to enable flow creation.</CardDescription>
+          <CardTitle className="text-xl">Create Builder</CardTitle>
+          <CardDescription>Add a Telegram bot first to enable builder creation.</CardDescription>
         </CardHeader>
       </Card>
     );
   }
 
-  const nodeType = String((selectedNode?.data as NodeActionData | undefined)?.type ?? "");
-
   return (
-    <Card className="bg-white">
+    <Card className="surface-panel border-white/90 bg-white/95">
       <CardHeader>
-        <CardTitle className="text-xl">Flow Builder</CardTitle>
-        <CardDescription>1) Choose trigger 2) Add conditions if needed 3) Add actions via + buttons on nodes.</CardDescription>
+        <CardTitle className="text-xl">Builder Studio</CardTitle>
+        <CardDescription>
+          Choose trigger, add conditions/actions from node controls, then fine-tune selected nodes in the inspector.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-3 md:grid-cols-4">
           <label className="space-y-1 text-sm text-muted-foreground">
-            <span>Flow</span>
+            <span>Builder</span>
             <select
               className="flex h-10 w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
               value={selectedRuleId}
               onChange={(e) => setSelectedRuleId(e.target.value)}
             >
-              <option value="new">New flow</option>
+              <option value="new">New builder</option>
               {rules.map((rule) => (
                 <option key={rule.id} value={rule.id}>
                   {rule.name}
@@ -642,40 +723,70 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
           </label>
 
           <label className="space-y-1 text-sm text-muted-foreground">
-            <span>Flow name</span>
+            <span>Builder name</span>
             <Input value={name} onChange={(e) => setName(e.target.value)} required />
           </label>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <Button type="button" onClick={saveFlow} disabled={isSaving}>
-            {isSaving ? "Saving..." : selectedRuleId === "new" ? "Create Flow" : "Update Flow"}
+            {isSaving ? "Saving..." : selectedRuleId === "new" ? "Create Builder" : "Update Builder"}
           </Button>
-          <Badge variant="secondary">Select a node and edit on right panel</Badge>
+          <Badge variant="secondary">Pick a node to edit it in the inspector</Badge>
+          <Badge variant="outline">Nodes: {nodes.length}</Badge>
+          <Badge variant="outline">Edges: {edges.length}</Badge>
           {status ? <Badge variant="outline">{status}</Badge> : null}
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="h-[620px] overflow-hidden rounded-md border border-slate-200 bg-slate-50">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="builder-canvas h-[660px] overflow-hidden rounded-xl border border-slate-200">
             <ReactFlow
+              className="builder-flow"
               nodes={displayNodes}
               edges={edges}
               nodeTypes={nodeTypes}
+              defaultEdgeOptions={defaultEdgeOptions}
+              connectionMode={ConnectionMode.Loose}
+              isValidConnection={isValidConnection}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
               onSelectionChange={({ nodes: selected }) => setSelectedNodeId(selected[0]?.id ?? null)}
+              snapToGrid
+              snapGrid={[20, 20]}
               fitView
+              fitViewOptions={{ padding: 0.16, includeHiddenNodes: false }}
+              proOptions={{ hideAttribution: true }}
             >
-              <MiniMap />
-              <Controls />
-              <Background gap={18} color="#e7ebf2" />
+              <Panel position="top-left" className="rounded-md border border-slate-200/70 bg-white/90 px-2 py-1 text-xs text-slate-700 shadow-sm">
+                Builder canvas
+              </Panel>
+              <MiniMap
+                pannable
+                zoomable
+                className="!rounded-lg !border !border-slate-200 !bg-white/90"
+                nodeBorderRadius={12}
+                maskColor="rgba(15, 23, 42, 0.08)"
+              />
+              <Controls showInteractive={false} position="bottom-left" />
+              <Background variant={BackgroundVariant.Dots} gap={18} size={1.1} color="#cdd5e6" />
             </ReactFlow>
           </div>
 
-          <div className="space-y-3 rounded-md border border-slate-200 bg-slate-50 p-3">
-            <h3 className="text-sm font-semibold text-slate-800">Inspector</h3>
+          <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/95 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-slate-800">Inspector</h3>
+              <Button type="button" variant="outline" size="sm" onClick={deleteSelectedNode} disabled={!selectedNode || selectedNode.type === "start"}>
+                <Trash2 className="h-4 w-4" />
+                Delete node
+              </Button>
+            </div>
+
             {!selectedNode ? <p className="text-sm text-slate-500">Select a node to edit its settings.</p> : null}
+
+            {selectedNode?.type === "start" ? (
+              <p className="text-sm text-slate-500">Start node only forwards to the next step.</p>
+            ) : null}
 
             {selectedNode?.type === "condition" ? (
               <>
@@ -683,7 +794,7 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
                   <span>Condition type</span>
                   <select
                     className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
-                    value={String((selectedNode.data as NodeActionData).type ?? "text_contains")}
+                    value={selectedConditionType}
                     onChange={(e) => updateSelectedNodeData({ type: e.target.value })}
                   >
                     {CONDITION_OPTIONS.map((option) => (
@@ -694,22 +805,22 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
                   </select>
                 </label>
 
-                {(nodeType === "all" || nodeType === "any") ? (
+                {selectedConditionType === "all" || selectedConditionType === "any" ? (
                   <label className="space-y-1 text-sm text-muted-foreground">
                     <span>Nested conditions JSON array</span>
                     <Textarea
                       rows={5}
-                      value={String((selectedNode.data as NodeActionData).conditionsJson ?? "[]")}
+                      value={String(selectedNodeData.conditionsJson ?? "[]")}
                       onChange={(e) => updateSelectedNodeData({ conditionsJson: e.target.value })}
                     />
                   </label>
                 ) : (
                   <label className="space-y-1 text-sm text-muted-foreground">
-                    <span>{nodeType === "variable_equals" || nodeType === "variable_exists" ? "Key" : "Value"}</span>
-                    {nodeType === "message_source_equals" ? (
+                    <span>{selectedConditionType === "variable_equals" || selectedConditionType === "variable_exists" ? "Key" : "Value"}</span>
+                    {selectedConditionType === "message_source_equals" ? (
                       <select
                         className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
-                        value={String((selectedNode.data as NodeActionData).value ?? "user")}
+                        value={String(selectedNodeData.value ?? "user")}
                         onChange={(e) => updateSelectedNodeData({ value: e.target.value })}
                       >
                         <option value="user">user</option>
@@ -718,14 +829,14 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
                       </select>
                     ) : (
                       <Input
-                        value={String((selectedNode.data as NodeActionData).value ?? (selectedNode.data as NodeActionData).key ?? "")}
+                        value={String(selectedNodeData.value ?? selectedNodeData.key ?? "")}
                         onChange={(e) => {
-                          if (nodeType === "variable_equals" || nodeType === "variable_exists") {
+                          if (selectedConditionType === "variable_equals" || selectedConditionType === "variable_exists") {
                             updateSelectedNodeData({ key: e.target.value });
                             return;
                           }
 
-                          const val = nodeType === "from_user_id" ? Number(e.target.value || 0) : e.target.value;
+                          const val = selectedConditionType === "from_user_id" ? Number(e.target.value || 0) : e.target.value;
                           updateSelectedNodeData({ value: val });
                         }}
                       />
@@ -733,13 +844,10 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
                   </label>
                 )}
 
-                {nodeType === "variable_equals" ? (
+                {selectedConditionType === "variable_equals" ? (
                   <label className="space-y-1 text-sm text-muted-foreground">
                     <span>Equals</span>
-                    <Input
-                      value={String((selectedNode.data as NodeActionData).value ?? "")}
-                      onChange={(e) => updateSelectedNodeData({ value: e.target.value })}
-                    />
+                    <Input value={String(selectedNodeData.value ?? "")} onChange={(e) => updateSelectedNodeData({ value: e.target.value })} />
                   </label>
                 ) : null}
               </>
@@ -751,7 +859,7 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
                   <span>Action type</span>
                   <select
                     className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
-                    value={String((selectedNode.data as NodeActionData).type ?? "send_text")}
+                    value={String(selectedNodeData.type ?? "send_text")}
                     onChange={(e) => updateSelectedNodeData(defaultActionData(e.target.value as (typeof ACTION_OPTIONS)[number]))}
                   >
                     {ACTION_OPTIONS.map((option) => (
@@ -766,7 +874,7 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
                   <span>Primary text/value</span>
                   <Textarea
                     rows={4}
-                    value={String((selectedNode.data as NodeActionData).text ?? (selectedNode.data as NodeActionData).caption ?? (selectedNode.data as NodeActionData).value ?? (selectedNode.data as NodeActionData).equals ?? "")}
+                    value={String(selectedNodeData.text ?? selectedNodeData.caption ?? selectedNodeData.value ?? selectedNodeData.equals ?? "")}
                     onChange={(e) =>
                       updateSelectedNodeData({ text: e.target.value, caption: e.target.value, value: e.target.value, equals: e.target.value })
                     }
@@ -776,7 +884,14 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
                 <label className="space-y-1 text-sm text-muted-foreground">
                   <span>Chat ID / Key / URL</span>
                   <Input
-                    value={String((selectedNode.data as NodeActionData).chatId ?? (selectedNode.data as NodeActionData).key ?? (selectedNode.data as NodeActionData).photoUrl ?? (selectedNode.data as NodeActionData).documentUrl ?? (selectedNode.data as NodeActionData).callbackQueryId ?? "")}
+                    value={String(
+                      selectedNodeData.chatId ??
+                        selectedNodeData.key ??
+                        selectedNodeData.photoUrl ??
+                        selectedNodeData.documentUrl ??
+                        selectedNodeData.callbackQueryId ??
+                        ""
+                    )}
                     onChange={(e) =>
                       updateSelectedNodeData({
                         chatId: e.target.value,
@@ -793,7 +908,7 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
                   <span>Numeric value</span>
                   <Input
                     type="number"
-                    value={String((selectedNode.data as NodeActionData).userId ?? (selectedNode.data as NodeActionData).messageId ?? (selectedNode.data as NodeActionData).delayMs ?? 0)}
+                    value={String(selectedNodeData.userId ?? selectedNodeData.messageId ?? selectedNodeData.delayMs ?? 0)}
                     onChange={(e) => {
                       const value = Number(e.target.value || 0);
                       updateSelectedNodeData({ userId: value, messageId: value, delayMs: value });

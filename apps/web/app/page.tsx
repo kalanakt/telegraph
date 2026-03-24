@@ -41,7 +41,7 @@ export default async function HomePage() {
             </h1>
 
             <p className="max-w-[62ch] text-base text-muted-foreground md:text-lg">
-              Telegraph gives you a visual flow builder, execution history, and queue-backed processing so your bot logic stays reliable when usage climbs.
+              Telegraph gives you a visual builder studio, execution history, and queue-backed processing so your bot logic stays reliable when usage climbs.
             </p>
 
             <div className="flex flex-wrap gap-3">
@@ -83,7 +83,7 @@ export default async function HomePage() {
       <section className="grid gap-4 lg:grid-cols-12">
         <Card className="interactive-lift lg:col-span-7">
           <CardHeader>
-            <CardTitle className="font-[var(--font-display)] text-[1.4rem] tracking-[-0.02em]">Design flows visually</CardTitle>
+            <CardTitle className="font-[var(--font-display)] text-[1.4rem] tracking-[-0.02em]">Design builders visually</CardTitle>
             <CardDescription>
               Create trigger-condition-action chains in the canvas and publish without writing background workers from scratch.
             </CardDescription>
@@ -104,7 +104,7 @@ export default async function HomePage() {
             <CardDescription>Each workflow run stores per-action status so debugging stays fast.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <p>Inspect failures by action type, retry quickly, and track how behavior changes after each flow edit.</p>
+            <p>Inspect failures by action type, retry quickly, and track how behavior changes after each builder edit.</p>
             <p>Execution history is ordered for fast triage during campaigns.</p>
           </CardContent>
         </Card>
@@ -114,7 +114,7 @@ export default async function HomePage() {
         <Card className="interactive-lift border-primary/30">
           <CardHeader>
             <Badge className="w-fit">Launch path</Badge>
-            <CardTitle className="font-[var(--font-display)] text-[1.3rem] tracking-[-0.02em]">Go from token to first flow in minutes</CardTitle>
+            <CardTitle className="font-[var(--font-display)] text-[1.3rem] tracking-[-0.02em]">Go from token to first builder in minutes</CardTitle>
             <CardDescription>Connect a bot, add a trigger, and publish your first automation.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-3">
@@ -136,7 +136,7 @@ export default async function HomePage() {
           </CardHeader>
           <CardContent>
             <ul className="grid gap-2 md:grid-cols-2">
-              <Feature text="Visual flow creation for message triggers" />
+              <Feature text="Visual builder creation for message triggers" />
               <Feature text="Condition branches with Telegram actions" />
               <Feature text="Execution tracking with action status" />
               <Feature text="Plan-aware limits for production teams" />

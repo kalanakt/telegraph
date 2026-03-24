@@ -11,7 +11,7 @@ type SignedOutNavItem = { href: string; label: string };
 const signedInNavItems: SignedInNavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: "gauge" },
   { href: "/bots", label: "Bots", icon: "bot" },
-  { href: "/rules", label: "Flows", icon: "sparkles" },
+  { href: "/rules", label: "Builder", icon: "sparkles" },
   { href: "/runs", label: "Runs", icon: "list-checks" },
   { href: "/pricing", label: "Pricing", icon: "receipt" }
 ];
