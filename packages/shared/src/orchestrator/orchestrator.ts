@@ -8,14 +8,6 @@ export function createAutomationOrchestrator(deps: OrchestratorDeps): Automation
   return {
     async handleIncomingUpdate(input: HandleIncomingUpdateInput): Promise<OrchestrationResult> {
       const event = normalizeTelegramUpdate(input.telegramUpdate);
-      if (!event) {
-        return {
-          accepted: true,
-          reason: "unsupported_update",
-          queuedActions: 0,
-          runIds: []
-        };
-      }
 
       const bot = await deps.botRepository.findBotContext(input.botId);
       if (!bot || bot.status !== "active") {

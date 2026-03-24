@@ -7,3 +7,6 @@ coverage
 !.env.example
 pnpm-lock.yaml
 .pnpm-store
+.agents
+.claude
+skills-lock.json

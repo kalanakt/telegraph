@@ -39,7 +39,7 @@ export async function POST(req: Request) {
         userId: user.id,
         botId: data.botId,
         name: data.name,
-        trigger: data.trigger,
+        trigger: data.trigger as never,
         flowDefinition: data.flowDefinition as unknown as object
       }
     });
@@ -87,7 +87,7 @@ export async function PUT(req: Request) {
       data: {
         botId: data.botId,
         name: data.name,
-        trigger: data.trigger,
+        trigger: data.trigger as never,
         flowDefinition: data.flowDefinition as unknown as object
       }
     });

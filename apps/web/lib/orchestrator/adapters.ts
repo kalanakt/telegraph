@@ -75,7 +75,7 @@ export function createPrismaRuleRepository(prismaClient = prisma): RuleRepositor
         where: {
           botId,
           enabled: true,
-          trigger
+          trigger: trigger as never
         }
       });
 

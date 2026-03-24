@@ -1,30 +1,25 @@
 import { z } from "zod";
-import { isActionAllowedForTrigger, normalizeActionPayload } from "../domain/actions.js";
+import { isActionAllowedForTrigger } from "../domain/actions.js";
+import { TELEGRAM_CAPABILITIES, TELEGRAM_METHODS, TELEGRAM_TRIGGER_TYPES } from "../telegram/capabilities.js";
 import type { ActionPayload, ConditionPayload } from "../types/workflow.js";
 
-const MAX_DELAY_MS = 60_000;
 const TEMPLATE_FIELD_REGEX = /\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g;
 const ALLOWED_TEMPLATE_FIELDS = new Set([
   "event.text",
   "event.chatId",
   "event.chatType",
   "event.fromUserId",
+  "event.fromUsername",
   "event.messageId",
   "event.callbackData",
+  "event.callbackQueryId",
   "event.command",
   "event.commandArgs",
   "event.inlineQuery",
   "vars"
 ]);
 
-export const triggerSchema = z.enum([
-  "message_received",
-  "message_edited",
-  "command_received",
-  "callback_query_received",
-  "inline_query_received",
-  "chat_member_updated"
-]);
+export const triggerSchema = z.enum(TELEGRAM_TRIGGER_TYPES);
 
 export const conditionSchema: z.ZodType<ConditionPayload> = z.lazy(() =>
   z.discriminatedUnion("type", [
@@ -42,108 +37,47 @@ export const conditionSchema: z.ZodType<ConditionPayload> = z.lazy(() =>
   ])
 );
 
-const sendTextActionSchema = z.object({
-  type: z.literal("send_text"),
-  chatId: z.string().optional(),
-  text: z.string().min(1).max(4000)
-});
+export const actionSchema: z.ZodType<ActionPayload> = z
+  .object({
+    type: z.string().min(1),
+    params: z.record(z.string(), z.unknown())
+  })
+  .strict()
+  .superRefine((input, ctx) => {
+    if (!input.type.startsWith("telegram.")) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["type"],
+        message: "Action type must start with telegram."
+      });
+      return;
+    }
 
-const legacySendMessageActionSchema = z.object({
-  type: z.literal("send_message"),
-  chatId: z.string().optional(),
-  text: z.string().min(1).max(4000)
-});
+    const method = input.type.replace("telegram.", "");
+    if (!TELEGRAM_METHODS.includes(method as (typeof TELEGRAM_METHODS)[number])) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["type"],
+        message: `Unsupported telegram action type: ${input.type}`
+      });
+      return;
+    }
 
-const sendPhotoActionSchema = z.object({
-  type: z.literal("send_photo"),
-  chatId: z.string().optional(),
-  photoUrl: z.string().url(),
-  caption: z.string().max(1024).optional()
-});
-
-const sendDocumentActionSchema = z.object({
-  type: z.literal("send_document"),
-  chatId: z.string().optional(),
-  documentUrl: z.string().url(),
-  caption: z.string().max(1024).optional()
-});
-
-const editMessageTextActionSchema = z.object({
-  type: z.literal("edit_message_text"),
-  chatId: z.string().optional(),
-  messageId: z.number().int().positive().optional(),
-  text: z.string().min(1).max(4000)
-});
-
-const deleteMessageActionSchema = z.object({
-  type: z.literal("delete_message"),
-  chatId: z.string().optional(),
-  messageId: z.number().int().positive().optional()
-});
-
-const answerCallbackActionSchema = z.object({
-  type: z.literal("answer_callback_query"),
-  callbackQueryId: z.string().optional(),
-  text: z.string().max(200).optional(),
-  showAlert: z.boolean().optional()
-});
-
-const delayActionSchema = z.object({
-  type: z.literal("delay"),
-  delayMs: z.number().int().min(0).max(MAX_DELAY_MS)
-});
-
-const setVariableActionSchema = z.object({
-  type: z.literal("set_variable"),
-  key: z.string().min(1).max(80),
-  value: z.string().max(4000)
-});
-
-const branchOnVariableActionSchema = z.object({
-  type: z.literal("branch_on_variable"),
-  key: z.string().min(1).max(80),
-  equals: z.string().max(4000)
-});
-
-const restrictChatMemberActionSchema = z.object({
-  type: z.literal("restrict_chat_member"),
-  chatId: z.string().optional(),
-  userId: z.number().int(),
-  untilDate: z.number().int().positive().optional(),
-  canSendMessages: z.boolean().optional()
-});
-
-const banChatMemberActionSchema = z.object({
-  type: z.literal("ban_chat_member"),
-  chatId: z.string().optional(),
-  userId: z.number().int(),
-  revokeMessages: z.boolean().optional()
-});
-
-const unbanChatMemberActionSchema = z.object({
-  type: z.literal("unban_chat_member"),
-  chatId: z.string().optional(),
-  userId: z.number().int(),
-  onlyIfBanned: z.boolean().optional()
-});
-
-export const actionSchema = z
-  .discriminatedUnion("type", [
-    sendTextActionSchema,
-    legacySendMessageActionSchema,
-    sendPhotoActionSchema,
-    sendDocumentActionSchema,
-    editMessageTextActionSchema,
-    deleteMessageActionSchema,
-    answerCallbackActionSchema,
-    delayActionSchema,
-    setVariableActionSchema,
-    branchOnVariableActionSchema,
-    restrictChatMemberActionSchema,
-    banChatMemberActionSchema,
-    unbanChatMemberActionSchema
-  ])
-  .transform((action) => normalizeActionPayload(action) as ActionPayload);
+    const paramsSchema = TELEGRAM_CAPABILITIES[method as (typeof TELEGRAM_METHODS)[number]].paramsSchema;
+    const parsed = paramsSchema.safeParse(input.params);
+    if (!parsed.success) {
+      for (const issue of parsed.error.issues) {
+        ctx.addIssue({
+          ...issue,
+          path: ["params", ...issue.path]
+        });
+      }
+    }
+  })
+  .transform((input) => ({
+    type: input.type,
+    params: input.params
+  })) as z.ZodType<ActionPayload>;
 
 const flowNodeBaseSchema = z.object({
   id: z.string().min(1),
@@ -178,35 +112,29 @@ export const flowEdgeSchema = z.object({
   targetHandle: z.string().optional()
 });
 
+function collectTemplateStrings(value: unknown, out: string[]) {
+  if (typeof value === "string") {
+    out.push(value);
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      collectTemplateStrings(item, out);
+    }
+    return;
+  }
+
+  if (typeof value === "object" && value !== null) {
+    for (const nested of Object.values(value as Record<string, unknown>)) {
+      collectTemplateStrings(nested, out);
+    }
+  }
+}
+
 function validateTemplates(action: ActionPayload, ctx: z.RefinementCtx, nodeId: string) {
   const values: string[] = [];
-  switch (action.type) {
-    case "send_text":
-      values.push(action.text);
-      break;
-    case "send_photo":
-    case "send_document":
-      if (action.caption) {
-        values.push(action.caption);
-      }
-      break;
-    case "edit_message_text":
-      values.push(action.text);
-      break;
-    case "set_variable":
-      values.push(action.value);
-      break;
-    case "branch_on_variable":
-      values.push(action.equals);
-      break;
-    case "answer_callback_query":
-      if (action.text) {
-        values.push(action.text);
-      }
-      break;
-    default:
-      break;
-  }
+  collectTemplateStrings(action.params, values);
 
   for (const value of values) {
     for (const match of value.matchAll(TEMPLATE_FIELD_REGEX)) {
@@ -334,7 +262,7 @@ export const createFlowSchema = z
         continue;
       }
 
-      const action = node.data;
+      const action = node.data as ActionPayload;
       if (!isActionAllowedForTrigger(action.type, flow.trigger)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,

@@ -7,19 +7,19 @@ export function evaluateCondition(
 ): boolean {
   switch (condition.type) {
     case "text_contains":
-      return event.text.toLowerCase().includes(condition.value.toLowerCase());
+      return (event.text ?? "").toLowerCase().includes(condition.value.toLowerCase());
     case "text_equals":
-      return event.text.trim().toLowerCase() === condition.value.trim().toLowerCase();
+      return (event.text ?? "").trim().toLowerCase() === condition.value.trim().toLowerCase();
     case "from_user_id":
       return event.fromUserId === condition.value;
     case "from_username_equals":
       return (event.fromUsername ?? "").toLowerCase() === condition.value.toLowerCase();
     case "chat_id_equals":
-      return event.chatId === condition.value;
+      return (event.chatId ?? "") === condition.value;
     case "chat_type_equals":
-      return event.chatType === condition.value;
+      return (event.chatType ?? "") === condition.value;
     case "message_source_equals":
-      return event.messageSource === condition.value;
+      return (event.messageSource ?? "user") === condition.value;
     case "variable_equals":
       return context.variables[condition.key] === condition.value;
     case "variable_exists":

@@ -29,7 +29,12 @@ describe("flowDefinitionSchema", () => {
     const result = flowDefinitionSchema.safeParse({
       nodes: [
         { id: "s", type: "start", position: { x: 0, y: 0 }, data: {} },
-        { id: "a", type: "action", position: { x: 0, y: 0 }, data: { type: "send_text", text: "ok" } }
+        {
+          id: "a",
+          type: "action",
+          position: { x: 0, y: 0 },
+          data: { type: "telegram.sendMessage", params: { chat_id: "123", text: "ok" } }
+        }
       ],
       edges: [
         { id: "e1", source: "s", target: "a" },
@@ -56,13 +61,13 @@ describe("deriveActionsFromFlow", () => {
           id: "a_true",
           type: "action",
           position: { x: 0, y: 0 },
-          data: { type: "send_text", text: "matched" }
+          data: { type: "telegram.sendMessage", params: { chat_id: "123", text: "matched" } }
         },
         {
           id: "a_false",
           type: "action",
           position: { x: 0, y: 0 },
-          data: { type: "send_text", text: "not matched" }
+          data: { type: "telegram.sendMessage", params: { chat_id: "123", text: "not matched" } }
         }
       ],
       edges: [
@@ -73,7 +78,9 @@ describe("deriveActionsFromFlow", () => {
     };
 
     const actions = deriveActionsFromFlow(flow, baseEvent);
-    expect(actions).toEqual([{ actionId: "a_true", payload: { type: "send_text", text: "matched" } }]);
+    expect(actions).toEqual([
+      { actionId: "a_true", payload: { type: "telegram.sendMessage", params: { chat_id: "123", text: "matched" } } }
+    ]);
   });
 
   it("takes false branch when condition does not match", () => {
@@ -90,7 +97,7 @@ describe("deriveActionsFromFlow", () => {
           id: "a_false",
           type: "action",
           position: { x: 0, y: 0 },
-          data: { type: "send_text", text: "fallback" }
+          data: { type: "telegram.sendMessage", params: { chat_id: "123", text: "fallback" } }
         }
       ],
       edges: [
@@ -100,6 +107,8 @@ describe("deriveActionsFromFlow", () => {
     };
 
     const actions = deriveActionsFromFlow(flow, baseEvent);
-    expect(actions).toEqual([{ actionId: "a_false", payload: { type: "send_text", text: "fallback" } }]);
+    expect(actions).toEqual([
+      { actionId: "a_false", payload: { type: "telegram.sendMessage", params: { chat_id: "123", text: "fallback" } } }
+    ]);
   });
 });

@@ -1,4 +1,3 @@
-import { normalizeActionPayload } from "./actions.js";
 import type { ActionPayload, FlowDefinition, NormalizedEvent, WorkflowContext } from "../types/workflow.js";
 import { evaluateCondition } from "./evaluator.js";
 
@@ -45,11 +44,7 @@ export function deriveActionsFromFlow(flow: FlowDefinition, event: NormalizedEve
 
     if (node.type === "action" && !seenActionNodeIds.has(node.id)) {
       seenActionNodeIds.add(node.id);
-      const payload = normalizeActionPayload(node.data);
-      if (payload.type === "set_variable") {
-        context.variables[payload.key] = payload.value;
-      }
-
+      const payload = node.data as ActionPayload;
       orderedActions.push({
         actionId: node.id,
         payload

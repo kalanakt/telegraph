@@ -1,10 +1,13 @@
-export type TriggerType =
-  | "message_received"
-  | "message_edited"
-  | "command_received"
-  | "callback_query_received"
-  | "inline_query_received"
-  | "chat_member_updated";
+import type {
+  TelegramActionType,
+  TelegramMethod,
+  TelegramMethodParams,
+  TelegramMethodParamsMap,
+  TelegramTriggerType
+} from "../telegram/capabilities.js";
+import type { TelegramUpdate } from "./telegram.js";
+
+export type TriggerType = TelegramTriggerType;
 
 export type ConditionType =
   | "text_contains"
@@ -19,21 +22,7 @@ export type ConditionType =
   | "all"
   | "any";
 
-export type ActionType =
-  | "send_text"
-  | "send_photo"
-  | "send_document"
-  | "edit_message_text"
-  | "delete_message"
-  | "answer_callback_query"
-  | "delay"
-  | "set_variable"
-  | "branch_on_variable"
-  | "restrict_chat_member"
-  | "ban_chat_member"
-  | "unban_chat_member";
-
-export type LegacyActionType = "send_message";
+export type ActionType = TelegramActionType;
 
 export type RetryClass = "transient" | "permanent";
 
@@ -57,104 +46,17 @@ export type ConditionPayload =
   | { type: "all"; conditions: ConditionPayload[] }
   | { type: "any"; conditions: ConditionPayload[] };
 
-export type SendTextActionPayload = {
-  type: "send_text";
-  chatId?: string;
-  text: string;
+export type TelegramActionPayload<M extends TelegramMethod = TelegramMethod> = {
+  type: `telegram.${M}`;
+  params: TelegramMethodParams<M>;
 };
 
-export type SendPhotoActionPayload = {
-  type: "send_photo";
-  chatId?: string;
-  photoUrl: string;
-  caption?: string;
-};
-
-export type SendDocumentActionPayload = {
-  type: "send_document";
-  chatId?: string;
-  documentUrl: string;
-  caption?: string;
-};
-
-export type EditMessageTextActionPayload = {
-  type: "edit_message_text";
-  chatId?: string;
-  messageId?: number;
-  text: string;
-};
-
-export type DeleteMessageActionPayload = {
-  type: "delete_message";
-  chatId?: string;
-  messageId?: number;
-};
-
-export type AnswerCallbackQueryActionPayload = {
-  type: "answer_callback_query";
-  callbackQueryId?: string;
-  text?: string;
-  showAlert?: boolean;
-};
-
-export type DelayActionPayload = {
-  type: "delay";
-  delayMs: number;
-};
-
-export type SetVariableActionPayload = {
-  type: "set_variable";
-  key: string;
-  value: string;
-};
-
-export type BranchOnVariableActionPayload = {
-  type: "branch_on_variable";
-  key: string;
-  equals: string;
-};
-
-export type RestrictChatMemberActionPayload = {
-  type: "restrict_chat_member";
-  chatId?: string;
-  userId: number;
-  untilDate?: number;
-  canSendMessages?: boolean;
-};
-
-export type BanChatMemberActionPayload = {
-  type: "ban_chat_member";
-  chatId?: string;
-  userId: number;
-  revokeMessages?: boolean;
-};
-
-export type UnbanChatMemberActionPayload = {
-  type: "unban_chat_member";
-  chatId?: string;
-  userId: number;
-  onlyIfBanned?: boolean;
-};
-
-export type LegacySendMessageActionPayload = {
-  type: "send_message";
-  chatId?: string;
-  text: string;
-};
-
-export type ActionPayload =
-  | SendTextActionPayload
-  | SendPhotoActionPayload
-  | SendDocumentActionPayload
-  | EditMessageTextActionPayload
-  | DeleteMessageActionPayload
-  | AnswerCallbackQueryActionPayload
-  | DelayActionPayload
-  | SetVariableActionPayload
-  | BranchOnVariableActionPayload
-  | RestrictChatMemberActionPayload
-  | BanChatMemberActionPayload
-  | UnbanChatMemberActionPayload;
+export type ActionPayload = {
+  [K in TelegramMethod]: {
+    type: `telegram.${K}`;
+    params: TelegramMethodParamsMap[K];
+  };
+}[TelegramMethod];
 
 export type FlowNodeType = "start" | "condition" | "action";
 
@@ -165,7 +67,7 @@ export type FlowNodePosition = {
 
 export type FlowConditionNodeData = ConditionPayload;
 
-export type FlowActionNodeData = ActionPayload | LegacySendMessageActionPayload;
+export type FlowActionNodeData = ActionPayload;
 
 export type FlowNode =
   | {
@@ -203,58 +105,78 @@ export type FlowDefinition = {
 export type NormalizedEventBase = {
   trigger: TriggerType;
   updateId: number;
-  chatId: string;
-  chatType: string;
+  chatId?: string;
+  chatType?: string;
   fromUserId?: number;
   fromUsername?: string;
-  messageSource: "user" | "channel" | "group";
+  messageSource?: "user" | "channel" | "group";
   text: string;
   messageId?: number;
   callbackQueryId?: string;
+  callbackData?: string;
   inlineQueryId?: string;
+  inlineQuery?: string;
+  command?: string;
+  commandArgs?: string;
   variables?: Record<string, string>;
+  targetUserId?: number;
+  oldStatus?: string;
+  newStatus?: string;
+  rawUpdate?: TelegramUpdate;
 };
 
-export type MessageReceivedEvent = NormalizedEventBase & {
-  trigger: "message_received";
-};
-
-export type MessageEditedEvent = NormalizedEventBase & {
-  trigger: "message_edited";
-};
-
+export type MessageReceivedEvent = NormalizedEventBase & { trigger: "message_received" };
+export type MessageEditedEvent = NormalizedEventBase & { trigger: "message_edited" };
+export type ChannelPostReceivedEvent = NormalizedEventBase & { trigger: "channel_post_received" };
+export type ChannelPostEditedEvent = NormalizedEventBase & { trigger: "channel_post_edited" };
 export type CommandReceivedEvent = NormalizedEventBase & {
   trigger: "command_received";
   command: string;
   commandArgs: string;
 };
-
 export type CallbackQueryReceivedEvent = NormalizedEventBase & {
   trigger: "callback_query_received";
   callbackQueryId: string;
-  callbackData?: string;
 };
-
 export type InlineQueryReceivedEvent = NormalizedEventBase & {
   trigger: "inline_query_received";
   inlineQueryId: string;
   inlineQuery: string;
 };
-
-export type ChatMemberUpdatedEvent = NormalizedEventBase & {
-  trigger: "chat_member_updated";
-  targetUserId?: number;
-  oldStatus?: string;
-  newStatus?: string;
+export type ChosenInlineResultReceivedEvent = NormalizedEventBase & { trigger: "chosen_inline_result_received" };
+export type ShippingQueryReceivedEvent = NormalizedEventBase & { trigger: "shipping_query_received" };
+export type PreCheckoutQueryReceivedEvent = NormalizedEventBase & { trigger: "pre_checkout_query_received" };
+export type PollReceivedEvent = NormalizedEventBase & { trigger: "poll_received" };
+export type PollAnswerReceivedEvent = NormalizedEventBase & { trigger: "poll_answer_received" };
+export type ChatMemberUpdatedEvent = NormalizedEventBase & { trigger: "chat_member_updated" };
+export type MyChatMemberUpdatedEvent = NormalizedEventBase & { trigger: "my_chat_member_updated" };
+export type ChatJoinRequestReceivedEvent = NormalizedEventBase & { trigger: "chat_join_request_received" };
+export type MessageReactionUpdatedEvent = NormalizedEventBase & { trigger: "message_reaction_updated" };
+export type MessageReactionCountUpdatedEvent = NormalizedEventBase & { trigger: "message_reaction_count_updated" };
+export type UpdateReceivedEvent = NormalizedEventBase & {
+  trigger: "update_received";
+  rawUpdate: TelegramUpdate;
 };
 
 export type NormalizedEvent =
   | MessageReceivedEvent
   | MessageEditedEvent
+  | ChannelPostReceivedEvent
+  | ChannelPostEditedEvent
   | CommandReceivedEvent
   | CallbackQueryReceivedEvent
   | InlineQueryReceivedEvent
-  | ChatMemberUpdatedEvent;
+  | ChosenInlineResultReceivedEvent
+  | ShippingQueryReceivedEvent
+  | PreCheckoutQueryReceivedEvent
+  | PollReceivedEvent
+  | PollAnswerReceivedEvent
+  | ChatMemberUpdatedEvent
+  | MyChatMemberUpdatedEvent
+  | ChatJoinRequestReceivedEvent
+  | MessageReactionUpdatedEvent
+  | MessageReactionCountUpdatedEvent
+  | UpdateReceivedEvent;
 
 export type WorkflowContext = {
   variables: Record<string, string>;

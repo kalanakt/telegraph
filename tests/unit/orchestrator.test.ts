@@ -23,7 +23,7 @@ function flowThatRepliesIfContainsHello() {
         id: "action_1",
         type: "action",
         position: { x: 400, y: 0 },
-        data: { type: "send_text", text: "Hi!" }
+        data: { type: "telegram.sendMessage", params: { chat_id: "333", text: "Hi!" } }
       }
     ],
     edges: [
@@ -47,7 +47,7 @@ function flowThatRepliesIfEqualsBye() {
         id: "action_1",
         type: "action",
         position: { x: 400, y: 0 },
-        data: { type: "send_text", text: "Ignored" }
+        data: { type: "telegram.sendMessage", params: { chat_id: "333", text: "Ignored" } }
       }
     ],
     edges: [
@@ -181,13 +181,28 @@ describe("AutomationOrchestrator", () => {
     expect(enqueued).toHaveLength(0);
   });
 
-  it("returns unsupported_update for unsupported telegram payload", async () => {
+  it("maps unknown updates to catch-all trigger and can still process", async () => {
+    const enqueued: ActionJob[] = [];
     const orchestrator = createAutomationOrchestrator({
-      botRepository: { async findBotContext() { return null; } },
-      eventRepository: { async createIncomingEvent() { return { status: "duplicate" }; } },
+      botRepository: {
+        async findBotContext() {
+          return {
+            botId: "bot_1",
+            userId: "user_1",
+            encryptedToken: "enc",
+            status: "active",
+            plan: "FREE"
+          };
+        }
+      },
+      eventRepository: {
+        async createIncomingEvent() {
+          return { status: "created", eventId: "evt_1" };
+        }
+      },
       ruleRepository: { async listActiveRules() { return []; } },
       runRepository: { async createRunWithActions() { return { runId: "", actionRuns: [] }; } },
-      actionQueue: { async enqueueAction() {} },
+      actionQueue: { async enqueueAction(job) { enqueued.push(job); } },
       entitlementPolicy: { async isMonthlyExecutionExceeded() { return false; } },
       decryptToken: () => ""
     });
@@ -198,12 +213,9 @@ describe("AutomationOrchestrator", () => {
       receivedAt: new Date()
     });
 
-    expect(result).toEqual({
-      accepted: true,
-      reason: "unsupported_update",
-      queuedActions: 0,
-      runIds: []
-    });
+    expect(result.reason).toBe("processed");
+    expect(result.queuedActions).toBe(0);
+    expect(enqueued).toHaveLength(0);
   });
 
   it("returns plan_execution_limit after event persistence", async () => {

@@ -5,7 +5,6 @@ import type { ActionPayload, FlowDefinition, NormalizedEvent, TriggerType } from
 
 export type OrchestrationReason =
   | "inactive_bot"
-  | "unsupported_update"
   | "duplicate_update"
   | "plan_execution_limit"
   | "processed";

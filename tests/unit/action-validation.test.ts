@@ -1,29 +1,42 @@
 import { describe, expect, it } from "vitest";
 import { actionSchema } from "@telegram-builder/shared";
 
-describe("actionSchema", () => {
-  it("accepts a valid send_text payload", () => {
+describe("actionSchema v2", () => {
+  it("accepts a valid telegram.sendMessage payload", () => {
     const parsed = actionSchema.parse({
-      type: "send_text",
-      text: "Hello from bot"
+      type: "telegram.sendMessage",
+      params: {
+        chat_id: "123",
+        text: "Hello from bot",
+        parse_mode: "HTML"
+      }
     });
 
-    expect(parsed.type).toBe("send_text");
+    expect(parsed.type).toBe("telegram.sendMessage");
   });
 
-  it("keeps backward compatibility for send_message alias", () => {
+  it("supports rich fields like entities and inline keyboard", () => {
     const parsed = actionSchema.parse({
-      type: "send_message",
-      text: "Legacy"
+      type: "telegram.sendMessage",
+      params: {
+        chat_id: "123",
+        text: "Hello",
+        entities: [{ type: "bold", offset: 0, length: 5 }],
+        reply_markup: {
+          inline_keyboard: [[{ text: "Open", url: "https://example.com" }]]
+        }
+      }
     });
 
-    expect(parsed.type).toBe("send_text");
+    expect(parsed.params.reply_markup).toBeDefined();
   });
 
-  it("rejects an empty text payload", () => {
+  it("rejects invalid payloads", () => {
     const result = actionSchema.safeParse({
-      type: "send_text",
-      text: ""
+      type: "telegram.sendMessage",
+      params: {
+        text: "missing chat id"
+      }
     });
 
     expect(result.success).toBe(false);

@@ -15,19 +15,23 @@ function extractCommand(text: string): { command: string; commandArgs: string } 
   };
 }
 
-export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent | null {
-  const messageSource = update.message ?? update.channel_post;
+function mapMessageSource(chatType?: string): "user" | "channel" | "group" {
+  if (chatType === "channel") {
+    return "channel";
+  }
+
+  if ((chatType ?? "").includes("group")) {
+    return "group";
+  }
+
+  return "user";
+}
+
+export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent {
+  const messageSource = update.message;
   if (messageSource) {
-    const sourceWithFrom = messageSource as { from?: { id?: number } };
-    const fromUserId = typeof sourceWithFrom.from?.id === "number" ? sourceWithFrom.from.id : undefined;
-    const fromUsername =
-      typeof (sourceWithFrom.from as { username?: string } | undefined)?.username === "string"
-        ? (sourceWithFrom.from as { username?: string }).username
-        : undefined;
     const text = messageSource.text ?? messageSource.caption ?? "";
     const command = extractCommand(text);
-    const messageSourceType = messageSource.chat.type === "channel" ? "channel" : messageSource.chat.type.includes("group") ? "group" : "user";
-
     if (command) {
       return {
         trigger: "command_received",
@@ -35,9 +39,9 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
         messageId: messageSource.message_id,
         chatId: String(messageSource.chat.id),
         chatType: messageSource.chat.type,
-        fromUserId,
-        fromUsername,
-        messageSource: messageSourceType,
+        fromUserId: messageSource.from?.id,
+        fromUsername: messageSource.from?.username,
+        messageSource: mapMessageSource(messageSource.chat.type),
         text,
         command: command.command,
         commandArgs: command.commandArgs,
@@ -51,34 +55,52 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
       messageId: messageSource.message_id,
       chatId: String(messageSource.chat.id),
       chatType: messageSource.chat.type,
-      fromUserId,
-      fromUsername,
-      messageSource: messageSourceType,
+      fromUserId: messageSource.from?.id,
+      fromUsername: messageSource.from?.username,
+      messageSource: mapMessageSource(messageSource.chat.type),
       text,
       variables: {}
     };
   }
 
-  const editedSource = update.edited_message ?? update.edited_channel_post;
-  if (editedSource) {
-    const sourceWithFrom = editedSource as { from?: { id?: number } };
-    const fromUserId = typeof sourceWithFrom.from?.id === "number" ? sourceWithFrom.from.id : undefined;
-    const fromUsername =
-      typeof (sourceWithFrom.from as { username?: string } | undefined)?.username === "string"
-        ? (sourceWithFrom.from as { username?: string }).username
-        : undefined;
-    const messageSourceType = editedSource.chat.type === "channel" ? "channel" : editedSource.chat.type.includes("group") ? "group" : "user";
-
+  const editedMessage = update.edited_message;
+  if (editedMessage) {
     return {
       trigger: "message_edited",
       updateId: update.update_id,
-      messageId: editedSource.message_id,
-      chatId: String(editedSource.chat.id),
-      chatType: editedSource.chat.type,
-      fromUserId,
-      fromUsername,
-      messageSource: messageSourceType,
-      text: editedSource.text ?? editedSource.caption ?? "",
+      messageId: editedMessage.message_id,
+      chatId: String(editedMessage.chat.id),
+      chatType: editedMessage.chat.type,
+      fromUserId: editedMessage.from?.id,
+      fromUsername: editedMessage.from?.username,
+      messageSource: mapMessageSource(editedMessage.chat.type),
+      text: editedMessage.text ?? editedMessage.caption ?? "",
+      variables: {}
+    };
+  }
+
+  if (update.channel_post) {
+    return {
+      trigger: "channel_post_received",
+      updateId: update.update_id,
+      messageId: update.channel_post.message_id,
+      chatId: String(update.channel_post.chat.id),
+      chatType: update.channel_post.chat.type,
+      messageSource: "channel",
+      text: update.channel_post.text ?? update.channel_post.caption ?? "",
+      variables: {}
+    };
+  }
+
+  if (update.edited_channel_post) {
+    return {
+      trigger: "channel_post_edited",
+      updateId: update.update_id,
+      messageId: update.edited_channel_post.message_id,
+      chatId: String(update.edited_channel_post.chat.id),
+      chatType: update.edited_channel_post.chat.type,
+      messageSource: "channel",
+      text: update.edited_channel_post.text ?? update.edited_channel_post.caption ?? "",
       variables: {}
     };
   }
@@ -89,12 +111,12 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
       trigger: "callback_query_received",
       updateId: update.update_id,
       callbackQueryId: cb.id,
-      chatId: String(cb.message?.chat.id ?? 0),
-      chatType: cb.message?.chat.type ?? "private",
+      chatId: cb.message?.chat ? String(cb.message.chat.id) : undefined,
+      chatType: cb.message?.chat?.type,
       messageId: cb.message?.message_id,
       fromUserId: cb.from?.id,
       fromUsername: cb.from?.username,
-      messageSource: cb.message?.chat.type === "channel" ? "channel" : cb.message?.chat.type?.includes("group") ? "group" : "user",
+      messageSource: mapMessageSource(cb.message?.chat?.type),
       text: cb.data ?? "",
       callbackData: cb.data,
       variables: {}
@@ -102,39 +124,157 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
   }
 
   if (update.inline_query) {
-    const inline = update.inline_query;
     return {
       trigger: "inline_query_received",
       updateId: update.update_id,
-      inlineQueryId: inline.id,
-      chatId: String(inline.from.id),
-      chatType: "private",
-      fromUserId: inline.from.id,
-      fromUsername: inline.from.username,
+      inlineQueryId: update.inline_query.id,
+      inlineQuery: update.inline_query.query,
+      fromUserId: update.inline_query.from.id,
+      fromUsername: update.inline_query.from.username,
       messageSource: "user",
-      text: inline.query,
-      inlineQuery: inline.query,
+      text: update.inline_query.query,
       variables: {}
     };
   }
 
-  const member = update.chat_member ?? update.my_chat_member;
-  if (member) {
+  if (update.chosen_inline_result) {
+    return {
+      trigger: "chosen_inline_result_received",
+      updateId: update.update_id,
+      fromUserId: update.chosen_inline_result.from.id,
+      fromUsername: update.chosen_inline_result.from.username,
+      messageSource: "user",
+      text: update.chosen_inline_result.query,
+      variables: {}
+    };
+  }
+
+  if (update.shipping_query) {
+    return {
+      trigger: "shipping_query_received",
+      updateId: update.update_id,
+      fromUserId: update.shipping_query.from.id,
+      fromUsername: update.shipping_query.from.username,
+      messageSource: "user",
+      text: "",
+      variables: {}
+    };
+  }
+
+  if (update.pre_checkout_query) {
+    return {
+      trigger: "pre_checkout_query_received",
+      updateId: update.update_id,
+      fromUserId: update.pre_checkout_query.from.id,
+      fromUsername: update.pre_checkout_query.from.username,
+      messageSource: "user",
+      text: "",
+      variables: {}
+    };
+  }
+
+  if (update.poll) {
+    return {
+      trigger: "poll_received",
+      updateId: update.update_id,
+      text: update.poll.question,
+      variables: {}
+    };
+  }
+
+  if (update.poll_answer) {
+    return {
+      trigger: "poll_answer_received",
+      updateId: update.update_id,
+      fromUserId: update.poll_answer.user.id,
+      fromUsername: update.poll_answer.user.username,
+      messageSource: "user",
+      text: "",
+      variables: {}
+    };
+  }
+
+  if (update.chat_member) {
     return {
       trigger: "chat_member_updated",
       updateId: update.update_id,
-      chatId: String(member.chat.id),
-      chatType: member.chat.type,
-      fromUserId: member.from?.id,
-      fromUsername: member.from?.username,
-      messageSource: member.chat.type === "channel" ? "channel" : member.chat.type.includes("group") ? "group" : "user",
+      chatId: String(update.chat_member.chat.id),
+      chatType: update.chat_member.chat.type,
+      fromUserId: update.chat_member.from?.id,
+      fromUsername: update.chat_member.from?.username,
+      messageSource: mapMessageSource(update.chat_member.chat.type),
       text: "",
-      targetUserId: member.new_chat_member?.user.id,
-      oldStatus: member.old_chat_member?.status,
-      newStatus: member.new_chat_member?.status,
+      targetUserId: update.chat_member.new_chat_member?.user.id,
+      oldStatus: update.chat_member.old_chat_member?.status,
+      newStatus: update.chat_member.new_chat_member?.status,
       variables: {}
     };
   }
 
-  return null;
+  if (update.my_chat_member) {
+    return {
+      trigger: "my_chat_member_updated",
+      updateId: update.update_id,
+      chatId: String(update.my_chat_member.chat.id),
+      chatType: update.my_chat_member.chat.type,
+      fromUserId: update.my_chat_member.from?.id,
+      fromUsername: update.my_chat_member.from?.username,
+      messageSource: mapMessageSource(update.my_chat_member.chat.type),
+      text: "",
+      targetUserId: update.my_chat_member.new_chat_member?.user.id,
+      oldStatus: update.my_chat_member.old_chat_member?.status,
+      newStatus: update.my_chat_member.new_chat_member?.status,
+      variables: {}
+    };
+  }
+
+  if (update.chat_join_request) {
+    return {
+      trigger: "chat_join_request_received",
+      updateId: update.update_id,
+      chatId: String(update.chat_join_request.chat.id),
+      chatType: update.chat_join_request.chat.type,
+      fromUserId: update.chat_join_request.from.id,
+      fromUsername: update.chat_join_request.from.username,
+      messageSource: mapMessageSource(update.chat_join_request.chat.type),
+      text: "",
+      variables: {}
+    };
+  }
+
+  if (update.message_reaction) {
+    return {
+      trigger: "message_reaction_updated",
+      updateId: update.update_id,
+      chatId: String(update.message_reaction.chat.id),
+      chatType: update.message_reaction.chat.type,
+      fromUserId: update.message_reaction.user?.id,
+      fromUsername: update.message_reaction.user?.username,
+      messageSource: mapMessageSource(update.message_reaction.chat.type),
+      text: "",
+      messageId: update.message_reaction.message_id,
+      variables: {}
+    };
+  }
+
+  if (update.message_reaction_count) {
+    return {
+      trigger: "message_reaction_count_updated",
+      updateId: update.update_id,
+      chatId: String(update.message_reaction_count.chat.id),
+      chatType: update.message_reaction_count.chat.type,
+      messageSource: mapMessageSource(update.message_reaction_count.chat.type),
+      text: "",
+      messageId: update.message_reaction_count.message_id,
+      variables: {}
+    };
+  }
+
+  return {
+    trigger: "update_received",
+    updateId: update.update_id,
+    text: "",
+    rawUpdate: update,
+    variables: {}
+  };
 }

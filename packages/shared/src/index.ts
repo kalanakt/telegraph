@@ -9,6 +9,8 @@ export * from "./domain/encryption.js";
 export * from "./config/limits.js";
 export * from "./queue/contracts.js";
 export * from "./telegram/client.js";
+export * from "./telegram/types.js";
+export * from "./telegram/capabilities.js";
 export * from "./orchestrator/types.js";
 export * from "./orchestrator/normalize.js";
 export * from "./orchestrator/orchestrator.js";

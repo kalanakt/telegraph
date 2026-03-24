@@ -22,10 +22,22 @@ enum BotStatus {
 enum WorkflowTrigger {
   message_received
   message_edited
+  channel_post_received
+  channel_post_edited
   command_received
   callback_query_received
   inline_query_received
+  chosen_inline_result_received
+  shipping_query_received
+  pre_checkout_query_received
+  poll_received
+  poll_answer_received
   chat_member_updated
+  my_chat_member_updated
+  chat_join_request_received
+  message_reaction_updated
+  message_reaction_count_updated
+  update_received
 }
 
 enum ActionStatus {

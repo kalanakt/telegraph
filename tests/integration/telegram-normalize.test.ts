@@ -64,6 +64,7 @@ describe("normalizeTelegramUpdate", () => {
   });
 
   it("returns null for unsupported updates", () => {
-    expect(normalizeTelegramUpdate({ update_id: 1 })).toBeNull();
+    const normalized = normalizeTelegramUpdate({ update_id: 1 });
+    expect(normalized.trigger).toBe("update_received");
   });
 });

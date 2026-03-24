@@ -19,15 +19,15 @@ describe("orchestrator adapters", () => {
       runId: "run_1",
       actionRunId: "action_run_1",
       botToken: "token",
-      actionType: "send_text",
+      actionType: "telegram.sendMessage",
       executionPolicy: {
         retryClass: "transient",
         timeoutMs: 10000,
         idempotencyKeyStrategy: "event_and_action",
         rateLimitBucket: "telegram.write"
       },
-      idempotencyKey: "1:action_run_1:send_text",
-      action: { type: "send_text", text: "hello" },
+      idempotencyKey: "1:action_run_1:telegram.sendMessage",
+      action: { type: "telegram.sendMessage", params: { chat_id: "123", text: "hello" } },
       event: {
         trigger: "message_received",
         updateId: 1,
@@ -45,7 +45,7 @@ describe("orchestrator adapters", () => {
     });
 
     expect(calls).toHaveLength(1);
-    expect(calls[0].name).toBe("action:send_text");
+    expect(calls[0].name).toBe("action:telegram.sendMessage");
     expect(calls[0].options).toEqual({
       attempts: 5,
       backoff: { type: "exponential", delay: 2000 },
@@ -126,14 +126,14 @@ describe("orchestrator adapters", () => {
           edges: []
         }
       },
-      actions: [{ actionId: "a1", payload: { type: "send_text", text: "reply" } }]
+      actions: [{ actionId: "a1", payload: { type: "telegram.sendMessage", params: { chat_id: "1", text: "reply" } } }]
     });
 
     expect(workflowRunCreateCalls).toHaveLength(1);
     expect(actionRunCreateCalls).toHaveLength(1);
     expect(result).toEqual({
       runId: "run_123",
-      actionRuns: [{ actionRunId: "action_run_1", action: { type: "send_text", text: "reply" } }]
+      actionRuns: [{ actionRunId: "action_run_1", action: { type: "telegram.sendMessage", params: { chat_id: "1", text: "reply" } } }]
     });
   });
 });
