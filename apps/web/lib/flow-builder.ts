@@ -98,6 +98,15 @@ export function createActionTemplate(actionType: ActionPayload["type"]): ActionT
           caption: "Photo caption"
         }
       };
+    case "telegram.sendVideo":
+      return {
+        type: actionType,
+        params: {
+          chat_id: "{{event.chatId}}",
+          video: "https://example.com/video.mp4",
+          caption: "Video caption"
+        }
+      };
     case "telegram.sendDocument":
       return {
         type: actionType,
@@ -389,6 +398,12 @@ export function summarizeAction(payload: ActionPayload): string {
     const caption = asString(params.caption);
     const photo = asString(params.photo);
     return caption ?? photo ?? "Send photo";
+  }
+
+  if (payload.type === "telegram.sendVideo") {
+    const caption = asString(params.caption);
+    const video = asString(params.video);
+    return caption ?? video ?? "Send video";
   }
 
   if (payload.type === "telegram.sendDocument") {

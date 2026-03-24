@@ -178,6 +178,28 @@ const sendDocumentSchema = z
   })
   .strict();
 
+const sendVideoSchema = z
+  .object({
+    chat_id: chatIdSchema,
+    video: z.string().min(1),
+    duration: z.number().int().positive().optional(),
+    width: z.number().int().positive().optional(),
+    height: z.number().int().positive().optional(),
+    thumbnail: z.string().optional(),
+    caption: z.string().max(1024).optional(),
+    parse_mode: telegramParseModeSchema.optional(),
+    caption_entities: z.array(messageEntitySchema).max(100).optional(),
+    supports_streaming: z.boolean().optional(),
+    has_spoiler: z.boolean().optional(),
+    disable_notification: z.boolean().optional(),
+    protect_content: z.boolean().optional(),
+    reply_to_message_id: z.number().int().positive().optional(),
+    allow_sending_without_reply: z.boolean().optional(),
+    message_thread_id: z.number().int().positive().optional(),
+    reply_markup: telegramReplyMarkupSchema.optional()
+  })
+  .strict();
+
 const editMessageTextSchema = z
   .object({
     chat_id: chatIdSchema.optional(),
@@ -472,6 +494,7 @@ const getMeSchema = z.object({}).strict();
 const METHOD_SCHEMAS = {
   sendMessage: sendMessageSchema,
   sendPhoto: sendPhotoSchema,
+  sendVideo: sendVideoSchema,
   sendDocument: sendDocumentSchema,
   sendMediaGroup: sendMediaGroupSchema,
   copyMessage: copyMessageSchema,
@@ -544,6 +567,7 @@ function buildCapability(method: TelegramMethod, input: Omit<TelegramCapability,
 export const TELEGRAM_CAPABILITIES: Record<TelegramMethod, TelegramCapability> = {
   sendMessage: buildCapability("sendMessage", { label: "Send Message", category: "messages", description: "Send text and rich entities/markup.", executionPolicy: { retryClass: "transient", timeoutMs: 15_000, idempotencyKeyStrategy: "event_and_action", rateLimitBucket: "telegram.write" } }),
   sendPhoto: buildCapability("sendPhoto", { label: "Send Photo", category: "messages", description: "Send photo by URL/file id with caption support.", executionPolicy: { retryClass: "transient", timeoutMs: 20_000, idempotencyKeyStrategy: "event_and_action", rateLimitBucket: "telegram.write" } }),
+  sendVideo: buildCapability("sendVideo", { label: "Send Video", category: "messages", description: "Send video by URL/file id with caption support.", executionPolicy: { retryClass: "transient", timeoutMs: 30_000, idempotencyKeyStrategy: "event_and_action", rateLimitBucket: "telegram.write" } }),
   sendDocument: buildCapability("sendDocument", { label: "Send Document", category: "messages", description: "Send document by URL/file id.", executionPolicy: { retryClass: "transient", timeoutMs: 25_000, idempotencyKeyStrategy: "event_and_action", rateLimitBucket: "telegram.write" } }),
   sendMediaGroup: buildCapability("sendMediaGroup", { label: "Send Media Group", category: "messages", description: "Send media album (2-10 items).", executionPolicy: { retryClass: "transient", timeoutMs: 30_000, idempotencyKeyStrategy: "event_and_action", rateLimitBucket: "telegram.write" } }),
   copyMessage: buildCapability("copyMessage", { label: "Copy Message", category: "messages", description: "Copy a message between chats.", executionPolicy: { retryClass: "transient", timeoutMs: 15_000, idempotencyKeyStrategy: "event_and_action", rateLimitBucket: "telegram.write" } }),
