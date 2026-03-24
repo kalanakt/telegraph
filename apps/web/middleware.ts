@@ -9,7 +9,7 @@ const isProtectedRoute = createRouteMatcher([
   "/runs(.*)",
   "/api/bots(.*)",
   "/api/rules(.*)",
-  "/api/runs(.*)"
+  "/api/runs(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
@@ -31,5 +31,9 @@ export default clerkMiddleware(async (auth, req) => {
 });
 
 export const config = {
-  matcher: ["/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)", "/(api|trpc)(.*)"]
+  matcher: [
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    "/(api|trpc)(.*)",
+  ],
+  authorizedParties: ["https://telegram-bot-builder.up.railway.app"],
 };

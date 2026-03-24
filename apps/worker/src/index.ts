@@ -2,7 +2,7 @@ import { Queue, Worker } from "bullmq";
 import IORedis from "ioredis";
 import { PrismaClient } from "@prisma/client";
 import { QUEUES, type ActionJob } from "@telegram-builder/shared";
-import { handleActionJobFailure, processActionJob, type WorkerProcessorDeps, workerTelegramDeps } from "./processor";
+import { handleActionJobFailure, processActionJob, type WorkerProcessorDeps, workerTelegramDeps } from "./processor.js";
 
 const redisUrl = process.env.REDIS_URL;
 if (!redisUrl) {
