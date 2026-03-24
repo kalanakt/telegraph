@@ -3,6 +3,7 @@ import { Outfit, Sora } from "next/font/google";
 import Link from "next/link";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Nav } from "@/components/Nav";
+import { isClerkConfigured } from "@/lib/auth-config";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -40,6 +41,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const hasClerk = isClerkConfigured();
   const appShell = (
     <>
       <a className="skip-link focus-ring" href="#main-content">
@@ -71,7 +73,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${outfit.variable} ${sora.variable}`}>
-        {publishableKey ? <ClerkProvider publishableKey={publishableKey}>{appShell}</ClerkProvider> : appShell}
+        {hasClerk && publishableKey ? (
+          <ClerkProvider publishableKey={publishableKey}>{appShell}</ClerkProvider>
+        ) : (
+          appShell
+        )}
       </body>
     </html>
   );
