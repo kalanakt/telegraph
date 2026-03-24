@@ -4,7 +4,7 @@ import type {
   ExecutionPolicy,
   LegacySendMessageActionPayload,
   TriggerType
-} from "../types/workflow";
+} from "../types/workflow.js";
 
 export const ACTION_EXECUTION_POLICIES: Record<ActionType, ExecutionPolicy> = {
   send_text: {

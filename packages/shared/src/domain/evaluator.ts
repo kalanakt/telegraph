@@ -1,4 +1,4 @@
-import type { ConditionPayload, NormalizedEvent, WorkflowContext } from "../types/workflow";
+import type { ConditionPayload, NormalizedEvent, WorkflowContext } from "../types/workflow.js";
 
 export function evaluateCondition(
   event: NormalizedEvent,

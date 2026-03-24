@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { isActionAllowedForTrigger, normalizeActionPayload } from "../domain/actions";
-import type { ActionPayload, ConditionPayload } from "../types/workflow";
+import { isActionAllowedForTrigger, normalizeActionPayload } from "../domain/actions.js";
+import type { ActionPayload, ConditionPayload } from "../types/workflow.js";
 
 const MAX_DELAY_MS = 60_000;
 const TEMPLATE_FIELD_REGEX = /\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g;

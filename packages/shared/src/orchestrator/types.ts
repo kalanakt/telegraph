@@ -1,7 +1,7 @@
-import type { PlanKey } from "../config/limits";
-import type { ActionJob } from "../queue/contracts";
-import type { TelegramUpdate } from "../types/telegram";
-import type { ActionPayload, FlowDefinition, NormalizedEvent, TriggerType } from "../types/workflow";
+import type { PlanKey } from "../config/limits.js";
+import type { ActionJob } from "../queue/contracts.js";
+import type { TelegramUpdate } from "../types/telegram.js";
+import type { ActionPayload, FlowDefinition, NormalizedEvent, TriggerType } from "../types/workflow.js";
 
 export type OrchestrationReason =
   | "inactive_bot"

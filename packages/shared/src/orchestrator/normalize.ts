@@ -1,5 +1,5 @@
-import type { TelegramUpdate } from "../types/telegram";
-import type { NormalizedEvent } from "../types/workflow";
+import type { TelegramUpdate } from "../types/telegram.js";
+import type { NormalizedEvent } from "../types/workflow.js";
 
 function extractCommand(text: string): { command: string; commandArgs: string } | null {
   const trimmed = text.trim();

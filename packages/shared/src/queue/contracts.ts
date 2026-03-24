@@ -1,4 +1,4 @@
-import type { ActionPayload, ExecutionPolicy, NormalizedEvent } from "../types/workflow";
+import type { ActionPayload, ExecutionPolicy, NormalizedEvent } from "../types/workflow.js";
 
 export const QUEUES = {
   ACTIONS: "actions",

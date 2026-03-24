@@ -1,4 +1,4 @@
-import type { TelegramApiResult, TelegramMeResponse } from "../types/telegram";
+import type { TelegramApiResult, TelegramMeResponse } from "../types/telegram.js";
 
 const TELEGRAM_API = "https://api.telegram.org";
 

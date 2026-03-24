@@ -1,8 +1,8 @@
-import { getExecutionPolicy } from "../domain/actions";
-import { buildIdempotencyKey } from "../domain/idempotency";
-import { deriveActionsFromFlow } from "../domain/flow";
-import { normalizeTelegramUpdate } from "./normalize";
-import type { AutomationOrchestrator, HandleIncomingUpdateInput, OrchestratorDeps, OrchestrationResult } from "./types";
+import { getExecutionPolicy } from "../domain/actions.js";
+import { buildIdempotencyKey } from "../domain/idempotency.js";
+import { deriveActionsFromFlow } from "../domain/flow.js";
+import { normalizeTelegramUpdate } from "./normalize.js";
+import type { AutomationOrchestrator, HandleIncomingUpdateInput, OrchestratorDeps, OrchestrationResult } from "./types.js";
 
 export function createAutomationOrchestrator(deps: OrchestratorDeps): AutomationOrchestrator {
   return {

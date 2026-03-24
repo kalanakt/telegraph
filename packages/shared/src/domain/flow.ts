@@ -1,6 +1,6 @@
-import { normalizeActionPayload } from "./actions";
-import type { ActionPayload, FlowDefinition, NormalizedEvent, WorkflowContext } from "../types/workflow";
-import { evaluateCondition } from "./evaluator";
+import { normalizeActionPayload } from "./actions.js";
+import type { ActionPayload, FlowDefinition, NormalizedEvent, WorkflowContext } from "../types/workflow.js";
+import { evaluateCondition } from "./evaluator.js";
 
 export type DerivedFlowAction = {
   actionId: string;
