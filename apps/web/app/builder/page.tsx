@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AddRuleForm } from "@/components/AddRuleForm";
-import { PageHeading } from "@/components/PageHeading";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -76,11 +75,6 @@ export default async function RulesPage({
 
   return (
     <div className="space-y-5">
-      <PageHeading
-        title="Builder"
-        subtitle="Design graph-based automations for incoming Telegram messages with branching conditions."
-      />
-
       <AddRuleForm
         bots={bots.map((bot) => ({
           id: bot.id,

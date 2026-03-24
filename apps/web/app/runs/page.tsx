@@ -1,8 +1,14 @@
 import { redirect } from "next/navigation";
-import { PageHeading } from "@/components/PageHeading";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { isClerkConfigured } from "@/lib/auth-config";
 import { getAuthUserId } from "@/lib/clerk-auth";
 import { requireAppUser } from "@/lib/user";
@@ -35,19 +41,19 @@ export default async function RunsPage() {
     include: {
       actionRuns: true,
       rule: { select: { name: true } },
-      bot: { select: { username: true, displayName: true } }
+      bot: { select: { username: true, displayName: true } },
     },
     orderBy: { createdAt: "desc" },
-    take: 150
+    take: 150,
   });
 
   return (
     <div className="space-y-5">
-      <PageHeading title="Runs" subtitle="Inspect recent executions, statuses, and action-level outcomes." />
-
       <Card>
         <CardHeader>
-          <CardTitle className="font-[var(--font-display)]">Recent Executions</CardTitle>
+          <CardTitle className="font-[var(--font-display)]">
+            Recent Executions
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -64,14 +70,27 @@ export default async function RunsPage() {
             <TableBody>
               {runs.map((run) => (
                 <TableRow key={run.id}>
-                  <TableCell>{new Date(run.createdAt).toLocaleString()}</TableCell>
-                  <TableCell>{run.bot.username ? `@${run.bot.username}` : run.bot.displayName ?? "-"}</TableCell>
+                  <TableCell>
+                    {new Date(run.createdAt).toLocaleString()}
+                  </TableCell>
+                  <TableCell>
+                    {run.bot.username
+                      ? `@${run.bot.username}`
+                      : (run.bot.displayName ?? "-")}
+                  </TableCell>
                   <TableCell>{run.rule.name}</TableCell>
                   <TableCell>
                     <Badge variant="secondary">{run.trigger}</Badge>
                   </TableCell>
                   <TableCell>{runStatusBadge(run.status)}</TableCell>
-                  <TableCell>{run.actionRuns.map((a) => `${a.type}:${a.status}${a.lastError ? ` (${a.lastError})` : ""}`).join(", ")}</TableCell>
+                  <TableCell>
+                    {run.actionRuns
+                      .map(
+                        (a) =>
+                          `${a.type}:${a.status}${a.lastError ? ` (${a.lastError})` : ""}`,
+                      )
+                      .join(", ")}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

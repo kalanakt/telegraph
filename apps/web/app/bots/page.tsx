@@ -1,9 +1,15 @@
 import { redirect } from "next/navigation";
 import { AddBotForm } from "@/components/AddBotForm";
-import { PageHeading } from "@/components/PageHeading";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { isClerkConfigured } from "@/lib/auth-config";
 import { getAuthUserId } from "@/lib/clerk-auth";
 import { requireAppUser } from "@/lib/user";
@@ -28,21 +34,18 @@ export default async function BotsPage() {
 
   const bots = await prisma.bot.findMany({
     where: { userId: user.id },
-    orderBy: { createdAt: "desc" }
+    orderBy: { createdAt: "desc" },
   });
 
   return (
     <div className="space-y-5">
-      <PageHeading
-        title="Bots"
-        subtitle="Connect and monitor Telegram bots. Each bot gets its own webhook endpoint and workflow set."
-      />
-
       <AddBotForm />
 
       <Card>
         <CardHeader>
-          <CardTitle className="font-[var(--font-display)]">Connected Bots</CardTitle>
+          <CardTitle className="font-[var(--font-display)]">
+            Connected Bots
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -60,7 +63,9 @@ export default async function BotsPage() {
                   <TableCell>{bot.displayName ?? "-"}</TableCell>
                   <TableCell>@{bot.username ?? "-"}</TableCell>
                   <TableCell>{statusBadge(bot.status)}</TableCell>
-                  <TableCell>{new Date(bot.createdAt).toLocaleString()}</TableCell>
+                  <TableCell>
+                    {new Date(bot.createdAt).toLocaleString()}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
