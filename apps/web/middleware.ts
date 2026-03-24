@@ -1,6 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { isClerkConfigured } from "@/lib/auth-config";
 
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
@@ -13,10 +12,6 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  if (!isClerkConfigured()) {
-    return NextResponse.next();
-  }
-
   const { userId } = await auth();
 
   if (userId && req.nextUrl.pathname.startsWith("/sign-in")) {
@@ -27,13 +22,13 @@ export default clerkMiddleware(async (auth, req) => {
     await auth.protect();
   }
 
-  return NextResponse.next();
+}, {
+  authorizedParties: process.env.NEXT_PUBLIC_SITE_URL ? [process.env.NEXT_PUBLIC_SITE_URL] : undefined
 });
 
 export const config = {
   matcher: [
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
     "/(api|trpc)(.*)",
-  ],
-  authorizedParties: ["https://telegram-bot-builder.up.railway.app"],
+  ]
 };
