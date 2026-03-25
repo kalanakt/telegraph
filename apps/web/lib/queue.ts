@@ -2,8 +2,10 @@ import { Queue } from "bullmq";
 import { QUEUES, type ActionJob } from "@telegram-builder/shared";
 import { getRedis } from "./redis";
 
+type ActionJobName = `action:${ActionJob["actionType"]}`;
+
 function createActionQueueInstance() {
-  return new Queue<ActionJob, void, string>(QUEUES.ACTIONS, {
+  return new Queue<ActionJob, void, ActionJobName>(QUEUES.ACTIONS, {
     connection: getRedis()
   });
 }
