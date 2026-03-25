@@ -3,7 +3,8 @@ import { clerkClient } from "@clerk/nextjs/server";
 import { isClerkConfigured } from "./auth-config";
 import { prisma } from "./prisma";
 
-type SubscriptionLike = Record<string, unknown>;
+type BillingClient = Awaited<ReturnType<typeof clerkClient>>["billing"];
+type SubscriptionLike = Awaited<ReturnType<BillingClient["getUserBillingSubscription"]>>;
 
 const ACTIVE_ITEM_STATUSES = new Set(["active", "past_due", "upcoming", "in_trial"]);
 
@@ -121,7 +122,7 @@ export function mapClerkPlanSlugToPlanKey(slug?: string | null): PlanKey {
   return "FREE";
 }
 
-function mapSubscriptionToMirror(subscription: SubscriptionLike | null) {
+function mapSubscriptionToMirror(subscription: unknown) {
   const record = subscription ? toRecord(subscription) : null;
   const status = getString(record, "status") ?? "inactive";
   const clerkPlanSlug = getBestPlanSlug(record);
@@ -145,7 +146,7 @@ export async function fetchUserBillingSubscription(clerkUserId: string): Promise
 
   try {
     const client = await clerkClient();
-    return (await client.billing.getUserBillingSubscription(clerkUserId)) as unknown as SubscriptionLike;
+    return await client.billing.getUserBillingSubscription(clerkUserId);
   } catch {
     return null;
   }

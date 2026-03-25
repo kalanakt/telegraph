@@ -1,9 +1,14 @@
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { createFlowSchema } from "@telegram-builder/shared";
 import { z } from "zod";
 import { requireAppUser } from "@/lib/user";
 import { assertRuleLimit, getUserPlan } from "@/lib/billing";
 import { prisma } from "@/lib/prisma";
+
+function toPrismaJson(value: z.infer<typeof createFlowSchema>["flowDefinition"]) {
+  return value as Prisma.InputJsonObject;
+}
 
 export async function GET(req: Request) {
   try {
@@ -40,7 +45,7 @@ export async function POST(req: Request) {
         botId: data.botId,
         name: data.name,
         trigger: data.trigger as never,
-        flowDefinition: data.flowDefinition as unknown as object
+        flowDefinition: toPrismaJson(data.flowDefinition)
       }
     });
 
@@ -88,7 +93,7 @@ export async function PUT(req: Request) {
         botId: data.botId,
         name: data.name,
         trigger: data.trigger as never,
-        flowDefinition: data.flowDefinition as unknown as object
+        flowDefinition: toPrismaJson(data.flowDefinition)
       }
     });
 

@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const event = (await verifyClerkWebhook(req, signingSecret)) as unknown as Record<string, unknown>;
+    const event = await verifyClerkWebhook(req, signingSecret);
     const type = typeof event.type === "string" ? event.type : "";
 
     if (shouldHandleEvent(type)) {

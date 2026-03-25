@@ -1,7 +1,4 @@
-import type { ComponentType } from "react";
-import { blogMdxComponents } from "@/components/blog-mdx-components";
-
-type MdxComponentMap = Record<string, ComponentType<any>>;
+import { blogMdxComponents, type MdxComponentMap } from "@/components/blog-mdx-components";
 
 export function useMDXComponents(components: MdxComponentMap = {}): MdxComponentMap {
   return {

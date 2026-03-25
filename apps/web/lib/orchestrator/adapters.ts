@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import type { Queue } from "bullmq";
+import type { JobsOptions } from "bullmq";
 import {
   getExecutionPolicy,
   type ActionJob,
@@ -19,6 +19,46 @@ import {
 import { syncSubscriptionMirrorForUser } from "@/lib/clerk-billing";
 import { getActionQueue } from "@/lib/queue";
 import { prisma } from "@/lib/prisma";
+
+function serializePrismaJsonValue(value: unknown): Prisma.InputJsonValue | null {
+  if (value === null) {
+    return null;
+  }
+
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => serializePrismaJsonValue(item));
+  }
+
+  if (typeof value === "object") {
+    if ("toJSON" in value && typeof value.toJSON === "function") {
+      return serializePrismaJsonValue(value.toJSON());
+    }
+
+    const result: Record<string, Prisma.InputJsonValue | null> = {};
+
+    for (const [key, nested] of Object.entries(value)) {
+      if (nested !== undefined) {
+        result[key] = serializePrismaJsonValue(nested);
+      }
+    }
+
+    return result as Prisma.InputJsonObject;
+  }
+
+  throw new TypeError("Value cannot be serialized to Prisma JSON");
+}
+
+function toPrismaJson(value: Record<string, unknown>): Prisma.InputJsonObject {
+  const serialized = serializePrismaJsonValue(value);
+  if (!serialized || Array.isArray(serialized) || typeof serialized !== "object") {
+    throw new TypeError("Expected a JSON object");
+  }
+  return serialized as Prisma.InputJsonObject;
+}
 
 function isUniqueConstraintError(error: unknown): boolean {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -99,7 +139,7 @@ export function createPrismaEventRepository(prismaClient = prisma): EventReposit
             botId: input.botId,
             idempotencyKey: input.idempotencyKey,
             updateId: input.updateId,
-            payload: input.payload as unknown as object
+            payload: toPrismaJson(input.payload)
           }
         });
 
@@ -131,7 +171,7 @@ export function createPrismaRunRepository(prismaClient = prisma): RunRepository 
           eventId: input.eventId,
           status: "queued",
           trigger: input.eventPayload.trigger,
-          eventPayload: input.eventPayload as unknown as object
+          eventPayload: toPrismaJson(input.eventPayload)
         }
       });
 
@@ -142,10 +182,10 @@ export function createPrismaRunRepository(prismaClient = prisma): RunRepository 
               workflowRunId: run.id,
               actionId: flowAction.actionId,
               type: flowAction.payload.type,
-              payload: {
+              payload: toPrismaJson({
                 ...flowAction.payload,
                 executionPolicy: getExecutionPolicy(flowAction.payload.type)
-              } as unknown as object,
+              }),
               status: "pending"
             }
           })
@@ -170,7 +210,9 @@ export function createPrismaRunRepository(prismaClient = prisma): RunRepository 
   };
 }
 
-type QueueWriter = Pick<Queue<ActionJob, void, string>, "add">;
+type QueueWriter = {
+  add(name: string, data: ActionJob, opts?: JobsOptions): Promise<unknown>;
+};
 
 export function createBullMqActionQueueAdapter(queue?: QueueWriter | null): ActionQueue {
   const queueWriter = queue ?? getActionQueue();
