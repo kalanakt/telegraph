@@ -170,7 +170,7 @@ export function createPrismaRunRepository(prismaClient = prisma): RunRepository 
   };
 }
 
-type QueueWriter = Pick<Queue<ActionJob>, "add">;
+type QueueWriter = Pick<Queue<ActionJob, void, string>, "add">;
 
 export function createBullMqActionQueueAdapter(queue?: QueueWriter | null): ActionQueue {
   const queueWriter = queue ?? getActionQueue();

@@ -3,7 +3,7 @@ import { QUEUES, type ActionJob } from "@telegram-builder/shared";
 import { getRedis } from "./redis";
 
 function createActionQueueInstance() {
-  return new Queue<ActionJob>(QUEUES.ACTIONS, {
+  return new Queue<ActionJob, void, string>(QUEUES.ACTIONS, {
     connection: getRedis()
   });
 }
