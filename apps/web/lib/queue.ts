@@ -2,23 +2,36 @@ import { Queue } from "bullmq";
 import { QUEUES, type ActionJob } from "@telegram-builder/shared";
 import { getRedis } from "./redis";
 
-let actionQueue: Queue<ActionJob> | null = null;
-let deadLetterQueue: Queue | null = null;
+function createActionQueueInstance() {
+  return new Queue<ActionJob>(QUEUES.ACTIONS, {
+    connection: getRedis()
+  });
+}
 
-export function getActionQueue(): Queue<ActionJob> {
+function createDeadLetterQueueInstance() {
+  return new Queue(QUEUES.DEAD_LETTER, {
+    connection: getRedis()
+  });
+}
+
+type ActionQueueInstance = ReturnType<typeof createActionQueueInstance>;
+type DeadLetterQueueInstance = ReturnType<typeof createDeadLetterQueueInstance>;
+
+let actionQueue: ActionQueueInstance | null = null;
+let deadLetterQueue: DeadLetterQueueInstance | null = null;
+
+export function getActionQueue(): ActionQueueInstance {
   if (!actionQueue) {
-    actionQueue = new Queue<ActionJob>(QUEUES.ACTIONS, {
-      connection: getRedis()
-    });
+    actionQueue = createActionQueueInstance();
   }
+
   return actionQueue;
 }
 
-export function getDeadLetterQueue(): Queue {
+export function getDeadLetterQueue(): DeadLetterQueueInstance {
   if (!deadLetterQueue) {
-    deadLetterQueue = new Queue(QUEUES.DEAD_LETTER, {
-      connection: getRedis()
-    });
+    deadLetterQueue = createDeadLetterQueueInstance();
   }
+
   return deadLetterQueue;
 }
