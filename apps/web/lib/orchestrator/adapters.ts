@@ -17,7 +17,7 @@ import {
   PLAN_LIMITS
 } from "@telegram-builder/shared";
 import { syncSubscriptionMirrorForUser } from "@/lib/clerk-billing";
-import { getActionQueue } from "@/lib/queue";
+import { getActionQueue, type ActionJobName } from "@/lib/queue";
 import { prisma } from "@/lib/prisma";
 
 function serializePrismaJsonValue(value: unknown): Prisma.InputJsonValue | null {
@@ -211,7 +211,7 @@ export function createPrismaRunRepository(prismaClient = prisma): RunRepository 
 }
 
 type QueueWriter = {
-  add(name: string, data: ActionJob, opts?: JobsOptions): Promise<unknown>;
+  add(name: ActionJobName, data: ActionJob, opts?: JobsOptions): Promise<unknown>;
 };
 
 export function createBullMqActionQueueAdapter(queue?: QueueWriter | null): ActionQueue {
@@ -219,7 +219,9 @@ export function createBullMqActionQueueAdapter(queue?: QueueWriter | null): Acti
 
   return {
     async enqueueAction(job: ActionJob) {
-      await queueWriter.add(`action:${job.actionType}`, job, {
+      const jobName: ActionJobName = `action:${job.actionType}`;
+
+      await queueWriter.add(jobName, job, {
         attempts: 5,
         backoff: {
           type: "exponential",
