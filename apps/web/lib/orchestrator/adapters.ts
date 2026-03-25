@@ -172,10 +172,12 @@ export function createPrismaRunRepository(prismaClient = prisma): RunRepository 
 
 type QueueWriter = Pick<Queue<ActionJob>, "add">;
 
-export function createBullMqActionQueueAdapter(queue: QueueWriter = getActionQueue()): ActionQueue {
+export function createBullMqActionQueueAdapter(queue?: QueueWriter | null): ActionQueue {
+  const queueWriter = queue ?? getActionQueue();
+
   return {
     async enqueueAction(job: ActionJob) {
-      await queue.add(`action:${job.actionType}`, job, {
+      await queueWriter.add(`action:${job.actionType}`, job, {
         attempts: 5,
         backoff: {
           type: "exponential",
