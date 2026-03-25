@@ -5,7 +5,7 @@ import { getRedis } from "./redis";
 let actionQueue: Queue<ActionJob> | null = null;
 let deadLetterQueue: Queue | null = null;
 
-export function getActionQueue() {
+export function getActionQueue(): Queue<ActionJob> {
   if (!actionQueue) {
     actionQueue = new Queue<ActionJob>(QUEUES.ACTIONS, {
       connection: getRedis()
