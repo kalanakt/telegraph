@@ -215,7 +215,7 @@ type QueueWriter = {
 };
 
 export function createBullMqActionQueueAdapter(queue?: QueueWriter | null): ActionQueue {
-  const queueWriter = queue ?? getActionQueue();
+  const queueWriter: QueueWriter = queue ?? getActionQueue();
 
   return {
     async enqueueAction(job: ActionJob) {
