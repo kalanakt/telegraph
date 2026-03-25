@@ -24,6 +24,8 @@ export function evaluateCondition(
       return context.variables[condition.key] === condition.value;
     case "variable_exists":
       return typeof context.variables[condition.key] !== "undefined";
+    case "callback_data_equals":
+      return (event.callbackData ?? "") === condition.value;
     case "all":
       return condition.conditions.every((item) => evaluateCondition(event, item, context));
     case "any":

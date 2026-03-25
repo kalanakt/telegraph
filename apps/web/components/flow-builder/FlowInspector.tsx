@@ -1,0 +1,81 @@
+"use client";
+
+import { Trash2 } from "lucide-react";
+import type { Node } from "@xyflow/react";
+import type { TriggerType } from "@telegram-builder/shared";
+import { Button } from "@/components/ui/button";
+import { normalizeActionNodeData } from "./utils";
+import { StartInspector } from "./inspector/StartInspector";
+import { ConditionInspector } from "./inspector/ConditionInspector";
+import { ActionInspector } from "./inspector/ActionInspector";
+import type { ActionEditorData, ConditionEditorData } from "./types";
+
+type Props = {
+  selectedNode: Node | null;
+  trigger: TriggerType;
+  onTriggerChange: (trigger: TriggerType) => void;
+  onUpdateNodeData: (partial: Record<string, unknown>) => void;
+  onReplaceAction: (next: ActionEditorData) => void;
+  onUpdateActionParams: (partial: Record<string, unknown>) => void;
+  onDeleteNode: () => void;
+};
+
+export function FlowInspector({
+  selectedNode,
+  trigger,
+  onTriggerChange,
+  onUpdateNodeData,
+  onReplaceAction,
+  onUpdateActionParams,
+  onDeleteNode,
+}: Props) {
+  const selectedAction =
+    selectedNode?.type === "action"
+      ? normalizeActionNodeData(selectedNode.data)
+      : null;
+
+  return (
+    <div className="builder-inspector space-y-3 xl:sticky xl:top-6 xl:h-fit">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-slate-800">Inspector</h3>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onDeleteNode}
+          disabled={!selectedNode || selectedNode.type === "start"}
+        >
+          <Trash2 className="h-4 w-4" />
+          Delete node
+        </Button>
+      </div>
+
+      {!selectedNode ? (
+        <div className="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center">
+          <p className="text-sm text-slate-400">Select a node to edit its settings</p>
+        </div>
+      ) : null}
+
+      {selectedNode?.type === "start" ? (
+        <StartInspector trigger={trigger} onTriggerChange={onTriggerChange} />
+      ) : null}
+
+      {selectedNode?.type === "condition" ? (
+        <ConditionInspector
+          data={(selectedNode.data as Record<string, unknown>) as ConditionEditorData}
+          trigger={trigger}
+          onUpdate={onUpdateNodeData}
+        />
+      ) : null}
+
+      {selectedNode?.type === "action" && selectedAction ? (
+        <ActionInspector
+          action={selectedAction}
+          trigger={trigger}
+          onReplace={onReplaceAction}
+          onUpdateParams={onUpdateActionParams}
+        />
+      ) : null}
+    </div>
+  );
+}

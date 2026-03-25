@@ -202,6 +202,22 @@
     background: linear-gradient(160deg, hsl(198 84% 95%), hsl(210 84% 98%));
   }
 
+  .builder-node-start-configured {
+    @apply border-l-2 border-l-indigo-400;
+  }
+
+  .builder-button-handle-row {
+    @apply relative flex items-center justify-between gap-2 rounded-md border border-indigo-100 bg-indigo-50/70 px-2 py-1 text-[10px] text-indigo-800;
+  }
+
+  .builder-node-media-icon {
+    @apply flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-600;
+  }
+
+  .builder-trigger-chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700;
+  }
+
   .builder-label {
     @apply space-y-1 text-sm text-slate-600;
   }

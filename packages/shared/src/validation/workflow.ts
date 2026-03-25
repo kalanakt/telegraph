@@ -32,6 +32,7 @@ export const conditionSchema: z.ZodType<ConditionPayload> = z.lazy(() =>
     z.object({ type: z.literal("message_source_equals"), value: z.enum(["user", "channel", "group"]) }),
     z.object({ type: z.literal("variable_equals"), key: z.string().min(1), value: z.string() }),
     z.object({ type: z.literal("variable_exists"), key: z.string().min(1) }),
+    z.object({ type: z.literal("callback_data_equals"), value: z.string().min(1) }),
     z.object({ type: z.literal("all"), conditions: z.array(conditionSchema).min(1) }),
     z.object({ type: z.literal("any"), conditions: z.array(conditionSchema).min(1) })
   ])
@@ -109,7 +110,8 @@ export const flowEdgeSchema = z.object({
   source: z.string().min(1),
   target: z.string().min(1),
   sourceHandle: z.string().optional(),
-  targetHandle: z.string().optional()
+  targetHandle: z.string().optional(),
+  label: z.string().optional()
 });
 
 function collectTemplateStrings(value: unknown, out: string[]) {

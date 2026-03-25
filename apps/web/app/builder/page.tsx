@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { AddRuleForm } from "@/components/AddRuleForm";
+import { FlowBuilderStudio } from "@/components/flow-builder";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -75,7 +75,7 @@ export default async function RulesPage({
 
   return (
     <div className="space-y-5">
-      <AddRuleForm
+      <FlowBuilderStudio
         bots={bots.map((bot) => ({
           id: bot.id,
           label: `${bot.displayName ?? bot.username ?? bot.id} (${bot.status})`,

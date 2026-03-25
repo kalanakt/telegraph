@@ -1,0 +1,214 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { IsValidConnection, Node } from "@xyflow/react";
+import { flowDefinitionSchema } from "@telegram-builder/shared";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useFlowState } from "./hooks/useFlowState";
+import { useFlowCallbacks } from "./hooks/useFlowCallbacks";
+import { canCreateConnection, defaultFlowDefinition, toCanvasEdges, toCanvasNodes, toFlowDefinition } from "./utils";
+import { FlowToolbar } from "./FlowToolbar";
+import { FlowCanvas } from "./FlowCanvas";
+import { FlowInspector } from "./FlowInspector";
+import type { BotOption, RuleOption } from "./types";
+import type { ActionEditorData } from "./types";
+
+type Props = {
+  bots: BotOption[];
+  rules: RuleOption[];
+  initialRuleId?: string;
+};
+
+export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
+  const [botId, setBotId] = useState(bots[0]?.id ?? "");
+  const [name, setName] = useState("Builder");
+  const [selectedRuleId, setSelectedRuleId] = useState<string>(initialRuleId ?? "new");
+  const [status, setStatus] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  const flowState = useFlowState(defaultFlowDefinition());
+  const {
+    nodes,
+    setNodes,
+    onNodesChange,
+    edges,
+    setEdges,
+    onEdgesChange,
+    selectedNodeId,
+    setSelectedNodeId,
+    selectedNode,
+    trigger,
+    loadFlow,
+  } = flowState;
+
+  const callbacks = useFlowCallbacks(
+    { nodes, setNodes, edges, setEdges, selectedNodeId, setSelectedNodeId, selectedNode },
+    setStatus,
+  );
+
+  const {
+    setTrigger,
+    addFromNode,
+    onConnect,
+    updateSelectedNodeData,
+    replaceSelectedAction,
+    updateSelectedActionParams,
+    deleteSelectedNode,
+  } = callbacks;
+
+  // Load rule when selectedRuleId changes
+  useEffect(() => {
+    const existing = rules.find((rule) => rule.id === selectedRuleId);
+    if (!existing) {
+      loadFlow(defaultFlowDefinition());
+      setBotId(bots[0]?.id ?? "");
+      setName("Builder");
+      return;
+    }
+    setBotId(existing.botId);
+    setName(existing.name);
+    loadFlow(existing.flowDefinition, existing.trigger);
+  }, [bots, rules, selectedRuleId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Inject onAdd and onTriggerChange callbacks into node data for canvas display
+  const displayNodes = useMemo(
+    () =>
+      nodes.map((node) => ({
+        ...node,
+        data: {
+          ...(node.data as Record<string, unknown>),
+          onAdd: (branch: "next" | "true" | "false", kind: "condition" | "action") =>
+            addFromNode(node.id, branch, kind),
+          onTriggerChange: setTrigger,
+        },
+      })),
+    [addFromNode, nodes, setTrigger],
+  );
+
+  const isValidConnection: IsValidConnection = useCallback(
+    (connection) => canCreateConnection(connection, nodes, edges),
+    [edges, nodes],
+  );
+
+  const onSelectionChange = useCallback(
+    ({ nodes: selected }: { nodes: Node[] }) => {
+      setSelectedNodeId(selected[0]?.id ?? null);
+    },
+    [setSelectedNodeId],
+  );
+
+  async function saveFlow() {
+    setIsSaving(true);
+    setStatus("Validating...");
+
+    const flowDefinition = toFlowDefinition(nodes, edges);
+    const parsed = flowDefinitionSchema.safeParse(flowDefinition);
+    if (!parsed.success) {
+      setStatus(parsed.error.issues[0]?.message ?? "Flow graph is invalid.");
+      setIsSaving(false);
+      return;
+    }
+
+    const body: Record<string, unknown> = {
+      botId,
+      name,
+      trigger,
+      flowDefinition: parsed.data,
+    };
+
+    const isUpdating = selectedRuleId !== "new";
+    if (isUpdating) body.ruleId = selectedRuleId;
+
+    setStatus(isUpdating ? "Updating builder..." : "Creating builder...");
+
+    const res = await fetch("/api/builder", {
+      method: isUpdating ? "PUT" : "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    const json = await res.json();
+    if (!res.ok) {
+      const issueMessage =
+        Array.isArray(json.issues) && json.issues.length > 0
+          ? `${json.issues[0]?.path || "builder"}: ${json.issues[0]?.message || "invalid"}`
+          : null;
+      setStatus(issueMessage ?? json.error ?? "Could not save builder.");
+      setIsSaving(false);
+      return;
+    }
+
+    setStatus(isUpdating ? "Builder updated." : "Builder created.");
+    setIsSaving(false);
+    const nextId = (json.rule?.id as string | undefined) ?? selectedRuleId;
+    window.location.href = `/builder?edit=${nextId}`;
+  }
+
+  if (bots.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl">Create Builder</CardTitle>
+          <CardDescription>Add a Telegram bot first to enable builder creation.</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="surface-panel border-white/90 bg-white/95">
+      <CardHeader>
+        <CardTitle className="text-xl">Builder Studio</CardTitle>
+        <CardDescription>
+          Set a trigger on the Start node, add conditions and actions from node controls, then configure the selected node in the inspector.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <FlowToolbar
+          botId={botId}
+          bots={bots}
+          name={name}
+          selectedRuleId={selectedRuleId}
+          rules={rules}
+          isSaving={isSaving}
+          status={status}
+          nodeCount={nodes.length}
+          edgeCount={edges.length}
+          onBotChange={setBotId}
+          onNameChange={setName}
+          onRuleChange={setSelectedRuleId}
+          onSave={saveFlow}
+        />
+
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">
+          <FlowCanvas
+            nodes={displayNodes}
+            edges={edges}
+            trigger={trigger}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onSelectionChange={onSelectionChange}
+            isValidConnection={isValidConnection}
+          />
+
+          <FlowInspector
+            selectedNode={selectedNode}
+            trigger={trigger}
+            onTriggerChange={setTrigger}
+            onUpdateNodeData={updateSelectedNodeData}
+            onReplaceAction={replaceSelectedAction}
+            onUpdateActionParams={updateSelectedActionParams}
+            onDeleteNode={deleteSelectedNode}
+          />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

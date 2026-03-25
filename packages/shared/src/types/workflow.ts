@@ -19,6 +19,7 @@ export type ConditionType =
   | "message_source_equals"
   | "variable_equals"
   | "variable_exists"
+  | "callback_data_equals"
   | "all"
   | "any";
 
@@ -43,6 +44,7 @@ export type ConditionPayload =
   | { type: "message_source_equals"; value: "user" | "channel" | "group" }
   | { type: "variable_equals"; key: string; value: string }
   | { type: "variable_exists"; key: string }
+  | { type: "callback_data_equals"; value: string }
   | { type: "all"; conditions: ConditionPayload[] }
   | { type: "any"; conditions: ConditionPayload[] };
 
@@ -74,7 +76,7 @@ export type FlowNode =
       id: string;
       type: "start";
       position: FlowNodePosition;
-      data: Record<string, unknown>;
+      data: { trigger?: TriggerType } & Record<string, unknown>;
     }
   | {
       id: string;
@@ -95,6 +97,7 @@ export type FlowEdge = {
   target: string;
   sourceHandle?: string;
   targetHandle?: string;
+  label?: string;
 };
 
 export type FlowDefinition = {
