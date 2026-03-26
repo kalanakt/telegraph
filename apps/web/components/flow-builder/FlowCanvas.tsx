@@ -73,10 +73,13 @@ export function FlowCanvas({
   );
 
   return (
-    <div ref={wrapperRef} className="builder-canvas relative h-[720px] overflow-hidden rounded-lg border border-white/12">
+    <div
+      ref={wrapperRef}
+      className="builder-canvas relative h-[720px] overflow-hidden rounded-2xl border border-border/80"
+    >
       {nodes.length === 0 ? (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center px-4">
-          <div className="max-w-sm rounded-md border border-white/12 bg-black/78 px-4 py-3 text-center text-sm text-white/72">
+          <div className="max-w-sm rounded-xl border border-border/85 bg-white/86 px-4 py-3 text-center text-sm text-muted-foreground shadow-sm backdrop-blur-sm">
             Add a trigger, condition, or action from the toolbar, then connect them with lines.
           </div>
         </div>
@@ -111,9 +114,9 @@ export function FlowCanvas({
       >
         <Panel
           position="top-left"
-          className="flex items-center gap-2 rounded-md border border-white/12 bg-black/84 px-2.5 py-1.5 text-xs text-white/80"
+          className="flex items-center gap-2 rounded-xl border border-border/85 bg-white/86 px-2.5 py-1.5 text-xs text-foreground shadow-sm backdrop-blur-sm"
         >
-          <span className="flex h-5 w-5 items-center justify-center rounded-sm border border-white/10 bg-white/6 text-white">
+          <span className="flex h-5 w-5 items-center justify-center rounded-sm border border-border/80 bg-secondary/70 text-foreground">
             <TriggerIcon className="h-3 w-3" />
           </span>
           {formatTriggerLabel(trigger)}
@@ -122,16 +125,16 @@ export function FlowCanvas({
         <MiniMap
           pannable
           zoomable
-          className="!rounded-md !border !border-white/12 !bg-black/90"
+          className="!rounded-xl !border !border-border/85 !bg-white/92"
           nodeBorderRadius={4}
-          maskColor="rgba(0, 0, 0, 0.35)"
+          maskColor="rgba(148, 163, 184, 0.18)"
         />
         <Controls showInteractive={false} position="bottom-left" />
         <Background
           variant={BackgroundVariant.Lines}
           gap={24}
           size={0.6}
-          color="rgba(255,255,255,0.08)"
+          color="rgba(56, 189, 248, 0.14)"
         />
       </ReactFlow>
     </div>

@@ -57,29 +57,29 @@ export function ConditionNode({ data }: { data: ConditionEditorData & NodeCallba
       <Handle
         type="target"
         position={Position.Left}
-        className="!h-2.5 !w-2.5 !border-black !bg-white"
+        className="!h-2.5 !w-2.5 !border-white !bg-primary"
       />
 
       <div className="flex items-start gap-2">
-        <span className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-sm border border-white/10 bg-white/6 text-white">
+        <span className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-sm border border-border/85 bg-secondary/70 text-foreground">
           <Icon className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="text-[10px] uppercase tracking-[0.12em] text-white/45">Condition</div>
-          <div className="font-semibold leading-tight text-white">{formatConditionLabel(type)}</div>
-          <div className="mt-1 truncate rounded-sm border border-white/8 bg-white/4 px-1.5 py-1 font-mono text-[9px] text-white/58">
+          <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Condition</div>
+          <div className="font-semibold leading-tight text-foreground">{formatConditionLabel(type)}</div>
+          <div className="mt-1 truncate rounded-sm border border-border/80 bg-secondary/55 px-1.5 py-1 font-mono text-[9px] text-muted-foreground">
             {summary}
           </div>
         </div>
       </div>
 
       <div className="absolute right-4 top-[32%] -translate-y-1/2">
-        <span className="rounded-sm border border-white/10 bg-white/5 px-1 py-0.5 text-[9px] font-semibold text-white/62">
+        <span className="rounded-sm border border-border/80 bg-emerald-50 px-1 py-0.5 text-[9px] font-semibold text-emerald-700">
           true
         </span>
       </div>
       <div className="absolute right-4 top-[72%] -translate-y-1/2">
-        <span className="rounded-sm border border-white/10 bg-white/5 px-1 py-0.5 text-[9px] font-semibold text-white/62">
+        <span className="rounded-sm border border-border/80 bg-rose-50 px-1 py-0.5 text-[9px] font-semibold text-rose-700">
           false
         </span>
       </div>
@@ -89,14 +89,14 @@ export function ConditionNode({ data }: { data: ConditionEditorData & NodeCallba
         type="source"
         position={Position.Right}
         style={{ top: "35%" }}
-        className="!h-2.5 !w-2.5 !border-black !bg-white"
+        className="!h-2.5 !w-2.5 !border-white !bg-primary"
       />
       <Handle
         id="false"
         type="source"
         position={Position.Right}
         style={{ top: "72%" }}
-        className="!h-2.5 !w-2.5 !border-black !bg-white"
+        className="!h-2.5 !w-2.5 !border-white !bg-primary"
       />
     </div>
   );

@@ -53,11 +53,11 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
     <>
       <div className="builder-section">
         <p className="builder-kicker">Trigger context</p>
-        <p className="text-xs text-white/62">
+        <p className="text-xs text-foreground/70">
           Selected trigger: <span className="font-semibold">{trigger}</span>
         </p>
         {!isCompatible ? (
-          <div className="mt-2 flex items-start gap-2 rounded-md border border-amber-200/20 bg-amber-100/10 px-2 py-1.5 text-amber-50">
+          <div className="mt-2 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-amber-900">
             <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
             <p className="text-xs">
               This action is not compatible with the current trigger. Update trigger or action before saving.
@@ -205,9 +205,9 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
             {replyMarkupKind === "inline" ? (
               <div className="mt-3 space-y-2">
                 {inlineKeyboard.map((row, rowIndex) => (
-                  <div key={`inline-row-${rowIndex}`} className="space-y-2 rounded-md border border-slate-200 p-2">
+                  <div key={`inline-row-${rowIndex}`} className="space-y-2 rounded-md border border-border/80 bg-white/60 p-2">
                     <div className="flex items-center justify-between">
-                      <p className="text-xs font-medium text-white/68">Row {rowIndex + 1}</p>
+                      <p className="text-xs font-medium text-foreground/72">Row {rowIndex + 1}</p>
                       <Button
                         type="button"
                         size="sm"
@@ -301,9 +301,9 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
             {replyMarkupKind === "reply" ? (
               <div className="mt-3 space-y-2">
                 {replyKeyboard.map((row, rowIndex) => (
-                  <div key={`reply-row-${rowIndex}`} className="space-y-2 rounded-md border border-slate-200 p-2">
+                  <div key={`reply-row-${rowIndex}`} className="space-y-2 rounded-md border border-border/80 bg-white/60 p-2">
                     <div className="flex items-center justify-between">
-                      <p className="text-xs font-medium text-white/68">Row {rowIndex + 1}</p>
+                      <p className="text-xs font-medium text-foreground/72">Row {rowIndex + 1}</p>
                       <Button
                         type="button"
                         size="sm"
@@ -383,7 +383,7 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
       ) : (
         <div className="builder-section">
           <p className="builder-kicker">Advanced params</p>
-          <p className="mb-2 text-xs text-white/62">
+          <p className="mb-2 text-xs text-foreground/70">
             This method uses JSON editor mode. Core rich composer is available for sendMessage / sendPhoto / sendDocument.
           </p>
           <Textarea

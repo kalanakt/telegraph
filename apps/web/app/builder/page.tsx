@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { PageHeading } from "@/components/PageHeading";
 import { FlowBuilderStudio } from "@/components/flow-builder";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -74,7 +75,13 @@ export default async function RulesPage({
     .filter((rule): rule is NonNullable<typeof rule> => Boolean(rule));
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
+      <PageHeading
+        title="Builder studio"
+        subtitle="Design Telegram automations visually, then inspect active builders and jump back into editing."
+        action={<Badge variant="secondary">{flowRules.length} active</Badge>}
+      />
+
       <FlowBuilderStudio
         bots={bots.map((bot) => ({
           id: bot.id,
@@ -90,11 +97,10 @@ export default async function RulesPage({
         initialRuleId={params.edit}
       />
 
-      <Card>
+      <Card className="interactive-lift">
         <CardHeader>
-          <CardTitle className="font-[var(--font-display)]">
-            Active Builders
-          </CardTitle>
+          <CardTitle className="font-[var(--font-display)]">Active Builders</CardTitle>
+          <CardDescription>Recent saved builders for your connected bots.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>

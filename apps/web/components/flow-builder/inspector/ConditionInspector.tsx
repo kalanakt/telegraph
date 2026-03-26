@@ -22,7 +22,7 @@ export function ConditionInspector({ data, trigger, onUpdate }: Props) {
     <>
       <div className="builder-section">
         <p className="builder-kicker">Trigger context</p>
-        <p className="text-xs text-white/62">
+        <p className="text-xs text-foreground/70">
           Current flow trigger is <span className="font-semibold">{trigger}</span>. Keep condition values compatible with this event shape.
         </p>
       </div>
@@ -105,10 +105,10 @@ export function ConditionInspector({ data, trigger, onUpdate }: Props) {
       ) : null}
 
       {conditionType === "callback_data_equals" ? (
-        <div className="rounded-md border border-white/10 bg-white/4 px-3 py-2">
-          <p className="text-[10px] font-semibold text-white/72">Callback query tip</p>
-          <p className="mt-0.5 text-[10px] text-white/56">
-            Use this when the trigger is <code className="rounded-sm bg-white/8 px-0.5">callback_query_received</code> and you want to branch explicitly from a real condition node.
+        <div className="rounded-md border border-border/80 bg-white/60 px-3 py-2">
+          <p className="text-[10px] font-semibold text-foreground/78">Callback query tip</p>
+          <p className="mt-0.5 text-[10px] text-muted-foreground">
+            Use this when the trigger is <code className="rounded-sm bg-secondary/70 px-0.5">callback_query_received</code> and you want to branch explicitly from a real condition node.
           </p>
         </div>
       ) : null}

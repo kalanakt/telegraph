@@ -22,12 +22,12 @@ import type {
 } from "./types";
 import { CONDITION_OPTIONS } from "./types";
 
-export const EDGE_STYLE = { stroke: "#f3f4f6", strokeWidth: 1.25 };
+export const EDGE_STYLE = { stroke: "rgba(14, 165, 233, 0.46)", strokeWidth: 1.4 };
 
 export const defaultEdgeOptions = {
   type: "straight",
   style: EDGE_STYLE,
-  markerEnd: { type: MarkerType.ArrowClosed, color: "#f3f4f6" },
+  markerEnd: { type: MarkerType.ArrowClosed, color: "rgba(14, 165, 233, 0.56)" },
   animated: false,
 };
 

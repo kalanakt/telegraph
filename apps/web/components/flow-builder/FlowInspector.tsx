@@ -37,7 +37,7 @@ export function FlowInspector({
   return (
     <div className="builder-inspector space-y-3 xl:sticky xl:top-6 xl:h-fit">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-white">Inspector</h3>
+        <h3 className="text-sm font-semibold text-foreground">Inspector</h3>
         <Button
           type="button"
           variant="outline"
@@ -51,8 +51,8 @@ export function FlowInspector({
       </div>
 
       {!selectedNode ? (
-        <div className="rounded-md border border-dashed border-white/12 px-4 py-6 text-center">
-          <p className="text-sm text-white/50">Select a node to edit it, or add one from the toolbar.</p>
+        <div className="rounded-md border border-dashed border-border/80 bg-white/55 px-4 py-6 text-center">
+          <p className="text-sm text-muted-foreground">Select a node to edit it, or add one from the toolbar.</p>
         </div>
       ) : null}
 

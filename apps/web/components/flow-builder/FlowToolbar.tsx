@@ -80,7 +80,7 @@ export function FlowToolbar({
         </label>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-white/10 bg-black px-3 py-3">
+      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/85 bg-white/82 px-3 py-3 shadow-sm backdrop-blur-sm">
         <Button type="button" variant="secondary" onClick={() => onAddNode("start")} disabled={hasTrigger}>
           Add trigger
         </Button>
@@ -97,12 +97,12 @@ export function FlowToolbar({
             ? "Create Builder"
             : "Update Builder"}
         </Button>
-        <Badge variant="secondary" className="border-white/15 bg-white/10 text-white">
+        <Badge variant="secondary" className="border border-border/80 bg-secondary/75 text-secondary-foreground">
           Add nodes here, then connect them on the canvas
         </Badge>
-        <Badge variant="outline" className="border-white/15 text-white/76">Nodes: {nodeCount}</Badge>
-        <Badge variant="outline" className="border-white/15 text-white/76">Edges: {edgeCount}</Badge>
-        {status ? <Badge variant="outline" className="border-white/15 text-white/88">{status}</Badge> : null}
+        <Badge variant="outline" className="border border-border/80 bg-white/65 text-foreground/76">Nodes: {nodeCount}</Badge>
+        <Badge variant="outline" className="border border-border/80 bg-white/65 text-foreground/76">Edges: {edgeCount}</Badge>
+        {status ? <Badge variant="outline" className="border border-border/80 bg-white/65 text-foreground/88">{status}</Badge> : null}
       </div>
     </>
   );

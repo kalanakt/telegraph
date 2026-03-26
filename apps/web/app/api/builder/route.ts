@@ -10,6 +10,19 @@ function toPrismaJson(value: z.infer<typeof createFlowSchema>["flowDefinition"])
   return value as Prisma.InputJsonObject;
 }
 
+function mapBuilderError(error: unknown, fallback: string) {
+  const message = error instanceof Error ? error.message : fallback;
+
+  if (
+    message.includes('invalid input value for enum "WorkflowTrigger"') ||
+    message.includes('invalid input value for enum \\"WorkflowTrigger\\"')
+  ) {
+    return "Your database enum is behind the app schema. Run the latest Prisma migration or `pnpm prisma:push`, then try saving the builder again.";
+  }
+
+  return message;
+}
+
 export async function GET(req: Request) {
   try {
     const user = await requireAppUser();
@@ -63,7 +76,7 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    const message = error instanceof Error ? error.message : "Failed to create rule";
+    const message = mapBuilderError(error, "Failed to create rule");
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }
@@ -111,7 +124,7 @@ export async function PUT(req: Request) {
         { status: 400 }
       );
     }
-    const message = error instanceof Error ? error.message : "Failed to update flow";
+    const message = mapBuilderError(error, "Failed to update flow");
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }

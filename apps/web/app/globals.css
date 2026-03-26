@@ -171,7 +171,9 @@
 
   .builder-canvas {
     background:
-      linear-gradient(180deg, rgba(12, 12, 12, 0.98) 0%, rgba(8, 8, 8, 1) 100%);
+      radial-gradient(720px 280px at 0% 0%, hsl(198 88% 80% / 0.24), transparent 58%),
+      radial-gradient(620px 320px at 100% 0%, hsl(210 90% 86% / 0.3), transparent 55%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(244, 248, 252, 0.98) 100%);
   }
 
   .builder-flow .react-flow__renderer {
@@ -179,57 +181,80 @@
   }
 
   .builder-flow .react-flow__edge-text {
-    fill: rgba(255, 255, 255, 0.7);
+    fill: hsl(var(--muted-foreground) / 0.85);
     font-size: 10px;
     font-weight: 600;
   }
 
   .builder-flow .react-flow__controls {
     @apply rounded-md border shadow-none;
-    border-color: rgba(255, 255, 255, 0.12);
-    background-color: rgba(0, 0, 0, 0.92);
+    border-color: hsl(var(--border) / 0.95);
+    background-color: rgba(255, 255, 255, 0.92);
   }
 
   .builder-flow .react-flow__controls-button {
     @apply border-b transition-colors;
-    border-color: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.72);
+    border-color: hsl(var(--border) / 0.9);
+    color: hsl(var(--foreground) / 0.72);
   }
 
   .builder-flow .react-flow__controls-button:hover {
-    background-color: rgba(255, 255, 255, 0.06);
+    background-color: hsl(var(--secondary) / 0.8);
+  }
+
+  .builder-flow .react-flow__minimap {
+    border-color: hsl(var(--border) / 0.95);
+    background-color: rgba(255, 255, 255, 0.92);
+  }
+
+  .builder-flow .react-flow__node.selected,
+  .builder-flow .react-flow__node:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--primary) / 0.22);
+  }
+
+  .builder-flow .react-flow__handle {
+    border: 2px solid rgba(255, 255, 255, 0.92);
+    background: hsl(var(--primary));
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.18);
   }
 
   .builder-node {
-    @apply border bg-black shadow-none backdrop-blur-0;
-    border-color: rgba(255, 255, 255, 0.14);
+    @apply border bg-white/94 shadow-sm backdrop-blur-sm;
+    border-color: hsl(var(--border) / 0.95);
+    box-shadow:
+      0 12px 32px rgba(15, 23, 42, 0.08),
+      0 2px 8px rgba(15, 23, 42, 0.05);
   }
 
   .builder-node-start-configured {
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+    box-shadow:
+      0 14px 34px rgba(15, 23, 42, 0.1),
+      inset 0 0 0 1px hsl(var(--primary) / 0.15);
   }
 
   .builder-node-media-icon {
-    @apply flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-sm border text-white;
-    border-color: rgba(255, 255, 255, 0.1);
-    background-color: rgba(255, 255, 255, 0.06);
+    @apply flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-sm border;
+    border-color: hsl(var(--border) / 0.95);
+    color: hsl(var(--foreground) / 0.78);
+    background-color: hsl(var(--secondary) / 0.72);
   }
 
   .builder-label {
-    @apply space-y-1 text-sm text-slate-500;
+    @apply space-y-1 text-sm text-muted-foreground;
   }
 
   .builder-label > span {
-    @apply text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500;
+    @apply text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground;
   }
 
   .builder-field {
     @apply h-10 w-full rounded-md border bg-white px-3 py-2 text-sm text-slate-900 shadow-none transition;
-    border-color: rgba(15, 23, 42, 0.12);
+    border-color: hsl(var(--border) / 0.95);
   }
 
   .builder-field:hover {
-    border-color: rgba(15, 23, 42, 0.24);
+    border-color: hsl(var(--primary) / 0.35);
   }
 
   .builder-field:focus {
@@ -238,22 +263,23 @@
   }
 
   .builder-field-soft {
-    background-color: rgb(248 250 252 / 0.8);
+    background-color: rgb(255 255 255 / 0.84);
   }
 
   .builder-inspector {
-    @apply rounded-lg border bg-[#0c0c0c] p-4 shadow-none;
-    border-color: rgba(255, 255, 255, 0.12);
+    @apply rounded-2xl border bg-white/84 p-4 shadow-sm backdrop-blur-sm;
+    border-color: hsl(var(--border) / 0.95);
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
   }
 
   .builder-section {
     @apply rounded-md border p-3;
-    background: rgba(255, 255, 255, 0.03);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: hsl(var(--secondary) / 0.45);
+    border-color: hsl(var(--border) / 0.95);
   }
 
   .builder-kicker {
     @apply mb-2 text-[10px] font-semibold uppercase tracking-[0.12em];
-    color: rgba(255, 255, 255, 0.45);
+    color: hsl(var(--muted-foreground) / 0.85);
   }
 }
