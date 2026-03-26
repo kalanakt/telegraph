@@ -22,7 +22,7 @@ export function ConditionInspector({ data, trigger, onUpdate }: Props) {
     <>
       <div className="builder-section">
         <p className="builder-kicker">Trigger context</p>
-        <p className="text-xs text-slate-600">
+        <p className="text-xs text-white/62">
           Current flow trigger is <span className="font-semibold">{trigger}</span>. Keep condition values compatible with this event shape.
         </p>
       </div>
@@ -105,10 +105,10 @@ export function ConditionInspector({ data, trigger, onUpdate }: Props) {
       ) : null}
 
       {conditionType === "callback_data_equals" ? (
-        <div className="rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2">
-          <p className="text-[10px] font-semibold text-indigo-700">Button callback tip</p>
-          <p className="mt-0.5 text-[10px] text-indigo-600">
-            This condition matches when a <code className="rounded bg-indigo-100 px-0.5">callback_query_received</code> event has data equal to the value above. You can auto-create this condition by dragging from a button handle on a Send Message node.
+        <div className="rounded-md border border-white/10 bg-white/4 px-3 py-2">
+          <p className="text-[10px] font-semibold text-white/72">Callback query tip</p>
+          <p className="mt-0.5 text-[10px] text-white/56">
+            Use this when the trigger is <code className="rounded-sm bg-white/8 px-0.5">callback_query_received</code> and you want to branch explicitly from a real condition node.
           </p>
         </div>
       ) : null}

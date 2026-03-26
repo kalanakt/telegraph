@@ -12,12 +12,11 @@ import {
 } from "@/components/ui/card";
 import { useFlowState } from "./hooks/useFlowState";
 import { useFlowCallbacks } from "./hooks/useFlowCallbacks";
-import { canCreateConnection, defaultFlowDefinition, toCanvasEdges, toCanvasNodes, toFlowDefinition } from "./utils";
+import { canCreateConnection, defaultFlowDefinition, toFlowDefinition } from "./utils";
 import { FlowToolbar } from "./FlowToolbar";
 import { FlowCanvas } from "./FlowCanvas";
 import { FlowInspector } from "./FlowInspector";
 import type { BotOption, RuleOption } from "./types";
-import type { ActionEditorData } from "./types";
 
 type Props = {
   bots: BotOption[];
@@ -31,6 +30,7 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
   const [selectedRuleId, setSelectedRuleId] = useState<string>(initialRuleId ?? "new");
   const [status, setStatus] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [viewportCenter, setViewportCenter] = useState({ x: 220, y: 180 });
 
   const flowState = useFlowState(defaultFlowDefinition());
   const {
@@ -54,7 +54,7 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
 
   const {
     setTrigger,
-    addFromNode,
+    addNode,
     onConnect,
     updateSelectedNodeData,
     replaceSelectedAction,
@@ -76,19 +76,16 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
     loadFlow(existing.flowDefinition, existing.trigger);
   }, [bots, rules, selectedRuleId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Inject onAdd and onTriggerChange callbacks into node data for canvas display
   const displayNodes = useMemo(
     () =>
       nodes.map((node) => ({
         ...node,
         data: {
           ...(node.data as Record<string, unknown>),
-          onAdd: (branch: "next" | "true" | "false", kind: "condition" | "action") =>
-            addFromNode(node.id, branch, kind),
           onTriggerChange: setTrigger,
         },
       })),
-    [addFromNode, nodes, setTrigger],
+    [nodes, setTrigger],
   );
 
   const isValidConnection: IsValidConnection = useCallback(
@@ -110,7 +107,14 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
     const flowDefinition = toFlowDefinition(nodes, edges);
     const parsed = flowDefinitionSchema.safeParse(flowDefinition);
     if (!parsed.success) {
-      setStatus(parsed.error.issues[0]?.message ?? "Flow graph is invalid.");
+      const message = parsed.error.issues[0]?.message ?? "Flow graph is invalid.";
+      const friendlyMessage =
+        message === "Flow must include exactly one start node."
+          ? "Add exactly one trigger node before saving."
+          : message.includes("not reachable from the start node")
+          ? "Connect every condition and action to the trigger flow before saving."
+          : message;
+      setStatus(friendlyMessage);
       setIsSaving(false);
       return;
     }
@@ -162,11 +166,11 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
   }
 
   return (
-    <Card className="surface-panel border-white/90 bg-white/95">
+    <Card className="surface-panel border-white/70 bg-white/95">
       <CardHeader>
         <CardTitle className="text-xl">Builder Studio</CardTitle>
         <CardDescription>
-          Set a trigger on the Start node, add conditions and actions from node controls, then configure the selected node in the inspector.
+          Add trigger, condition, and action nodes from the toolbar, connect them on the canvas, then configure the selected node in the inspector.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -180,9 +184,11 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
           status={status}
           nodeCount={nodes.length}
           edgeCount={edges.length}
+          hasTrigger={nodes.some((node) => node.type === "start")}
           onBotChange={setBotId}
           onNameChange={setName}
           onRuleChange={setSelectedRuleId}
+          onAddNode={(kind) => addNode(kind, viewportCenter)}
           onSave={saveFlow}
         />
 
@@ -196,6 +202,7 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
             onConnect={onConnect}
             onSelectionChange={onSelectionChange}
             isValidConnection={isValidConnection}
+            onViewportCenterChange={setViewportCenter}
           />
 
           <FlowInspector

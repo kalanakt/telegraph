@@ -6,6 +6,7 @@ import {
   getTriggerGroups,
   migrateLegacyActionData
 } from "@/lib/flow-builder";
+import { canCreateConnection, createFlowNode } from "@/components/flow-builder/utils";
 
 describe("flow-builder trigger groups", () => {
   it("covers all trigger types from shared capabilities", () => {
@@ -121,5 +122,48 @@ describe("flow-builder legacy flow coercion", () => {
         type: "telegram.sendMessage"
       }
     });
+  });
+});
+
+describe("flow-builder toolbar node creation", () => {
+  it("creates a single start node template and places later nodes on the grid", () => {
+    const start = createFlowNode("start", []);
+    const condition = createFlowNode("condition", [start], { x: 173, y: 219 });
+    const action = createFlowNode("action", [start, condition], { x: 173, y: 219 });
+
+    expect(start.type).toBe("start");
+    expect(condition.type).toBe("condition");
+    expect(action.type).toBe("action");
+    expect(condition.position).toEqual({ x: 220, y: 220 });
+    expect(action.position).toEqual({ x: 260, y: 340 });
+  });
+
+  it("prevents duplicate condition branch connections while allowing explicit normal edges", () => {
+    const nodes = [
+      { id: "start_1", type: "start", position: { x: 0, y: 0 }, data: {} },
+      { id: "condition_1", type: "condition", position: { x: 200, y: 0 }, data: { type: "text_contains", value: "x" } },
+      { id: "action_1", type: "action", position: { x: 400, y: 0 }, data: createActionTemplate("telegram.sendMessage") },
+      { id: "action_2", type: "action", position: { x: 400, y: 120 }, data: createActionTemplate("telegram.sendMessage") },
+    ];
+
+    const edges = [
+      { id: "e1", source: "condition_1", target: "action_1", sourceHandle: "true" },
+    ];
+
+    expect(
+      canCreateConnection(
+        { source: "condition_1", target: "action_2", sourceHandle: "true" },
+        nodes,
+        edges,
+      ),
+    ).toBe(false);
+
+    expect(
+      canCreateConnection(
+        { source: "start_1", target: "condition_1" },
+        nodes,
+        edges,
+      ),
+    ).toBe(true);
   });
 });

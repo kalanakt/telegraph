@@ -1,16 +1,14 @@
 import { useCallback } from "react";
 import { addEdge, type Connection, type Edge, type Node } from "@xyflow/react";
 import { type TriggerType } from "@telegram-builder/shared";
-import { createActionTemplate } from "@/lib/flow-builder";
 import {
   canCreateConnection,
-  defaultConditionData,
+  createFlowNode,
   defaultEdgeOptions,
-  deriveButtonHandles,
   makeEdgeId,
   normalizeActionNodeData,
 } from "../utils";
-import type { ActionEditorData, AddBranch, AddKind } from "../types";
+import type { ActionEditorData, FlowNodeKind } from "../types";
 
 type FlowState = {
   nodes: Node[];
@@ -37,47 +35,22 @@ export function useFlowCallbacks(state: FlowState, setStatus: (msg: string) => v
     [setNodes],
   );
 
-  const addFromNode = useCallback(
-    (parentId: string, branch: AddBranch, kind: AddKind) => {
-      const parent = nodes.find((node) => node.id === parentId);
-      if (!parent) return;
+  const addNode = useCallback(
+    (
+      kind: FlowNodeKind,
+      viewportCenter?: { x: number; y: number },
+    ) => {
+      if (kind === "start" && nodes.some((node) => node.type === "start")) {
+        setStatus("Only one trigger node is allowed in a builder.");
+        return;
+      }
 
-      const idPrefix = kind === "condition" ? "condition" : "action";
-      const newId = `${idPrefix}_${Date.now()}`;
-      const parentX = parent.position.x;
-      const parentY = parent.position.y;
-      const branchOffset = branch === "true" ? -100 : branch === "false" ? 100 : 0;
-
-      const newNode: Node = {
-        id: newId,
-        type: kind,
-        position: { x: parentX + 320, y: parentY + branchOffset },
-        data:
-          kind === "condition"
-            ? defaultConditionData()
-            : createActionTemplate("telegram.sendMessage"),
-      };
-
-      const newEdge: Edge = {
-        id: `${parentId}_${branch}_${newId}_${Date.now()}`,
-        source: parentId,
-        target: newId,
-        sourceHandle:
-          parent.type === "condition" && (branch === "true" || branch === "false")
-            ? branch
-            : undefined,
-        label:
-          parent.type === "condition" && (branch === "true" || branch === "false")
-            ? branch
-            : undefined,
-        ...defaultEdgeOptions,
-      };
-
+      const newNode = createFlowNode(kind, nodes, viewportCenter);
       setNodes((curr) => [...curr, newNode]);
-      setEdges((curr) => [...curr, newEdge]);
-      setSelectedNodeId(newId);
+      setSelectedNodeId(newNode.id);
+      setStatus("");
     },
-    [nodes, setEdges, setNodes, setSelectedNodeId],
+    [nodes, setNodes, setSelectedNodeId, setStatus],
   );
 
   const onConnect = useCallback(
@@ -85,54 +58,6 @@ export function useFlowCallbacks(state: FlowState, setStatus: (msg: string) => v
       if (!canCreateConnection(connection, nodes, edges)) {
         setStatus("Connection blocked: branch already used, duplicate edge, or invalid.");
         return;
-      }
-
-      // Handle button callback connections — auto-insert a callback_data_equals condition
-      if (connection.sourceHandle?.startsWith("button-")) {
-        const sourceNode = nodes.find((n) => n.id === connection.source);
-        if (sourceNode) {
-          const params = (sourceNode.data as Record<string, unknown>)?.params as Record<string, unknown> ?? {};
-          const handles = deriveButtonHandles(params);
-          const buttonSpec = handles.find((h) => h.id === connection.sourceHandle);
-
-          if (buttonSpec) {
-            const conditionId = `condition_${Date.now()}`;
-            const conditionNode: Node = {
-              id: conditionId,
-              type: "condition",
-              position: {
-                x: (sourceNode.position.x ?? 0) + 320,
-                y: sourceNode.position.y ?? 0,
-              },
-              data: { type: "callback_data_equals", value: buttonSpec.callbackData },
-            };
-
-            const edgeToCondition: Edge = {
-              id: makeEdgeId(connection),
-              source: connection.source ?? "",
-              target: conditionId,
-              sourceHandle: connection.sourceHandle ?? undefined,
-              label: buttonSpec.label,
-              ...defaultEdgeOptions,
-            };
-
-            // Edge from condition true branch to the actual target
-            const edgeFromCondition: Edge = {
-              id: `${conditionId}_true_${connection.target}_${Date.now()}`,
-              source: conditionId,
-              target: connection.target ?? "",
-              sourceHandle: "true",
-              label: "true",
-              ...defaultEdgeOptions,
-            };
-
-            setNodes((curr) => [...curr, conditionNode]);
-            setEdges((curr) => [...curr, edgeToCondition, edgeFromCondition]);
-            setSelectedNodeId(conditionId);
-            setStatus("");
-            return;
-          }
-        }
       }
 
       const edge: Edge = {
@@ -209,7 +134,7 @@ export function useFlowCallbacks(state: FlowState, setStatus: (msg: string) => v
 
   return {
     setTrigger,
-    addFromNode,
+    addNode,
     onConnect,
     updateSelectedNodeData,
     replaceSelectedAction,

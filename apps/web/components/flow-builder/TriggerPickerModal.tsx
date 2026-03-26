@@ -82,13 +82,13 @@ export function TriggerPickerModal({ open, currentTrigger, onSelect, onClose }: 
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-          <h2 className="text-sm font-semibold text-slate-800">Choose a Trigger</h2>
+      <div className="relative w-full max-w-md rounded-lg border border-white/12 bg-[#0b0b0b] shadow-2xl">
+        <div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
+          <h2 className="text-sm font-semibold text-white">Choose a trigger</h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className="rounded-sm p-1 text-white/45 transition hover:bg-white/8 hover:text-white"
           >
             <X className="h-4 w-4" />
           </button>
@@ -106,11 +106,11 @@ export function TriggerPickerModal({ open, currentTrigger, onSelect, onClose }: 
 
         <div className="max-h-80 overflow-y-auto px-3 pb-3">
           {filtered.length === 0 ? (
-            <p className="py-4 text-center text-xs text-slate-500">No triggers match your search.</p>
+            <p className="py-4 text-center text-xs text-white/45">No triggers match your search.</p>
           ) : (
             filtered.map((group) => (
               <div key={group.id} className="mb-3">
-                <p className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                <p className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wider text-white/36">
                   {group.label}
                 </p>
                 <div className="space-y-0.5">
@@ -125,17 +125,17 @@ export function TriggerPickerModal({ open, currentTrigger, onSelect, onClose }: 
                           onSelect(trigger);
                           onClose();
                         }}
-                        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-xs transition ${
+                        className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-xs transition ${
                           isActive
-                            ? "bg-indigo-50 text-indigo-800"
-                            : "text-slate-700 hover:bg-slate-50"
+                            ? "border border-white/10 bg-white/8 text-white"
+                            : "text-white/72 hover:bg-white/5"
                         }`}
                       >
-                        <span className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md ${isActive ? "bg-indigo-100" : "bg-slate-100"}`}>
+                        <span className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-sm border border-white/10 ${isActive ? "bg-white/8" : "bg-white/5"}`}>
                           <Icon className="h-3.5 w-3.5" />
                         </span>
                         <span className="font-medium">{formatTriggerLabel(trigger)}</span>
-                        <span className="ml-auto font-mono text-[9px] text-slate-400">{trigger}</span>
+                        <span className="ml-auto font-mono text-[9px] text-white/36">{trigger}</span>
                       </button>
                     );
                   })}

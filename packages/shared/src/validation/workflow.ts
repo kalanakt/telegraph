@@ -249,6 +249,36 @@ export const flowDefinitionSchema = z
         message: "Flow graph must be acyclic."
       });
     }
+
+    const startNode = starts[0];
+    if (startNode) {
+      const reachable = new Set<string>();
+      const stack = [startNode.id];
+
+      while (stack.length > 0) {
+        const nodeId = stack.pop();
+        if (!nodeId || reachable.has(nodeId)) {
+          continue;
+        }
+
+        reachable.add(nodeId);
+        const neighbors = adjacency.get(nodeId) ?? [];
+        for (const neighborId of neighbors) {
+          if (!reachable.has(neighborId)) {
+            stack.push(neighborId);
+          }
+        }
+      }
+
+      for (const node of flow.nodes) {
+        if (!reachable.has(node.id)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Node ${node.id} is not reachable from the start node.`
+          });
+        }
+      }
+    }
   });
 
 export const createFlowSchema = z

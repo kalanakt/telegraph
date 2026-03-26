@@ -10,24 +10,24 @@ import {
   type TriggerType,
 } from "@telegram-builder/shared";
 import {
+  createActionTemplate,
   migrateLegacyActionData,
 } from "@/lib/flow-builder";
 import type {
   ActionEditorData,
-  AddBranch,
-  ButtonHandleSpec,
   ConditionEditorData,
+  FlowNodeKind,
   InlineKeyboardButton,
   ReplyKeyboardButton,
 } from "./types";
 import { CONDITION_OPTIONS } from "./types";
 
-export const EDGE_STYLE = { stroke: "#4f46e5", strokeWidth: 1.6 };
+export const EDGE_STYLE = { stroke: "#f3f4f6", strokeWidth: 1.25 };
 
 export const defaultEdgeOptions = {
-  type: "smoothstep",
+  type: "straight",
   style: EDGE_STYLE,
-  markerEnd: { type: MarkerType.ArrowClosed, color: "#4f46e5" },
+  markerEnd: { type: MarkerType.ArrowClosed, color: "#f3f4f6" },
   animated: false,
 };
 
@@ -45,9 +45,7 @@ export function asNumber(value: unknown): number {
 
 export function defaultFlowDefinition(): FlowDefinition {
   return {
-    nodes: [
-      { id: "start_1", type: "start", position: { x: 80, y: 220 }, data: {} },
-    ],
+    nodes: [],
     edges: [],
   };
 }
@@ -200,6 +198,44 @@ export function extractTriggerFromNodes(nodes: Node[]): TriggerType {
   return ((start?.data as Record<string, unknown>)?.trigger as TriggerType) ?? "message_received";
 }
 
+export function getDefaultNodeData(kind: FlowNodeKind) {
+  if (kind === "start") return {};
+  if (kind === "condition") return defaultConditionData();
+  return createActionTemplate("telegram.sendMessage");
+}
+
+export function getNextNodePosition(
+  nodes: Node[],
+  kind: FlowNodeKind,
+  viewportCenter?: { x: number; y: number },
+) {
+  const base = viewportCenter ?? { x: 200, y: 180 };
+  const sameTypeNodes = nodes.filter((node) => node.type === kind);
+  const typeIndex = sameTypeNodes.length;
+  const totalIndex = nodes.length;
+  const laneOffset =
+    kind === "start" ? -120 : kind === "condition" ? 0 : 120;
+
+  return {
+    x: Math.round((base.x + totalIndex * 40 + typeIndex * 16) / 20) * 20,
+    y: Math.round((base.y + laneOffset + typeIndex * 28) / 20) * 20,
+  };
+}
+
+export function createFlowNode(
+  kind: FlowNodeKind,
+  nodes: Node[],
+  viewportCenter?: { x: number; y: number },
+): Node {
+  const id = `${kind}_${Date.now()}`;
+  return {
+    id,
+    type: kind,
+    position: getNextNodePosition(nodes, kind, viewportCenter),
+    data: getDefaultNodeData(kind),
+  };
+}
+
 export function makeEdgeId(connection: Connection) {
   return `${connection.source}_${connection.sourceHandle ?? "default"}_${connection.target}_${connection.targetHandle ?? "default"}_${Date.now()}`;
 }
@@ -212,7 +248,6 @@ export function canCreateConnection(
   connection: Connection | Edge,
   nodes: Node[],
   edges: Edge[],
-  branch?: AddBranch,
 ) {
   if (!connection.source || !connection.target) return false;
   if (connection.source === connection.target) return false;
@@ -241,20 +276,8 @@ export function canCreateConnection(
     if (existingBranch) return false;
   }
 
-  // Button handles can only have one outgoing connection per button
-  if (connection.sourceHandle?.startsWith("button-")) {
-    const existingButtonEdge = edges.some(
-      (edge) =>
-        edge.source === connection.source &&
-        edge.sourceHandle === connection.sourceHandle,
-    );
-    if (existingButtonEdge) return false;
-  }
-
   return true;
 }
-
-// ─── Keyboard helpers ───────────────────────────────────────────────────────
 
 export function getInlineKeyboard(params: Record<string, unknown>): InlineKeyboardButton[][] {
   const replyMarkup = params.reply_markup;
@@ -339,15 +362,4 @@ export function updateReplyKeyboard(
       return { ...button, ...partial };
     });
   });
-}
-
-export function deriveButtonHandles(params: Record<string, unknown>): ButtonHandleSpec[] {
-  const rows = getInlineKeyboard(params);
-  return rows.flatMap((row, r) =>
-    row.flatMap((btn, b) =>
-      btn.callback_data
-        ? [{ id: `button-${r}-${b}`, label: btn.text, callbackData: btn.callback_data }]
-        : [],
-    ),
-  );
 }

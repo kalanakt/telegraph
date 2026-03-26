@@ -44,6 +44,56 @@ describe("flowDefinitionSchema", () => {
 
     expect(result.success).toBe(false);
   });
+
+  it("rejects disconnected nodes that are not reachable from the start", () => {
+    const result = flowDefinitionSchema.safeParse({
+      nodes: [
+        { id: "start", type: "start", position: { x: 0, y: 0 }, data: {} },
+        {
+          id: "action_connected",
+          type: "action",
+          position: { x: 200, y: 0 },
+          data: { type: "telegram.sendMessage", params: { chat_id: "123", text: "ok" } }
+        },
+        {
+          id: "action_disconnected",
+          type: "action",
+          position: { x: 200, y: 140 },
+          data: { type: "telegram.sendMessage", params: { chat_id: "123", text: "dangling" } }
+        }
+      ],
+      edges: [{ id: "e1", source: "start", target: "action_connected" }]
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.some((issue) => issue.message.includes("not reachable from the start node"))).toBe(true);
+  });
+
+  it("accepts a fully connected graph", () => {
+    const result = flowDefinitionSchema.safeParse({
+      nodes: [
+        { id: "start", type: "start", position: { x: 0, y: 0 }, data: {} },
+        {
+          id: "condition",
+          type: "condition",
+          position: { x: 200, y: 0 },
+          data: { type: "text_contains", value: "hello" }
+        },
+        {
+          id: "action_true",
+          type: "action",
+          position: { x: 400, y: 0 },
+          data: { type: "telegram.sendMessage", params: { chat_id: "123", text: "yes" } }
+        }
+      ],
+      edges: [
+        { id: "e1", source: "start", target: "condition" },
+        { id: "e2", source: "condition", target: "action_true", sourceHandle: "true" }
+      ]
+    });
+
+    expect(result.success).toBe(true);
+  });
 });
 
 describe("deriveActionsFromFlow", () => {

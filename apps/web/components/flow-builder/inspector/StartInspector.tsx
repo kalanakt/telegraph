@@ -18,25 +18,25 @@ export function StartInspector({ trigger, onTriggerChange }: Props) {
     <>
       <div className="builder-section space-y-2">
         <p className="builder-kicker">Trigger</p>
-        <div className="flex items-center gap-2 rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2">
-          <span className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-100 text-indigo-600">
+        <div className="flex items-center gap-2 rounded-md border border-white/10 bg-white/4 px-3 py-2">
+          <span className="flex h-6 w-6 items-center justify-center rounded-sm border border-white/10 bg-white/6 text-white">
             <Icon className="h-3.5 w-3.5" />
           </span>
           <div className="flex-1">
-            <p className="text-xs font-semibold text-indigo-800">{formatTriggerLabel(trigger)}</p>
-            <p className="font-mono text-[9px] text-indigo-500">{trigger}</p>
+            <p className="text-xs font-semibold text-white">{formatTriggerLabel(trigger)}</p>
+            <p className="font-mono text-[9px] text-white/45">{trigger}</p>
           </div>
           <button
             type="button"
             onClick={() => setPickerOpen(true)}
-            className="nodrag nopan flex items-center gap-1 rounded-lg border border-indigo-200 bg-white px-2 py-1 text-[10px] font-medium text-indigo-700 transition hover:bg-indigo-50"
+            className="nodrag nopan flex items-center gap-1 rounded-sm border border-white/12 bg-white/5 px-2 py-1 text-[10px] font-medium text-white/75 transition hover:bg-white/10"
           >
             <ChevronDown className="h-3 w-3" />
             Change
           </button>
         </div>
-        <p className="text-[11px] text-slate-500">
-          The trigger is set on the Start node. You can also change it by clicking the start node on the canvas.
+        <p className="text-[11px] text-white/48">
+          This builder must contain exactly one trigger node. Use it as the entry point for the rest of the graph.
         </p>
       </div>
 

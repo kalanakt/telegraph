@@ -19,8 +19,7 @@ export type FlowBuilderProps = {
   initialRuleId?: string;
 };
 
-export type AddKind = "condition" | "action";
-export type AddBranch = "next" | "true" | "false";
+export type FlowNodeKind = "start" | "condition" | "action";
 
 export type ConditionEditorData = {
   type?: string;
@@ -43,14 +42,7 @@ export type ActionEditorData = {
 };
 
 export type NodeCallbacks = {
-  onAdd?: (branch: AddBranch, kind: AddKind) => void;
   onTriggerChange?: (trigger: TriggerType) => void;
-};
-
-export type ButtonHandleSpec = {
-  id: string;
-  label: string;
-  callbackData: string;
 };
 
 export const CONDITION_OPTIONS = [

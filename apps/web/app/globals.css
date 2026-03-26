@@ -163,9 +163,7 @@
 
   .builder-canvas {
     background:
-      radial-gradient(540px 220px at 8% -6%, hsl(198 78% 89% / 0.22), transparent 70%),
-      radial-gradient(500px 220px at 92% -4%, hsl(208 74% 90% / 0.24), transparent 70%),
-      linear-gradient(180deg, hsl(210 40% 98%) 0%, hsl(210 30% 96%) 100%);
+      linear-gradient(180deg, rgba(12, 12, 12, 0.98) 0%, rgba(8, 8, 8, 1) 100%);
   }
 
   .builder-flow .react-flow__renderer {
@@ -173,65 +171,47 @@
   }
 
   .builder-flow .react-flow__edge-text {
-    fill: hsl(224 76% 40%);
+    fill: rgba(255, 255, 255, 0.7);
     font-size: 10px;
     font-weight: 600;
   }
 
   .builder-flow .react-flow__controls {
-    @apply rounded-xl border border-slate-200/90 bg-white/95 shadow-[0_10px_24px_-20px_rgba(15,23,42,0.35)];
+    @apply rounded-md border border-white/12 bg-black/92 shadow-none;
   }
 
   .builder-flow .react-flow__controls-button {
-    @apply border-b border-slate-100 text-slate-700 transition-colors hover:bg-slate-50;
+    @apply border-b border-white/8 text-white/72 transition-colors hover:bg-white/6;
   }
 
   .builder-node {
-    @apply border border-slate-200/90 bg-white/95 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.38)] backdrop-blur-sm;
-  }
-
-  .builder-node-start {
-    background: linear-gradient(160deg, hsl(197 74% 97%), hsl(210 58% 98%));
-  }
-
-  .builder-node-condition {
-    background: linear-gradient(160deg, hsl(47 86% 95%), hsl(43 62% 97%));
-  }
-
-  .builder-node-action {
-    background: linear-gradient(160deg, hsl(198 84% 95%), hsl(210 84% 98%));
+    @apply border bg-black shadow-none backdrop-blur-0;
+    border-color: rgba(255, 255, 255, 0.14);
   }
 
   .builder-node-start-configured {
-    @apply border-l-2 border-l-indigo-400;
-  }
-
-  .builder-button-handle-row {
-    @apply relative flex items-center justify-between gap-2 rounded-md border border-indigo-100 bg-indigo-50/70 px-2 py-1 text-[10px] text-indigo-800;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
   }
 
   .builder-node-media-icon {
-    @apply flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-600;
-  }
-
-  .builder-trigger-chip {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700;
+    @apply flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-sm border border-white/10 bg-white/6 text-white;
   }
 
   .builder-label {
-    @apply space-y-1 text-sm text-slate-600;
+    @apply space-y-1 text-sm text-slate-500;
   }
 
   .builder-label > span {
-    @apply text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500;
+    @apply text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500;
   }
 
   .builder-field {
-    @apply h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-[0_1px_0_0_rgba(15,23,42,0.02)] transition;
+    @apply h-10 w-full rounded-md border bg-white px-3 py-2 text-sm text-slate-900 shadow-none transition;
+    border-color: rgba(15, 23, 42, 0.12);
   }
 
   .builder-field:hover {
-    @apply border-slate-300;
+    border-color: rgba(15, 23, 42, 0.24);
   }
 
   .builder-field:focus {
@@ -243,14 +223,17 @@
   }
 
   .builder-inspector {
-    @apply rounded-2xl border border-slate-200/90 bg-white/95 p-4 shadow-[0_14px_34px_-28px_rgba(15,23,42,0.4)] backdrop-blur-sm;
+    @apply rounded-lg border bg-[#0c0c0c] p-4 shadow-none;
+    border-color: rgba(255, 255, 255, 0.12);
   }
 
   .builder-section {
-    @apply rounded-xl border border-slate-200/85 bg-white p-3;
+    @apply rounded-md border p-3;
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
   }
 
   .builder-kicker {
-    @apply mb-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500;
+    @apply mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/45;
   }
 }
