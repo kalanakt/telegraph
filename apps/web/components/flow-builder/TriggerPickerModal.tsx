@@ -82,13 +82,13 @@ export function TriggerPickerModal({ open, currentTrigger, onSelect, onClose }: 
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="relative w-full max-w-md rounded-2xl border border-border/85 bg-white/96 shadow-2xl">
+      <div className="relative w-full max-w-md rounded-sm border border-border/85 bg-white/96 shadow-2xl">
         <div className="flex items-center justify-between border-b border-border/80 px-4 py-3">
           <h2 className="text-sm font-semibold text-foreground">Choose a trigger</h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-sm p-1 text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+            className="rounded-sm p-1 text-muted-foreground"
           >
             <X className="h-4 w-4" />
           </button>
@@ -125,10 +125,10 @@ export function TriggerPickerModal({ open, currentTrigger, onSelect, onClose }: 
                           onSelect(trigger);
                           onClose();
                         }}
-                        className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-xs transition ${
+                        className={`flex w-full items-center gap-3 rounded-sm px-3 py-2 text-left text-xs ${
                           isActive
                             ? "border border-border bg-secondary/80 text-foreground shadow-sm"
-                            : "text-foreground/78 hover:bg-secondary/55"
+                            : "text-foreground/78"
                         }`}
                       >
                         <span className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-sm border border-border/80 ${isActive ? "bg-white" : "bg-secondary/65"}`}>

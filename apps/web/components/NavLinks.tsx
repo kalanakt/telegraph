@@ -49,10 +49,10 @@ export function NavLinks({
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "focus-ring inline-flex items-center gap-2 rounded-[1rem] px-3.5 py-2.5 text-sm font-medium transition-colors",
+                  "focus-ring inline-flex items-center gap-2 rounded-sm px-3.5 py-2.5 text-sm font-medium",
                   isActive
                     ? "border border-border/80 bg-background text-foreground"
-                    : "text-muted-foreground hover:bg-background/70 hover:text-foreground"
+                    : "text-muted-foreground"
                 )}
               >
                 <Icon className="size-4" />
@@ -69,10 +69,10 @@ export function NavLinks({
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "focus-ring inline-flex items-center gap-2 rounded-[1rem] px-3.5 py-2.5 text-sm font-medium transition-colors",
+                  "focus-ring inline-flex items-center gap-2 rounded-sm px-3.5 py-2.5 text-sm font-medium",
                   isActive
                     ? "border border-border/80 bg-background text-foreground"
-                    : "text-muted-foreground hover:bg-background/70 hover:text-foreground"
+                    : "text-muted-foreground"
                 )}
               >
                 <span>{item.label}</span>

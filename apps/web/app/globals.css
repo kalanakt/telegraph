@@ -137,14 +137,14 @@
   }
 
   .surface-panel {
-    @apply rounded-[1.75rem] border backdrop-blur-xl;
+    @apply rounded-sm border backdrop-blur-xl;
     border-color: hsl(var(--border) / 0.82);
     background:
       linear-gradient(180deg, rgb(255 255 255 / 0.96) 0%, rgb(255 255 255 / 0.86) 100%);
   }
 
   .skip-link {
-    @apply absolute left-3 top-3 z-[60] -translate-y-16 rounded-md bg-foreground px-3 py-2 text-sm font-medium text-background transition;
+    @apply absolute left-3 top-3 z-[60] -translate-y-16 rounded-sm bg-foreground px-3 py-2 text-sm font-medium text-background;
   }
 
   .blog-prose {
@@ -185,7 +185,7 @@
   }
 
   .blog-link {
-    @apply text-primary underline underline-offset-4 transition;
+    @apply text-primary underline underline-offset-4;
     text-decoration-color: hsl(var(--primary) / 0.45);
   }
 
@@ -194,7 +194,7 @@
   }
 
   .blog-pre {
-    @apply mt-6 overflow-x-auto rounded-xl border bg-foreground px-4 py-4 text-sm text-background;
+    @apply mt-6 overflow-x-auto rounded-sm border bg-foreground px-4 py-4 text-sm text-background;
   }
 
   .blog-pre code {
@@ -202,7 +202,7 @@
   }
 
   .blog-callout {
-    @apply mt-6 rounded-r-xl border-l border-primary px-4 py-3;
+    @apply mt-6 rounded-r-sm border-l border-primary px-4 py-3;
     background-color: hsl(var(--accent) / 0.45);
     color: hsl(var(--foreground) / 0.95);
   }
@@ -218,16 +218,14 @@
     @apply outline-none;
   }
 
-  .interactive-lift {
-    @apply transition-transform duration-200 ease-out;
-  }
+  .interactive-lift {}
 
   .section-chip {
-    @apply inline-flex items-center rounded-full border border-border/80 bg-background/85 px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground backdrop-blur-sm;
+    @apply inline-flex items-center rounded-sm border border-border/80 bg-background/85 px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground backdrop-blur-sm;
   }
 
   .metric-tile {
-    @apply rounded-[1.35rem] border border-border/80 bg-background/88 p-4 backdrop-blur-sm;
+    @apply rounded-sm border border-border/80 bg-background/88 p-4 backdrop-blur-sm;
   }
 
   .builder-canvas {
@@ -248,13 +246,13 @@
   }
 
   .builder-flow .react-flow__controls {
-    @apply rounded-md border shadow-none;
+    @apply rounded-sm border shadow-none;
     border-color: hsl(var(--border) / 0.95);
     background-color: rgba(255, 255, 255, 0.92);
   }
 
   .builder-flow .react-flow__controls-button {
-    @apply border-b transition-colors;
+    @apply border-b;
     border-color: hsl(var(--border) / 0.9);
     color: hsl(var(--foreground) / 0.72);
   }
@@ -304,12 +302,8 @@
   }
 
   .builder-field {
-    @apply h-10 w-full rounded-md border bg-white px-3 py-2 text-sm text-slate-900 shadow-none transition;
+    @apply h-10 w-full rounded-sm border bg-white px-3 py-2 text-sm text-slate-900 shadow-none;
     border-color: hsl(var(--border) / 0.95);
-  }
-
-  .builder-field:hover {
-    border-color: hsl(var(--primary) / 0.35);
   }
 
   .builder-field:focus {
@@ -322,12 +316,12 @@
   }
 
   .builder-inspector {
-    @apply rounded-2xl border bg-white/84 p-4 backdrop-blur-sm;
+    @apply rounded-sm border bg-white/84 p-4 backdrop-blur-sm;
     border-color: hsl(var(--border) / 0.95);
   }
 
   .builder-section {
-    @apply rounded-md border p-3;
+    @apply rounded-sm border p-3;
     background: hsl(var(--secondary) / 0.45);
     border-color: hsl(var(--border) / 0.95);
   }
@@ -372,18 +366,10 @@
   transform: translateY(0);
 }
 
-.blog-link:hover {
-  text-decoration-color: hsl(var(--primary));
-}
-
 .focus-ring:focus-visible {
   box-shadow:
     0 0 0 1px hsl(var(--background)),
     0 0 0 3px hsl(var(--ring) / 0.26);
-}
-
-.interactive-lift:hover {
-  transform: translateY(-0.2rem);
 }
 
 @theme inline {

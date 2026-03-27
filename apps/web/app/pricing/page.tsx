@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { isClerkConfigured } from "@/lib/auth-config";
+import { clerkCheckoutAppearance, clerkPricingAppearance } from "@/lib/clerk-appearance";
 
 function Feature({ children }: { children: ReactNode }) {
   return (
@@ -32,24 +33,9 @@ export default function PricingPage() {
         />
         <PricingTable
           for="user"
-          appearance={{
-            elements: {
-              pricingTable: {
-                boxShadow: "none",
-              },
-              pricingTableCard: {
-                boxShadow: "none",
-              },
-            },
-          }}
+          appearance={clerkPricingAppearance}
           checkoutProps={{
-            appearance: {
-              elements: {
-                cardBox: {
-                  boxShadow: "none",
-                },
-              },
-            },
+            appearance: clerkCheckoutAppearance,
           }}
         />
       </div>

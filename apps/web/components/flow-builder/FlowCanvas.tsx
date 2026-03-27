@@ -75,11 +75,11 @@ export function FlowCanvas({
   return (
     <div
       ref={wrapperRef}
-      className="builder-canvas relative h-[720px] overflow-hidden rounded-2xl border border-border/80"
+      className="builder-canvas relative h-[720px] overflow-hidden rounded-sm border border-border/80"
     >
       {nodes.length === 0 ? (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center px-4">
-          <div className="max-w-sm rounded-xl border border-border/85 bg-white/86 px-4 py-3 text-center text-sm text-muted-foreground shadow-sm backdrop-blur-sm">
+          <div className="max-w-sm rounded-sm border border-border/85 bg-white/86 px-4 py-3 text-center text-sm text-muted-foreground shadow-sm backdrop-blur-sm">
             Add a trigger, condition, or action from the toolbar, then connect them with lines.
           </div>
         </div>
@@ -114,7 +114,7 @@ export function FlowCanvas({
       >
         <Panel
           position="top-left"
-          className="flex items-center gap-2 rounded-xl border border-border/85 bg-white/86 px-2.5 py-1.5 text-xs text-foreground shadow-sm backdrop-blur-sm"
+          className="flex items-center gap-2 rounded-sm border border-border/85 bg-white/86 px-2.5 py-1.5 text-xs text-foreground shadow-sm backdrop-blur-sm"
         >
           <span className="flex h-5 w-5 items-center justify-center rounded-sm border border-border/80 bg-secondary/70 text-foreground">
             <TriggerIcon className="h-3 w-3" />
@@ -125,7 +125,7 @@ export function FlowCanvas({
         <MiniMap
           pannable
           zoomable
-          className="!rounded-xl !border !border-border/85 !bg-white/92"
+          className="!rounded-sm !border !border-border/85 !bg-white/92"
           nodeBorderRadius={4}
           maskColor="rgba(148, 163, 184, 0.18)"
         />

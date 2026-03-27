@@ -33,14 +33,14 @@ export async function Nav() {
 
   return (
     <header className="mb-10">
-      <div className="surface-panel px-4 py-4 md:px-5">
+      <div className="px-1 py-2">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center">
             <Link
               href="/"
-              className="focus-ring inline-flex items-center gap-3 rounded-[1.3rem] bg-foreground px-3.5 py-2.5 text-background"
+              className="focus-ring inline-flex items-center gap-3 rounded-sm bg-foreground px-3.5 py-2.5 text-background"
             >
-              <span className="flex size-8 items-center justify-center rounded-[0.95rem] bg-background/12 text-sm font-semibold tracking-[-0.04em]">
+              <span className="flex size-8 items-center justify-center rounded-sm bg-background/12 text-sm font-semibold tracking-[-0.04em]">
                 T
               </span>
               <span className="flex flex-col">
@@ -53,7 +53,7 @@ export async function Nav() {
               </span>
             </Link>
 
-            <div className="flex flex-wrap items-center gap-1.5 rounded-[1.2rem] border border-border/70 bg-secondary/72 p-1.5 backdrop-blur-sm">
+            <div className="flex flex-wrap items-center gap-1.5 rounded-sm border border-border/70 bg-secondary/72 p-1.5 backdrop-blur-sm">
               <NavLinks
                 signedInNavItems={signedInNavItems}
                 signedOutNavItems={signedOutNavItems}
@@ -65,8 +65,8 @@ export async function Nav() {
           {hasClerk ? (
             <div className="flex items-center gap-2 self-start xl:self-auto">
               {isSignedIn ? (
-                <div className="rounded-[1rem] border border-border/70 bg-background/80 p-1">
-                  <UserButton afterSignOutUrl="/" />
+                <div className="rounded-sm border border-border/70 bg-background/80 p-1">
+                  <UserButton afterSignOutUrl="/" userProfileMode="navigation" userProfileUrl="/account" />
                 </div>
               ) : (
                 <>

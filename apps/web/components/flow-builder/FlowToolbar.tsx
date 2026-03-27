@@ -80,7 +80,7 @@ export function FlowToolbar({
         </label>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/85 bg-white/82 px-3 py-3 shadow-sm backdrop-blur-sm">
+      <div className="flex flex-wrap items-center gap-2 rounded-sm border border-border/85 bg-white/82 px-3 py-3 shadow-sm backdrop-blur-sm">
         <Button type="button" variant="secondary" onClick={() => onAddNode("start")} disabled={hasTrigger}>
           Add trigger
         </Button>

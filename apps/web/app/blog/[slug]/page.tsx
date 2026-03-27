@@ -76,7 +76,7 @@ export default async function BlogPostPage({ params }: { params: Promise<PagePar
       <header className="surface-panel p-6 md:p-8">
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            <Link className="focus-ring underline-offset-4 hover:underline" href="/blog">
+            <Link className="focus-ring underline-offset-4" href="/blog">
               Blog
             </Link>
             <span> / </span>

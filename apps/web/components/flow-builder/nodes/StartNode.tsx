@@ -34,7 +34,7 @@ export function StartNode({ data }: { data: StartNodeData }) {
 
         <button
           type="button"
-          className="nodrag nopan mt-3 flex w-full items-center gap-1 rounded-sm border border-border/85 bg-secondary/70 px-2 py-1.5 text-[10px] font-medium text-foreground/75 transition hover:bg-secondary"
+          className="nodrag nopan mt-3 flex w-full items-center gap-1 rounded-sm border border-border/85 bg-secondary/70 px-2 py-1.5 text-[10px] font-medium text-foreground/75"
           onClick={() => setPickerOpen(true)}
         >
           <ChevronDown className="h-3 w-3" />

@@ -52,14 +52,14 @@ export default async function BlogIndexPage({ searchParams }: { searchParams: Pr
         <form action="/blog" className="grid gap-3 md:grid-cols-[1fr_auto]">
           <input
             aria-label="Search blog posts"
-            className="focus-ring w-full rounded-lg border bg-white px-3 py-2 text-sm"
+            className="focus-ring w-full rounded-sm border bg-white px-3 py-2 text-sm"
             defaultValue={query}
             name="q"
             placeholder="Search posts by title, summary, or tag"
             type="search"
           />
 
-          <button className="focus-ring rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background" type="submit">
+          <button className="focus-ring rounded-sm bg-foreground px-4 py-2 text-sm font-medium text-background" type="submit">
             Search
           </button>
 
@@ -67,7 +67,7 @@ export default async function BlogIndexPage({ searchParams }: { searchParams: Pr
         </form>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Link className={`focus-ring rounded-full px-3 py-1 text-xs font-medium ${tag ? "bg-secondary text-secondary-foreground" : "bg-foreground text-background"}`} href={query ? `/blog?q=${encodeURIComponent(query)}` : "/blog"}>
+          <Link className={`focus-ring rounded-sm px-3 py-1 text-xs font-medium ${tag ? "bg-secondary text-secondary-foreground" : "bg-foreground text-background"}`} href={query ? `/blog?q=${encodeURIComponent(query)}` : "/blog"}>
             All
           </Link>
           {allTags.map((item) => {
@@ -78,7 +78,7 @@ export default async function BlogIndexPage({ searchParams }: { searchParams: Pr
             return (
               <Link
                 key={item}
-                className={`focus-ring rounded-full px-3 py-1 text-xs font-medium ${item === tag.toLowerCase() ? "bg-foreground text-background" : "bg-secondary text-secondary-foreground"}`}
+                className={`focus-ring rounded-sm px-3 py-1 text-xs font-medium ${item === tag.toLowerCase() ? "bg-foreground text-background" : "bg-secondary text-secondary-foreground"}`}
                 href={href}
               >
                 {item}
@@ -105,7 +105,7 @@ export default async function BlogIndexPage({ searchParams }: { searchParams: Pr
                   {post.author ? <span>By {post.author}</span> : null}
                 </div>
                 <CardTitle className="font-[var(--font-display)] text-[1.4rem] tracking-[-0.02em]">
-                  <Link className="focus-ring underline-offset-4 hover:underline" href={getBlogBasePath(post.slug)}>
+                  <Link className="focus-ring underline-offset-4" href={getBlogBasePath(post.slug)}>
                     {post.title}
                   </Link>
                 </CardTitle>

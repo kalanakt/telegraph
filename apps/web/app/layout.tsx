@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Nav } from "@/components/Nav";
 import { isClerkConfigured } from "@/lib/auth-config";
+import { clerkAppearance } from "@/lib/clerk-appearance";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -74,7 +75,9 @@ export default function RootLayout({
     <html lang="en" className={`${outfit.variable} ${sora.variable} font-sans`}>
       <body>
         {hasClerk && publishableKey ? (
-          <ClerkProvider publishableKey={publishableKey}>{appShell}</ClerkProvider>
+          <ClerkProvider appearance={clerkAppearance} publishableKey={publishableKey}>
+            {appShell}
+          </ClerkProvider>
         ) : (
           appShell
         )}

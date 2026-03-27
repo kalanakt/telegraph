@@ -24,7 +24,7 @@ function StatTile({
   return (
     <div className="metric-tile flex flex-col gap-3">
       <div className="flex items-center gap-2 text-muted-foreground">
-        <span className="flex size-9 items-center justify-center rounded-[1rem] bg-primary/10 text-primary">
+        <span className="flex size-9 items-center justify-center rounded-sm bg-primary/10 text-primary">
           <Icon className="size-4" />
         </span>
         <span className="text-[0.72rem] font-semibold uppercase tracking-[0.14em]">
