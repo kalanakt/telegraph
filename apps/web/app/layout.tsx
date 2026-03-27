@@ -5,6 +5,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Nav } from "@/components/Nav";
 import { isClerkConfigured } from "@/lib/auth-config";
 import { clerkAppearance } from "@/lib/clerk-appearance";
+import { getSiteUrl, toAbsoluteUrl } from "@/lib/site-url";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -20,19 +21,30 @@ const sora = Sora({
 });
 
 export const metadata: Metadata = {
-  title: "Telegraph | Telegram automation workspace",
+  metadataBase: new URL(getSiteUrl()),
+  title: "Telegraph | Telegram bot automation workspace",
   description:
-    "Build and run Telegram automations with a visual builder studio, bot controls, and execution history.",
+    "Build and run Telegram automations with a visual workflow builder, bot controls, and execution history.",
+  applicationName: "Telegraph",
+  alternates: {
+    canonical: toAbsoluteUrl("/"),
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
   openGraph: {
-    title: "Telegraph",
+    title: "Telegraph | Telegram bot automation workspace",
     description:
       "Telegram automation workspace for teams shipping event-driven workflows.",
     type: "website",
+    url: toAbsoluteUrl("/"),
+    siteName: "Telegraph",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Telegraph",
-    description: "Build and run Telegram automations with a visual builder.",
+    title: "Telegraph | Telegram bot automation workspace",
+    description: "Build and run Telegram automations with a visual workflow builder.",
   },
 };
 

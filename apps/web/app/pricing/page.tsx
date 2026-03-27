@@ -59,7 +59,7 @@ export default function PricingPage() {
               Free
             </CardTitle>
             <CardDescription>
-              For early testing and single-bot builders.
+              For early testing and single-bot flows.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col gap-4">

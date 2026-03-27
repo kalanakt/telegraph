@@ -16,6 +16,18 @@ const flatSurface = {
   background: "hsl(var(--background) / 0.92)",
 };
 
+const userButtonSurface = {
+  ...flatSurface,
+  backdropFilter: "blur(14px)",
+};
+
+const userButtonActionButton = {
+  borderRadius: "0.125rem",
+  boxShadow: "none",
+  background: "transparent",
+  color: "hsl(var(--foreground))",
+};
+
 export const clerkAppearance = {
   theme: "simple" as const,
   layout: {
@@ -121,13 +133,31 @@ export const clerkAppearance = {
       boxShadow: "none",
       borderRadius: "0.125rem",
     },
-    userButtonPopoverCard: flatSurface,
-    userButtonPopoverActionButton: {
+    userButtonTrigger: {
       borderRadius: "0.125rem",
       boxShadow: "none",
     },
+    userButtonPopoverCard: userButtonSurface,
+    userButtonPopoverMain: {
+      background: "transparent",
+    },
+    userButtonPopoverActions: {
+      background: "transparent",
+    },
+    userButtonPopoverActionButton: userButtonActionButton,
+    userButtonPopoverActionButtonText: {
+      color: "hsl(var(--foreground))",
+    },
+    userButtonPopoverActionButtonIcon: {
+      color: "hsl(var(--muted-foreground))",
+    },
     userButtonPopoverFooter: {
+      background: "hsl(var(--background) / 0.92)",
       borderTop: "1px solid hsl(var(--border) / 0.8)",
+      boxShadow: "none",
+    },
+    userButtonPopoverFooterText: {
+      color: "hsl(var(--muted-foreground))",
     },
   },
 };
@@ -151,6 +181,16 @@ export const clerkProfileAppearance = {
     },
     cardBox: {
       width: "100%",
+      boxShadow: "none",
+    },
+  },
+};
+
+export const clerkUserButtonAppearance = {
+  ...clerkAppearance,
+  elements: {
+    ...clerkAppearance.elements,
+    avatarBox: {
       boxShadow: "none",
     },
   },

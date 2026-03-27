@@ -26,7 +26,7 @@ type Props = {
 
 export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
   const [botId, setBotId] = useState(bots[0]?.id ?? "");
-  const [name, setName] = useState("Builder");
+  const [name, setName] = useState("Flow");
   const [selectedRuleId, setSelectedRuleId] = useState<string>(initialRuleId ?? "new");
   const [status, setStatus] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -62,13 +62,17 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
     deleteSelectedNode,
   } = callbacks;
 
+  useEffect(() => {
+    setSelectedRuleId(initialRuleId ?? "new");
+  }, [initialRuleId]);
+
   // Load rule when selectedRuleId changes
   useEffect(() => {
     const existing = rules.find((rule) => rule.id === selectedRuleId);
     if (!existing) {
       loadFlow(defaultFlowDefinition());
       setBotId(bots[0]?.id ?? "");
-      setName("Builder");
+      setName("Flow");
       return;
     }
     setBotId(existing.botId);
@@ -129,9 +133,9 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
     const isUpdating = selectedRuleId !== "new";
     if (isUpdating) body.ruleId = selectedRuleId;
 
-    setStatus(isUpdating ? "Updating builder..." : "Creating builder...");
+    setStatus(isUpdating ? "Updating flow..." : "Creating flow...");
 
-    const res = await fetch("/api/builder", {
+    const res = await fetch("/api/flows", {
       method: isUpdating ? "PUT" : "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
@@ -141,25 +145,25 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
     if (!res.ok) {
       const issueMessage =
         Array.isArray(json.issues) && json.issues.length > 0
-          ? `${json.issues[0]?.path || "builder"}: ${json.issues[0]?.message || "invalid"}`
+          ? `${json.issues[0]?.path || "flow"}: ${json.issues[0]?.message || "invalid"}`
           : null;
-      setStatus(issueMessage ?? json.error ?? "Could not save builder.");
+      setStatus(issueMessage ?? json.error ?? "Could not save flow.");
       setIsSaving(false);
       return;
     }
 
-    setStatus(isUpdating ? "Builder updated." : "Builder created.");
+    setStatus(isUpdating ? "Flow updated." : "Flow created.");
     setIsSaving(false);
     const nextId = (json.rule?.id as string | undefined) ?? selectedRuleId;
-    window.location.href = `/builder?edit=${nextId}`;
+    window.location.href = `/flows?edit=${nextId}`;
   }
 
   if (bots.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl">Create Builder</CardTitle>
-          <CardDescription>Add a Telegram bot first to enable builder creation.</CardDescription>
+          <CardTitle className="text-xl">Create Flow</CardTitle>
+          <CardDescription>Add a Telegram bot first to enable flow creation.</CardDescription>
         </CardHeader>
       </Card>
     );
@@ -168,7 +172,7 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
   return (
     <Card className="surface-panel border-white/70 bg-white/95">
       <CardHeader>
-        <CardTitle className="text-xl">Builder Studio</CardTitle>
+        <CardTitle className="text-xl">Flows Studio</CardTitle>
         <CardDescription>
           Add trigger, condition, and action nodes from the toolbar, connect them on the canvas, then configure the selected node in the inspector.
         </CardDescription>

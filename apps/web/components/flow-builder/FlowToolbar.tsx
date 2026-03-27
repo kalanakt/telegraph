@@ -44,13 +44,13 @@ export function FlowToolbar({
     <>
       <div className="grid gap-3 lg:grid-cols-3">
         <label className="builder-label">
-          <span>Builder</span>
+          <span>Flow</span>
           <select
             className="builder-field builder-field-soft"
             value={selectedRuleId}
             onChange={(e) => onRuleChange(e.target.value)}
           >
-            <option value="new">New builder</option>
+            <option value="new">New flow</option>
             {rules.map((rule) => (
               <option key={rule.id} value={rule.id}>
                 {rule.name}
@@ -75,7 +75,7 @@ export function FlowToolbar({
         </label>
 
         <label className="builder-label">
-          <span>Builder name</span>
+          <span>Flow name</span>
           <Input value={name} onChange={(e) => onNameChange(e.target.value)} required />
         </label>
       </div>
@@ -94,8 +94,8 @@ export function FlowToolbar({
           {isSaving
             ? "Saving..."
             : selectedRuleId === "new"
-            ? "Create Builder"
-            : "Update Builder"}
+            ? "Create Flow"
+            : "Update Flow"}
         </Button>
         <Badge variant="secondary" className="border border-border/80 bg-secondary/75 text-secondary-foreground">
           Add nodes here, then connect them on the canvas

@@ -15,9 +15,12 @@ export default async function AccountPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeading title="Account" subtitle="Manage your profile, security, and billing." />
       <div className="surface-panel p-4 md:p-6">
-        <UserProfile appearance={clerkProfileAppearance} path="/account" routing="path" />
+        <UserProfile
+          appearance={clerkProfileAppearance}
+          path="/account"
+          routing="path"
+        />
       </div>
     </div>
   );

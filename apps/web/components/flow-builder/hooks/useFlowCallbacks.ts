@@ -41,7 +41,7 @@ export function useFlowCallbacks(state: FlowState, setStatus: (msg: string) => v
       viewportCenter?: { x: number; y: number },
     ) => {
       if (kind === "start" && nodes.some((node) => node.type === "start")) {
-        setStatus("Only one trigger node is allowed in a builder.");
+        setStatus("Only one trigger node is allowed in a flow.");
         return;
       }
 

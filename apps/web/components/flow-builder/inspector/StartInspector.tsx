@@ -36,7 +36,7 @@ export function StartInspector({ trigger, onTriggerChange }: Props) {
           </button>
         </div>
         <p className="text-[11px] text-muted-foreground">
-          This builder must contain exactly one trigger node. Use it as the entry point for the rest of the graph.
+          This flow must contain exactly one trigger node. Use it as the entry point for the rest of the graph.
         </p>
       </div>
 
