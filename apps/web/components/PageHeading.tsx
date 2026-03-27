@@ -14,11 +14,11 @@ export function PageHeading({
 }) {
   return (
     <div className={cn("page-heading md:flex-row md:items-end md:justify-between", className)}>
-      <div className="space-y-1">
+      <div className="flex flex-col gap-2">
         <h1 className="page-title font-[var(--font-display)]">{title}</h1>
         <p className="page-subtitle">{subtitle}</p>
       </div>
-      {action ? <div className="pt-1 md:pt-0">{action}</div> : null}
+      {action ? <div className="flex items-center pt-1 md:pt-0">{action}</div> : null}
     </div>
   );
 }

@@ -71,8 +71,8 @@ export default function RootLayout({
   );
 
   return (
-    <html lang="en">
-      <body className={`${outfit.variable} ${sora.variable}`}>
+    <html lang="en" className={`${outfit.variable} ${sora.variable} font-sans`}>
+      <body>
         {hasClerk && publishableKey ? (
           <ClerkProvider publishableKey={publishableKey}>{appShell}</ClerkProvider>
         ) : (

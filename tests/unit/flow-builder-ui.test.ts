@@ -66,7 +66,7 @@ describe("flow-builder composer payloads", () => {
     expect(parsed.success).toBe(true);
   });
 
-  it("serializes sendPhoto and sendDocument with captions and reply keyboard", () => {
+  it("serializes sendPhoto, sendVideo, and sendDocument with captions and reply keyboard", () => {
     const sendPhotoPayload = {
       ...createActionTemplate("telegram.sendPhoto"),
       params: {
@@ -75,6 +75,19 @@ describe("flow-builder composer payloads", () => {
         caption: "Photo",
         reply_markup: {
           keyboard: [[{ text: "Next" }]],
+          resize_keyboard: true
+        }
+      }
+    };
+
+    const sendVideoPayload = {
+      ...createActionTemplate("telegram.sendVideo"),
+      params: {
+        chat_id: "123",
+        video: "https://example.com/video.mp4",
+        caption: "Video",
+        reply_markup: {
+          keyboard: [[{ text: "Watch" }]],
           resize_keyboard: true
         }
       }
@@ -94,6 +107,7 @@ describe("flow-builder composer payloads", () => {
     };
 
     expect(actionSchema.safeParse(sendPhotoPayload).success).toBe(true);
+    expect(actionSchema.safeParse(sendVideoPayload).success).toBe(true);
     expect(actionSchema.safeParse(sendDocumentPayload).success).toBe(true);
   });
 });

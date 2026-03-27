@@ -32,41 +32,55 @@ export async function Nav() {
   const isSignedIn = Boolean(userId);
 
   return (
-    <header className="mb-8">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href="/"
-            className="mr-2 inline-flex items-center rounded-md bg-foreground px-3 py-2 text-background"
-          >
-            <span className="text-sm font-semibold tracking-[0.04em]">
-              Telegraph
-            </span>
-          </Link>
+    <header className="mb-10">
+      <div className="surface-panel px-4 py-4 md:px-5">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center">
+            <Link
+              href="/"
+              className="focus-ring inline-flex items-center gap-3 rounded-[1.3rem] bg-foreground px-3.5 py-2.5 text-background"
+            >
+              <span className="flex size-8 items-center justify-center rounded-[0.95rem] bg-background/12 text-sm font-semibold tracking-[-0.04em]">
+                T
+              </span>
+              <span className="flex flex-col">
+                <span className="text-sm font-semibold tracking-[0.02em]">
+                  Telegraph
+                </span>
+                <span className="text-[0.65rem] uppercase tracking-[0.18em] text-background/65">
+                  automation studio
+                </span>
+              </span>
+            </Link>
 
-          <NavLinks
-            signedInNavItems={signedInNavItems}
-            signedOutNavItems={signedOutNavItems}
-            isSignedIn={isSignedIn}
-          />
-        </div>
-
-        {hasClerk ? (
-          <div className="flex items-center gap-2">
-            {isSignedIn ? (
-              <UserButton afterSignOutUrl="/" />
-            ) : (
-              <>
-                <Button asChild type="button" variant="secondary">
-                  <Link href="/sign-in">Sign in</Link>
-                </Button>
-                <Button asChild type="button">
-                  <Link href="/sign-up">Sign up</Link>
-                </Button>
-              </>
-            )}
+            <div className="flex flex-wrap items-center gap-1.5 rounded-[1.2rem] border border-border/70 bg-secondary/72 p-1.5 backdrop-blur-sm">
+              <NavLinks
+                signedInNavItems={signedInNavItems}
+                signedOutNavItems={signedOutNavItems}
+                isSignedIn={isSignedIn}
+              />
+            </div>
           </div>
-        ) : null}
+
+          {hasClerk ? (
+            <div className="flex items-center gap-2 self-start xl:self-auto">
+              {isSignedIn ? (
+                <div className="rounded-[1rem] border border-border/70 bg-background/80 p-1">
+                  <UserButton afterSignOutUrl="/" />
+                </div>
+              ) : (
+                <>
+                  <Button asChild type="button" variant="ghost">
+                    <Link href="/sign-in">Sign in</Link>
+                  </Button>
+                  <Button asChild type="button">
+                    <Link href="/sign-up">Start free</Link>
+                  </Button>
+                </>
+              )}
+            </div>
+          ) : null}
+        </div>
       </div>
     </header>
   );

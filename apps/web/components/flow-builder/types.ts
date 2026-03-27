@@ -63,5 +63,6 @@ export const CONDITION_OPTIONS = [
 export const CORE_COMPOSER_METHODS = new Set([
   "telegram.sendMessage",
   "telegram.sendPhoto",
+  "telegram.sendVideo",
   "telegram.sendDocument",
 ]);

@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
-import { AlertTriangle } from "lucide-react";
+import { useMemo, useRef, useState, type ChangeEvent } from "react";
+import { AlertTriangle, LoaderCircle, Upload, X } from "lucide-react";
 import { isActionAllowedForTrigger, type ActionPayload, type TriggerType } from "@telegram-builder/shared";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,9 +24,32 @@ type Props = {
   onUpdateParams: (partial: Record<string, unknown>) => void;
 };
 
+type UploadableParam = "photo" | "video" | "document";
+type UploadState = {
+  field: UploadableParam;
+  filename: string;
+} | null;
+
 function normalizeActionNodeData(data: unknown): ActionEditorData {
   const normalized = migrateLegacyActionData(data);
   return { type: normalized.type, params: normalized.params as Record<string, unknown> };
+}
+
+function getUploadConfig(actionType: ActionPayload["type"]): {
+  field: UploadableParam;
+  label: string;
+  accept?: string;
+} | null {
+  switch (actionType) {
+    case "telegram.sendPhoto":
+      return { field: "photo", label: "Photo URL / File ID", accept: "image/*" };
+    case "telegram.sendVideo":
+      return { field: "video", label: "Video URL / File ID", accept: "video/*" };
+    case "telegram.sendDocument":
+      return { field: "document", label: "Document URL / File ID" };
+    default:
+      return null;
+  }
 }
 
 export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: Props) {
@@ -48,6 +71,43 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
   const inlineKeyboard = getInlineKeyboard(params);
   const replyKeyboard = getReplyKeyboard(params);
   const replyMarkupKind = getReplyMarkupKind(params);
+  const uploadConfig = getUploadConfig(action.type);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [uploadState, setUploadState] = useState<UploadState>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  async function handleUploadFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file || !uploadConfig) {
+      return;
+    }
+
+    setUploadError(null);
+    setUploadState({ field: uploadConfig.field, filename: file.name });
+
+    try {
+      const formData = new FormData();
+      formData.set("file", file);
+
+      const response = await fetch("/api/media/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const payload = (await response.json()) as { error?: string; url?: string };
+      if (!response.ok || !payload.url) {
+        throw new Error(payload.error ?? "Upload failed");
+      }
+
+      onUpdateParams({ [uploadConfig.field]: payload.url });
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "Upload failed");
+    } finally {
+      setUploadState(null);
+    }
+  }
 
   return (
     <>
@@ -115,12 +175,18 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
             {action.type === "telegram.sendPhoto" ? (
               <>
                 <label className="builder-label mt-2">
-                  <span>Photo URL / File ID</span>
-                  <Input
-                    value={asString(params.photo)}
-                    onChange={(e) => onUpdateParams({ photo: e.target.value })}
+                  <span>Caption</span>
+                  <Textarea
+                    rows={3}
+                    value={asString(params.caption)}
+                    onChange={(e) => onUpdateParams({ caption: e.target.value })}
                   />
                 </label>
+              </>
+            ) : null}
+
+            {action.type === "telegram.sendVideo" ? (
+              <>
                 <label className="builder-label mt-2">
                   <span>Caption</span>
                   <Textarea
@@ -135,13 +201,6 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
             {action.type === "telegram.sendDocument" ? (
               <>
                 <label className="builder-label mt-2">
-                  <span>Document URL / File ID</span>
-                  <Input
-                    value={asString(params.document)}
-                    onChange={(e) => onUpdateParams({ document: e.target.value })}
-                  />
-                </label>
-                <label className="builder-label mt-2">
                   <span>Caption</span>
                   <Textarea
                     rows={3}
@@ -150,6 +209,62 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
                   />
                 </label>
               </>
+            ) : null}
+
+            {uploadConfig ? (
+              <div className="mt-2 space-y-2 rounded-md border border-border/80 bg-white/60 p-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  accept={uploadConfig.accept}
+                  onChange={handleUploadFile}
+                />
+                <label className="builder-label">
+                  <span>{uploadConfig.label}</span>
+                  <Input
+                    value={asString(params[uploadConfig.field])}
+                    onChange={(e) => onUpdateParams({ [uploadConfig.field]: e.target.value })}
+                    placeholder="https://... or Telegram file_id"
+                  />
+                </label>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadState !== null}
+                  >
+                    {uploadState?.field === uploadConfig.field ? (
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4" />
+                    )}
+                    Upload to S3
+                  </Button>
+                  {asString(params[uploadConfig.field]) ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => onUpdateParams({ [uploadConfig.field]: "" })}
+                    >
+                      <X className="h-4 w-4" />
+                      Clear
+                    </Button>
+                  ) : null}
+                </div>
+                <p className="text-xs text-foreground/70">
+                  Upload a file to your configured S3 bucket, or paste an existing public URL / Telegram file ID.
+                </p>
+                {uploadState?.field === uploadConfig.field ? (
+                  <p className="text-xs text-foreground/70">Uploading {uploadState.filename}...</p>
+                ) : null}
+                {uploadError ? (
+                  <p className="text-xs text-destructive">{uploadError}</p>
+                ) : null}
+              </div>
             ) : null}
 
             <label className="builder-label mt-2">
@@ -384,7 +499,7 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
         <div className="builder-section">
           <p className="builder-kicker">Advanced params</p>
           <p className="mb-2 text-xs text-foreground/70">
-            This method uses JSON editor mode. Core rich composer is available for sendMessage / sendPhoto / sendDocument.
+            This method uses JSON editor mode. Core rich composer is available for sendMessage / sendPhoto / sendVideo / sendDocument.
           </p>
           <Textarea
             rows={10}

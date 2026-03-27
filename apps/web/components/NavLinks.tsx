@@ -49,13 +49,13 @@ export function NavLinks({
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "focus-ring inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium",
+                  "focus-ring inline-flex items-center gap-2 rounded-[1rem] px-3.5 py-2.5 text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-secondary text-foreground"
-                    : "text-muted-foreground"
+                    ? "border border-border/80 bg-background text-foreground"
+                    : "text-muted-foreground hover:bg-background/70 hover:text-foreground"
                 )}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="size-4" />
                 <span>{item.label}</span>
               </Link>
             );
@@ -69,10 +69,10 @@ export function NavLinks({
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "focus-ring inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium",
+                  "focus-ring inline-flex items-center gap-2 rounded-[1rem] px-3.5 py-2.5 text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-secondary text-foreground"
-                    : "text-muted-foreground"
+                    ? "border border-border/80 bg-background text-foreground"
+                    : "text-muted-foreground hover:bg-background/70 hover:text-foreground"
                 )}
               >
                 <span>{item.label}</span>
