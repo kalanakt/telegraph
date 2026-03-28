@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import type { TelegramUpdate } from "@telegram-builder/shared";
 import { logError, logInfo } from "@/lib/logger";
 import { getAutomationOrchestrator } from "@/lib/orchestrator/service";
@@ -23,6 +24,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ botId: 
 
     return NextResponse.json({ ok: true, result });
   } catch (error) {
+    Sentry.captureException(error, {
+      tags: {
+        area: "telegram-webhook",
+      },
+      extra: {
+        botId,
+      },
+    });
+
     logError("webhook_failed", {
       botId,
       error: error instanceof Error ? error.message : "Unknown error"

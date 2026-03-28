@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.6.0",
+    "@sentry/node": "^10.46.0",
     "@telegram-builder/shared": "workspace:*",
     "bullmq": "^5.46.1",
     "ioredis": "^5.10.0"
