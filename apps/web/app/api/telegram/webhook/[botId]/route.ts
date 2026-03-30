@@ -8,6 +8,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ botId: 
   const { botId } = await params;
   const orchestrator = getAutomationOrchestrator();
 
+  const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET_TOKEN;
+  if (expectedSecret) {
+    const provided = req.headers.get("x-telegram-bot-api-secret-token");
+    if (provided !== expectedSecret) {
+      logInfo("webhook_unauthorized", { botId });
+      return NextResponse.json({ ok: false }, { status: 401 });
+    }
+  }
+
   try {
     const update = (await req.json()) as TelegramUpdate;
 

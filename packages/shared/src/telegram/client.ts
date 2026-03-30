@@ -49,9 +49,16 @@ export async function telegramGetMe(token: string): Promise<TelegramMeResponse> 
   return (await response.json()) as TelegramMeResponse;
 }
 
-export async function telegramSetWebhook(token: string, webhookUrl: string): Promise<boolean> {
+export async function telegramSetWebhook(
+  token: string,
+  webhookUrl: string,
+  options?: { secretToken?: string | null }
+): Promise<boolean> {
+  const secretToken = options?.secretToken ?? undefined;
+
   const result = await requestTelegram(token, "setWebhook", {
     url: webhookUrl,
+    ...(secretToken ? { secret_token: secretToken } : {}),
     allowed_updates: [
       "message",
       "edited_message",

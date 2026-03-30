@@ -130,10 +130,18 @@ export function normalizeConditionNodeData(data: Record<string, unknown>) {
     return { type, value: Number(data.value ?? 0) };
   }
 
+  if (type === "target_user_id_equals") {
+    return { type, value: Number(data.value ?? 0) };
+  }
+
   if (type === "message_source_equals") {
     const raw = String(data.value ?? "user");
     const value = raw === "channel" || raw === "group" ? raw : "user";
     return { type, value };
+  }
+
+  if (type.startsWith("message_has_")) {
+    return { type };
   }
 
   return {

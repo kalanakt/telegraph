@@ -10,6 +10,10 @@ export function evaluateCondition(
       return (event.text ?? "").toLowerCase().includes(condition.value.toLowerCase());
     case "text_equals":
       return (event.text ?? "").trim().toLowerCase() === condition.value.trim().toLowerCase();
+    case "text_starts_with":
+      return (event.text ?? "").toLowerCase().startsWith(condition.value.toLowerCase());
+    case "text_ends_with":
+      return (event.text ?? "").toLowerCase().endsWith(condition.value.toLowerCase());
     case "from_user_id":
       return event.fromUserId === condition.value;
     case "from_username_equals":
@@ -26,6 +30,32 @@ export function evaluateCondition(
       return typeof context.variables[condition.key] !== "undefined";
     case "callback_data_equals":
       return (event.callbackData ?? "") === condition.value;
+    case "callback_data_contains":
+      return (event.callbackData ?? "").toLowerCase().includes(condition.value.toLowerCase());
+    case "command_equals":
+      return (event.command ?? "").toLowerCase() === condition.value.toLowerCase();
+    case "command_args_contains":
+      return (event.commandArgs ?? "").toLowerCase().includes(condition.value.toLowerCase());
+    case "inline_query_contains":
+      return (event.inlineQuery ?? "").toLowerCase().includes(condition.value.toLowerCase());
+    case "target_user_id_equals":
+      return event.targetUserId === condition.value;
+    case "old_status_equals":
+      return (event.oldStatus ?? "").toLowerCase() === condition.value.toLowerCase();
+    case "new_status_equals":
+      return (event.newStatus ?? "").toLowerCase() === condition.value.toLowerCase();
+    case "message_has_photo":
+      return Boolean(event.hasPhoto);
+    case "message_has_video":
+      return Boolean(event.hasVideo);
+    case "message_has_document":
+      return Boolean(event.hasDocument);
+    case "message_has_sticker":
+      return Boolean(event.hasSticker);
+    case "message_has_location":
+      return Boolean(event.hasLocation);
+    case "message_has_contact":
+      return Boolean(event.hasContact);
     case "all":
       return condition.conditions.every((item) => evaluateCondition(event, item, context));
     case "any":

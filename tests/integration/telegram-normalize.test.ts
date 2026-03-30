@@ -63,6 +63,50 @@ describe("normalizeTelegramUpdate", () => {
     expect(normalized?.trigger).toBe("callback_query_received");
   });
 
+  it("includes message feature flags for media updates", () => {
+    const normalized = normalizeTelegramUpdate({
+      update_id: 5000,
+      message: {
+        message_id: 1,
+        chat: { id: 777, type: "private" },
+        from: { id: 222 },
+        caption: "photo caption",
+        photo: [{ file_id: "x", file_unique_id: "y", width: 1, height: 1 }]
+      }
+    });
+
+    expect(normalized.trigger).toBe("message_received");
+    expect((normalized as { hasPhoto?: boolean }).hasPhoto).toBe(true);
+  });
+
+  it("normalizes shipping and pre-checkout query ids", () => {
+    const shipping = normalizeTelegramUpdate({
+      update_id: 6000,
+      shipping_query: {
+        id: "ship_1",
+        from: { id: 222, username: "alice" },
+        invoice_payload: "payload"
+      }
+    });
+
+    expect(shipping.trigger).toBe("shipping_query_received");
+    expect((shipping as { shippingQueryId?: string }).shippingQueryId).toBe("ship_1");
+
+    const preCheckout = normalizeTelegramUpdate({
+      update_id: 6001,
+      pre_checkout_query: {
+        id: "pre_1",
+        from: { id: 222, username: "alice" },
+        currency: "USD",
+        total_amount: 100,
+        invoice_payload: "payload"
+      }
+    });
+
+    expect(preCheckout.trigger).toBe("pre_checkout_query_received");
+    expect((preCheckout as { preCheckoutQueryId?: string }).preCheckoutQueryId).toBe("pre_1");
+  });
+
   it("returns null for unsupported updates", () => {
     const normalized = normalizeTelegramUpdate({ update_id: 1 });
     expect(normalized.trigger).toBe("update_received");

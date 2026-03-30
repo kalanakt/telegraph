@@ -12,6 +12,8 @@ export type TriggerType = TelegramTriggerType;
 export type ConditionType =
   | "text_contains"
   | "text_equals"
+  | "text_starts_with"
+  | "text_ends_with"
   | "from_user_id"
   | "from_username_equals"
   | "chat_id_equals"
@@ -20,6 +22,19 @@ export type ConditionType =
   | "variable_equals"
   | "variable_exists"
   | "callback_data_equals"
+  | "callback_data_contains"
+  | "command_equals"
+  | "command_args_contains"
+  | "inline_query_contains"
+  | "target_user_id_equals"
+  | "old_status_equals"
+  | "new_status_equals"
+  | "message_has_photo"
+  | "message_has_video"
+  | "message_has_document"
+  | "message_has_sticker"
+  | "message_has_location"
+  | "message_has_contact"
   | "all"
   | "any";
 
@@ -37,6 +52,8 @@ export type ExecutionPolicy = {
 export type ConditionPayload =
   | { type: "text_contains"; value: string }
   | { type: "text_equals"; value: string }
+  | { type: "text_starts_with"; value: string }
+  | { type: "text_ends_with"; value: string }
   | { type: "from_user_id"; value: number }
   | { type: "from_username_equals"; value: string }
   | { type: "chat_id_equals"; value: string }
@@ -45,6 +62,19 @@ export type ConditionPayload =
   | { type: "variable_equals"; key: string; value: string }
   | { type: "variable_exists"; key: string }
   | { type: "callback_data_equals"; value: string }
+  | { type: "callback_data_contains"; value: string }
+  | { type: "command_equals"; value: string }
+  | { type: "command_args_contains"; value: string }
+  | { type: "inline_query_contains"; value: string }
+  | { type: "target_user_id_equals"; value: number }
+  | { type: "old_status_equals"; value: string }
+  | { type: "new_status_equals"; value: string }
+  | { type: "message_has_photo" }
+  | { type: "message_has_video" }
+  | { type: "message_has_document" }
+  | { type: "message_has_sticker" }
+  | { type: "message_has_location" }
+  | { type: "message_has_contact" }
   | { type: "all"; conditions: ConditionPayload[] }
   | { type: "any"; conditions: ConditionPayload[] };
 
@@ -119,12 +149,20 @@ export type NormalizedEventBase = {
   callbackData?: string;
   inlineQueryId?: string;
   inlineQuery?: string;
+  shippingQueryId?: string;
+  preCheckoutQueryId?: string;
   command?: string;
   commandArgs?: string;
   variables?: Record<string, string>;
   targetUserId?: number;
   oldStatus?: string;
   newStatus?: string;
+  hasPhoto?: boolean;
+  hasVideo?: boolean;
+  hasDocument?: boolean;
+  hasSticker?: boolean;
+  hasLocation?: boolean;
+  hasContact?: boolean;
   rawUpdate?: TelegramUpdate;
 };
 
@@ -147,8 +185,11 @@ export type InlineQueryReceivedEvent = NormalizedEventBase & {
   inlineQuery: string;
 };
 export type ChosenInlineResultReceivedEvent = NormalizedEventBase & { trigger: "chosen_inline_result_received" };
-export type ShippingQueryReceivedEvent = NormalizedEventBase & { trigger: "shipping_query_received" };
-export type PreCheckoutQueryReceivedEvent = NormalizedEventBase & { trigger: "pre_checkout_query_received" };
+export type ShippingQueryReceivedEvent = NormalizedEventBase & { trigger: "shipping_query_received"; shippingQueryId: string };
+export type PreCheckoutQueryReceivedEvent = NormalizedEventBase & {
+  trigger: "pre_checkout_query_received";
+  preCheckoutQueryId: string;
+};
 export type PollReceivedEvent = NormalizedEventBase & { trigger: "poll_received" };
 export type PollAnswerReceivedEvent = NormalizedEventBase & { trigger: "poll_answer_received" };
 export type ChatMemberUpdatedEvent = NormalizedEventBase & { trigger: "chat_member_updated" };

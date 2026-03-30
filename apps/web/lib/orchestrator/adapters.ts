@@ -163,34 +163,46 @@ export function createPrismaEventRepository(prismaClient = prisma): EventReposit
 export function createPrismaRunRepository(prismaClient = prisma): RunRepository {
   return {
     async createRunWithActions(input) {
-      const run = await prismaClient.workflowRun.create({
-        data: {
-          userId: input.userId,
-          botId: input.botId,
-          ruleId: input.rule.ruleId,
-          eventId: input.eventId,
-          status: "queued",
-          trigger: input.eventPayload.trigger,
-          eventPayload: toPrismaJson(input.eventPayload)
-        }
-      });
+      const runInTransaction = async (tx: typeof prismaClient) => {
+        const run = await tx.workflowRun.create({
+          data: {
+            userId: input.userId,
+            botId: input.botId,
+            ruleId: input.rule.ruleId,
+            eventId: input.eventId,
+            status: "queued",
+            trigger: input.eventPayload.trigger,
+            eventPayload: toPrismaJson(input.eventPayload)
+          }
+        });
 
-      const actionRuns = await Promise.all(
-        input.actions.map((flowAction) =>
-          prismaClient.actionRun.create({
-            data: {
-              workflowRunId: run.id,
-              actionId: flowAction.actionId,
-              type: flowAction.payload.type,
-              payload: toPrismaJson({
-                ...flowAction.payload,
-                executionPolicy: getExecutionPolicy(flowAction.payload.type)
-              }),
-              status: "pending"
-            }
-          })
-        )
-      );
+        const actionRuns = await Promise.all(
+          input.actions.map((flowAction) =>
+            tx.actionRun.create({
+              data: {
+                workflowRunId: run.id,
+                actionId: flowAction.actionId,
+                type: flowAction.payload.type,
+                payload: toPrismaJson({
+                  ...flowAction.payload,
+                  executionPolicy: getExecutionPolicy(flowAction.payload.type)
+                }),
+                status: "pending"
+              }
+            })
+          )
+        );
+
+        return { run, actionRuns };
+      };
+
+      const result =
+        "$transaction" in prismaClient && typeof prismaClient.$transaction === "function"
+          ? await prismaClient.$transaction(async (tx) => runInTransaction(tx as typeof prismaClient))
+          : await runInTransaction(prismaClient);
+
+      const run = result.run;
+      const actionRuns = result.actionRuns;
 
       return {
         runId: run.id,
@@ -222,6 +234,7 @@ export function createBullMqActionQueueAdapter(queue?: QueueWriter | null): Acti
       const jobName: ActionJobName = `action:${job.actionType}`;
 
       await queueWriter.add(jobName, job, {
+        jobId: job.idempotencyKey,
         attempts: 5,
         backoff: {
           type: "exponential",

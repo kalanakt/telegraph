@@ -97,6 +97,8 @@ type NodeCallbacks = {
 const CONDITION_OPTIONS = [
   "text_contains",
   "text_equals",
+  "text_starts_with",
+  "text_ends_with",
   "from_user_id",
   "from_username_equals",
   "chat_id_equals",
@@ -104,6 +106,20 @@ const CONDITION_OPTIONS = [
   "message_source_equals",
   "variable_equals",
   "variable_exists",
+  "callback_data_equals",
+  "callback_data_contains",
+  "command_equals",
+  "command_args_contains",
+  "inline_query_contains",
+  "target_user_id_equals",
+  "old_status_equals",
+  "new_status_equals",
+  "message_has_photo",
+  "message_has_video",
+  "message_has_document",
+  "message_has_sticker",
+  "message_has_location",
+  "message_has_contact",
   "all",
   "any",
 ] as const;
@@ -1168,6 +1184,11 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
                       }
                     />
                   </label>
+                ) : selectedConditionType.startsWith("message_has_") ? (
+                  <div className="builder-section">
+                    <p className="builder-kicker">Condition value</p>
+                    <p className="text-xs text-slate-600">This condition does not require a value.</p>
+                  </div>
                 ) : (
                   <label className="builder-label">
                     <span>
@@ -1205,7 +1226,8 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
                           }
 
                           const val =
-                            selectedConditionType === "from_user_id"
+                            selectedConditionType === "from_user_id" ||
+                            selectedConditionType === "target_user_id_equals"
                               ? Number(e.target.value || 0)
                               : e.target.value;
                           updateSelectedNodeData({ value: val });

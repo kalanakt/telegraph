@@ -101,8 +101,20 @@ function renderTemplate(value: string, job: ActionJob): string {
         return String(job.event.command ?? "");
       case "event.commandArgs":
         return String(job.event.commandArgs ?? "");
+      case "event.inlineQueryId":
+        return String(job.event.inlineQueryId ?? "");
       case "event.inlineQuery":
         return String(job.event.inlineQuery ?? "");
+      case "event.shippingQueryId":
+        return String(job.event.shippingQueryId ?? "");
+      case "event.preCheckoutQueryId":
+        return String(job.event.preCheckoutQueryId ?? "");
+      case "event.targetUserId":
+        return String(job.event.targetUserId ?? "");
+      case "event.oldStatus":
+        return String(job.event.oldStatus ?? "");
+      case "event.newStatus":
+        return String(job.event.newStatus ?? "");
       default:
         return "";
     }
@@ -146,7 +158,22 @@ async function runTelegramAction(deps: WorkerProcessorDeps, job: ActionJob): Pro
   const capability = getCapabilityByActionType(job.action.type);
   const renderedParams = renderTemplatesDeep(job.action.params, job) as Record<string, unknown>;
 
-  const result = await deps.invokeTelegramMethod(job.botToken, capability.method, renderedParams);
+  let parsedParams: Record<string, unknown>;
+  try {
+    parsedParams = capability.paramsSchema.parse(renderedParams) as Record<string, unknown>;
+  } catch (error) {
+    const firstIssue =
+      typeof error === "object" && error !== null && "issues" in error
+        ? (error as { issues?: Array<{ message?: string }> }).issues?.[0]?.message
+        : undefined;
+
+    throw {
+      message: firstIssue ? `Invalid action params: ${firstIssue}` : "Invalid action params",
+      classification: "permanent"
+    } satisfies ActionExecutionError;
+  }
+
+  const result = await deps.invokeTelegramMethod(job.botToken, capability.method, parsedParams);
   if (!result.ok) {
     throw classifyTelegramResult(result);
   }

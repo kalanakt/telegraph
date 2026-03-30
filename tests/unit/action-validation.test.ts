@@ -41,4 +41,33 @@ describe("actionSchema v2", () => {
 
     expect(result.success).toBe(false);
   });
+
+  it("accepts query and join-request actions with template ids", () => {
+    expect(
+      actionSchema.safeParse({
+        type: "telegram.answerPreCheckoutQuery",
+        params: { pre_checkout_query_id: "{{event.preCheckoutQueryId}}", ok: true }
+      }).success
+    ).toBe(true);
+
+    expect(
+      actionSchema.safeParse({
+        type: "telegram.answerShippingQuery",
+        params: {
+          shipping_query_id: "{{event.shippingQueryId}}",
+          ok: true,
+          shipping_options: [
+            { id: "standard", title: "Standard", prices: [{ label: "Shipping", amount: 0 }] }
+          ]
+        }
+      }).success
+    ).toBe(true);
+
+    expect(
+      actionSchema.safeParse({
+        type: "telegram.approveChatJoinRequest",
+        params: { chat_id: "{{event.chatId}}", user_id: "{{event.fromUserId}}" }
+      }).success
+    ).toBe(true);
+  });
 });

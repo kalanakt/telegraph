@@ -9,6 +9,7 @@ const withMDX = createMDX({
 const nextConfig: NextConfig = {
   typedRoutes: false,
   pageExtensions: ["ts", "tsx", "md", "mdx"],
+  serverExternalPackages: ["bullmq", "ioredis", "@prisma/client"],
   env: {
     NEXT_PUBLIC_SENTRY_DSN: process.env.SENTRY_DSN,
     NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE: process.env.SENTRY_TRACES_SAMPLE_RATE,

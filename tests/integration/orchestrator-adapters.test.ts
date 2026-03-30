@@ -47,6 +47,7 @@ describe("orchestrator adapters", () => {
     expect(calls).toHaveLength(1);
     expect(calls[0].name).toBe("action:telegram.sendMessage");
     expect(calls[0].options).toEqual({
+      jobId: "1:action_run_1:telegram.sendMessage",
       attempts: 5,
       backoff: { type: "exponential", delay: 2000 },
       removeOnComplete: 100,

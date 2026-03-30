@@ -73,7 +73,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "TELEGRAM_WEBHOOK_BASE_URL is required" }, { status: 500 });
     }
 
-    const webhookOk = await telegramSetWebhook(data.token, `${webhookBase}/${bot.id}`);
+    const secretToken = process.env.TELEGRAM_WEBHOOK_SECRET_TOKEN;
+    const webhookOk = await telegramSetWebhook(data.token, `${webhookBase}/${bot.id}`, {
+      secretToken
+    });
 
     if (!webhookOk) {
       await prisma.bot.update({ where: { id: bot.id }, data: { status: "webhook_error" } });

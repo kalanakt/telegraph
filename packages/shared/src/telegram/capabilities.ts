@@ -125,6 +125,12 @@ export const telegramReplyMarkupSchema = z.union([
   forceReplySchema
 ]);
 
+const templateTokenSchema = z.string().regex(/^\{\{\s*[a-zA-Z0-9_.]+\s*\}\}$/);
+const numericStringSchema = z.string().regex(/^-?\d+$/);
+
+const templateableIntSchema = z.union([z.number().int(), numericStringSchema.transform(Number), templateTokenSchema]);
+const templateablePositiveIntSchema = z.union([z.number().int().positive(), z.string().regex(/^\d+$/).transform(Number), templateTokenSchema]);
+
 const chatIdSchema = z.union([z.string().min(1), z.number().int()]);
 
 const sendMessageSchema = z
@@ -203,7 +209,7 @@ const sendVideoSchema = z
 const editMessageTextSchema = z
   .object({
     chat_id: chatIdSchema.optional(),
-    message_id: z.number().int().positive().optional(),
+    message_id: templateablePositiveIntSchema.optional(),
     inline_message_id: z.string().optional(),
     text: z.string().min(1).max(4096),
     parse_mode: telegramParseModeSchema.optional(),
@@ -226,7 +232,7 @@ const editMessageTextSchema = z
 const deleteMessageSchema = z
   .object({
     chat_id: chatIdSchema,
-    message_id: z.number().int().positive()
+    message_id: templateablePositiveIntSchema
   })
   .strict();
 
@@ -239,6 +245,74 @@ const answerCallbackQuerySchema = z
     cache_time: z.number().int().min(0).max(86400).optional()
   })
   .strict();
+
+const inlineQueryResultSchema = z.record(z.string(), z.unknown());
+
+const answerInlineQuerySchema = z
+  .object({
+    inline_query_id: z.string().min(1),
+    results: z.array(inlineQueryResultSchema).min(1).max(50),
+    cache_time: z.number().int().min(0).max(86400).optional(),
+    is_personal: z.boolean().optional(),
+    next_offset: z.string().optional(),
+    button: z.record(z.string(), z.unknown()).optional()
+  })
+  .strict();
+
+const labeledPriceSchema = z
+  .object({
+    label: z.string().min(1).max(32),
+    amount: z.number().int()
+  })
+  .strict();
+
+const shippingOptionSchema = z
+  .object({
+    id: z.string().min(1).max(64),
+    title: z.string().min(1).max(32),
+    prices: z.array(labeledPriceSchema).min(1).max(50)
+  })
+  .strict();
+
+const answerShippingQuerySchema = z
+  .object({
+    shipping_query_id: z.string().min(1),
+    ok: z.boolean(),
+    shipping_options: z.array(shippingOptionSchema).min(1).optional(),
+    error_message: z.string().min(1).max(256).optional()
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.ok && !value.shipping_options) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "answerShippingQuery requires shipping_options when ok=true"
+      });
+    }
+
+    if (!value.ok && !value.error_message) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "answerShippingQuery requires error_message when ok=false"
+      });
+    }
+  });
+
+const answerPreCheckoutQuerySchema = z
+  .object({
+    pre_checkout_query_id: z.string().min(1),
+    ok: z.boolean(),
+    error_message: z.string().min(1).max(256).optional()
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (!value.ok && !value.error_message) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "answerPreCheckoutQuery requires error_message when ok=false"
+      });
+    }
+  });
 
 const sendMediaGroupSchema = z
   .object({
@@ -283,7 +357,7 @@ const sendChatActionSchema = z
 const restrictChatMemberSchema = z
   .object({
     chat_id: chatIdSchema,
-    user_id: z.number().int(),
+    user_id: templateableIntSchema,
     permissions: z
       .object({
         can_send_messages: z.boolean().optional(),
@@ -303,15 +377,15 @@ const restrictChatMemberSchema = z
       })
       .strict(),
     use_independent_chat_permissions: z.boolean().optional(),
-    until_date: z.number().int().positive().optional()
+    until_date: templateablePositiveIntSchema.optional()
   })
   .strict();
 
 const banChatMemberSchema = z
   .object({
     chat_id: chatIdSchema,
-    user_id: z.number().int(),
-    until_date: z.number().int().positive().optional(),
+    user_id: templateableIntSchema,
+    until_date: templateablePositiveIntSchema.optional(),
     revoke_messages: z.boolean().optional()
   })
   .strict();
@@ -319,7 +393,7 @@ const banChatMemberSchema = z
 const unbanChatMemberSchema = z
   .object({
     chat_id: chatIdSchema,
-    user_id: z.number().int(),
+    user_id: templateableIntSchema,
     only_if_banned: z.boolean().optional()
   })
   .strict();
@@ -327,7 +401,7 @@ const unbanChatMemberSchema = z
 const getChatMemberSchema = z
   .object({
     chat_id: chatIdSchema,
-    user_id: z.number().int()
+    user_id: templateableIntSchema
   })
   .strict();
 
@@ -352,7 +426,7 @@ const getChatAdministratorsSchema = z
 const pinChatMessageSchema = z
   .object({
     chat_id: chatIdSchema,
-    message_id: z.number().int().positive(),
+    message_id: templateablePositiveIntSchema,
     disable_notification: z.boolean().optional()
   })
   .strict();
@@ -360,7 +434,21 @@ const pinChatMessageSchema = z
 const unpinChatMessageSchema = z
   .object({
     chat_id: chatIdSchema,
-    message_id: z.number().int().positive().optional()
+    message_id: templateablePositiveIntSchema.optional()
+  })
+  .strict();
+
+const approveChatJoinRequestSchema = z
+  .object({
+    chat_id: chatIdSchema,
+    user_id: templateableIntSchema
+  })
+  .strict();
+
+const declineChatJoinRequestSchema = z
+  .object({
+    chat_id: chatIdSchema,
+    user_id: templateableIntSchema
   })
   .strict();
 
@@ -502,6 +590,9 @@ const METHOD_SCHEMAS = {
   editMessageText: editMessageTextSchema,
   deleteMessage: deleteMessageSchema,
   answerCallbackQuery: answerCallbackQuerySchema,
+  answerInlineQuery: answerInlineQuerySchema,
+  answerShippingQuery: answerShippingQuerySchema,
+  answerPreCheckoutQuery: answerPreCheckoutQuerySchema,
   sendChatAction: sendChatActionSchema,
   restrictChatMember: restrictChatMemberSchema,
   banChatMember: banChatMemberSchema,
@@ -514,6 +605,8 @@ const METHOD_SCHEMAS = {
   getChatMember: getChatMemberSchema,
   getChatMemberCount: getChatMemberCountSchema,
   getChatAdministrators: getChatAdministratorsSchema,
+  approveChatJoinRequest: approveChatJoinRequestSchema,
+  declineChatJoinRequest: declineChatJoinRequestSchema,
   setChatTitle: setChatTitleSchema,
   setChatDescription: setChatDescriptionSchema,
   exportChatInviteLink: exportChatInviteLinkSchema,
@@ -575,10 +668,15 @@ export const TELEGRAM_CAPABILITIES: Record<TelegramMethod, TelegramCapability> =
   editMessageText: buildCapability("editMessageText", { label: "Edit Message Text", category: "messages", description: "Edit existing message text with markup.", executionPolicy: { retryClass: "transient", timeoutMs: 15_000, idempotencyKeyStrategy: "event_and_action", rateLimitBucket: "telegram.write" } }),
   deleteMessage: buildCapability("deleteMessage", { label: "Delete Message", category: "messages", description: "Delete a message in chat.", executionPolicy: { retryClass: "transient", timeoutMs: 10_000, idempotencyKeyStrategy: "event_and_action", rateLimitBucket: "telegram.write" } }),
   answerCallbackQuery: buildCapability("answerCallbackQuery", { label: "Answer Callback", category: "messages", description: "Answer callback query from inline keyboard.", executionPolicy: { retryClass: "transient", timeoutMs: 8_000, idempotencyKeyStrategy: "action_run", rateLimitBucket: "telegram.callback" } }),
+  answerInlineQuery: buildCapability("answerInlineQuery", { label: "Answer Inline Query", category: "messages", description: "Respond to an inline query with result items.", executionPolicy: { retryClass: "transient", timeoutMs: 15_000, idempotencyKeyStrategy: "action_run", rateLimitBucket: "telegram.inline" } }),
+  answerShippingQuery: buildCapability("answerShippingQuery", { label: "Answer Shipping Query", category: "admin", description: "Answer a shipping query for an invoice payment.", executionPolicy: { retryClass: "transient", timeoutMs: 15_000, idempotencyKeyStrategy: "action_run", rateLimitBucket: "telegram.payments" } }),
+  answerPreCheckoutQuery: buildCapability("answerPreCheckoutQuery", { label: "Answer Pre-Checkout", category: "admin", description: "Answer a pre-checkout query for an invoice payment.", executionPolicy: { retryClass: "transient", timeoutMs: 15_000, idempotencyKeyStrategy: "action_run", rateLimitBucket: "telegram.payments" } }),
   sendChatAction: buildCapability("sendChatAction", { label: "Send Chat Action", category: "messages", description: "Send typing/upload status.", executionPolicy: { retryClass: "transient", timeoutMs: 8_000, idempotencyKeyStrategy: "action_run", rateLimitBucket: "telegram.write" } }),
   restrictChatMember: buildCapability("restrictChatMember", { label: "Restrict Chat Member", category: "moderation", description: "Restrict member permissions.", executionPolicy: { retryClass: "transient", timeoutMs: 15_000, idempotencyKeyStrategy: "event_and_action", rateLimitBucket: "telegram.moderation" } }),
   banChatMember: buildCapability("banChatMember", { label: "Ban Chat Member", category: "moderation", description: "Ban a member from a chat.", executionPolicy: { retryClass: "transient", timeoutMs: 15_000, idempotencyKeyStrategy: "event_and_action", rateLimitBucket: "telegram.moderation" } }),
   unbanChatMember: buildCapability("unbanChatMember", { label: "Unban Chat Member", category: "moderation", description: "Unban a member in chat.", executionPolicy: { retryClass: "transient", timeoutMs: 15_000, idempotencyKeyStrategy: "event_and_action", rateLimitBucket: "telegram.moderation" } }),
+  approveChatJoinRequest: buildCapability("approveChatJoinRequest", { label: "Approve Join Request", category: "moderation", description: "Approve a pending chat join request.", executionPolicy: { retryClass: "transient", timeoutMs: 10_000, idempotencyKeyStrategy: "event_and_action", rateLimitBucket: "telegram.moderation" } }),
+  declineChatJoinRequest: buildCapability("declineChatJoinRequest", { label: "Decline Join Request", category: "moderation", description: "Decline a pending chat join request.", executionPolicy: { retryClass: "transient", timeoutMs: 10_000, idempotencyKeyStrategy: "event_and_action", rateLimitBucket: "telegram.moderation" } }),
   pinChatMessage: buildCapability("pinChatMessage", { label: "Pin Message", category: "chat", description: "Pin message in chat.", executionPolicy: { retryClass: "transient", timeoutMs: 10_000, idempotencyKeyStrategy: "event_and_action", rateLimitBucket: "telegram.chat" } }),
   unpinChatMessage: buildCapability("unpinChatMessage", { label: "Unpin Message", category: "chat", description: "Unpin one message in chat.", executionPolicy: { retryClass: "transient", timeoutMs: 10_000, idempotencyKeyStrategy: "event_and_action", rateLimitBucket: "telegram.chat" } }),
   unpinAllChatMessages: buildCapability("unpinAllChatMessages", { label: "Unpin All", category: "chat", description: "Unpin all chat messages.", executionPolicy: { retryClass: "transient", timeoutMs: 10_000, idempotencyKeyStrategy: "event_and_action", rateLimitBucket: "telegram.chat" } }),
@@ -637,7 +735,12 @@ export const TELEGRAM_TRIGGER_TYPES = [
 export type TelegramTriggerType = (typeof TELEGRAM_TRIGGER_TYPES)[number];
 
 const actionTriggerCompat: Partial<Record<TelegramActionType, readonly TelegramTriggerType[]>> = {
-  "telegram.answerCallbackQuery": ["callback_query_received", "update_received"]
+  "telegram.answerCallbackQuery": ["callback_query_received", "update_received"],
+  "telegram.answerInlineQuery": ["inline_query_received", "update_received"],
+  "telegram.answerShippingQuery": ["shipping_query_received", "update_received"],
+  "telegram.answerPreCheckoutQuery": ["pre_checkout_query_received", "update_received"],
+  "telegram.approveChatJoinRequest": ["chat_join_request_received", "update_received"],
+  "telegram.declineChatJoinRequest": ["chat_join_request_received", "update_received"]
 };
 
 export function isTelegramActionAllowedForTrigger(actionType: TelegramActionType, trigger: TelegramTriggerType): boolean {

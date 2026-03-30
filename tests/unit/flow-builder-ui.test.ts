@@ -110,6 +110,14 @@ describe("flow-builder composer payloads", () => {
     expect(actionSchema.safeParse(sendVideoPayload).success).toBe(true);
     expect(actionSchema.safeParse(sendDocumentPayload).success).toBe(true);
   });
+
+  it("serializes query and join-request templates", () => {
+    expect(actionSchema.safeParse(createActionTemplate("telegram.answerInlineQuery")).success).toBe(true);
+    expect(actionSchema.safeParse(createActionTemplate("telegram.answerShippingQuery")).success).toBe(true);
+    expect(actionSchema.safeParse(createActionTemplate("telegram.answerPreCheckoutQuery")).success).toBe(true);
+    expect(actionSchema.safeParse(createActionTemplate("telegram.approveChatJoinRequest")).success).toBe(true);
+    expect(actionSchema.safeParse(createActionTemplate("telegram.declineChatJoinRequest")).success).toBe(true);
+  });
 });
 
 describe("flow-builder legacy flow coercion", () => {

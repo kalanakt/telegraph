@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Outfit, Sora } from "next/font/google";
 import Link from "next/link";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Nav } from "@/components/Nav";
@@ -7,18 +6,6 @@ import { isClerkConfigured } from "@/lib/auth-config";
 import { clerkAppearance } from "@/lib/clerk-appearance";
 import { getSiteUrl, toAbsoluteUrl } from "@/lib/site-url";
 import "./globals.css";
-
-const outfit = Outfit({
-  subsets: ["latin"],
-  variable: "--font-sans",
-  display: "swap",
-});
-
-const sora = Sora({
-  subsets: ["latin"],
-  variable: "--font-display",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
@@ -84,7 +71,7 @@ export default function RootLayout({
   );
 
   return (
-    <html lang="en" className={`${outfit.variable} ${sora.variable} font-sans`}>
+    <html lang="en" className="font-sans">
       <body>
         {hasClerk && publishableKey ? (
           <ClerkProvider appearance={clerkAppearance} publishableKey={publishableKey}>

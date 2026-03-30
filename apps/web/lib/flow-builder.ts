@@ -116,6 +116,116 @@ export function createActionTemplate(actionType: ActionPayload["type"]): ActionT
           caption: "Document caption"
         }
       };
+    case "telegram.editMessageText":
+      return {
+        type: actionType,
+        params: {
+          chat_id: "{{event.chatId}}",
+          message_id: "{{event.messageId}}",
+          text: "Edited message"
+        }
+      };
+    case "telegram.deleteMessage":
+      return {
+        type: actionType,
+        params: {
+          chat_id: "{{event.chatId}}",
+          message_id: "{{event.messageId}}"
+        }
+      };
+    case "telegram.answerCallbackQuery":
+      return {
+        type: actionType,
+        params: {
+          callback_query_id: "{{event.callbackQueryId}}",
+          text: "Thanks!"
+        }
+      };
+    case "telegram.answerInlineQuery":
+      return {
+        type: actionType,
+        params: {
+          inline_query_id: "{{event.inlineQueryId}}",
+          results: [
+            {
+              type: "article",
+              id: "result_1",
+              title: "Example result",
+              input_message_content: {
+                message_text: "Hello from Telegraph"
+              }
+            }
+          ],
+          is_personal: true,
+          cache_time: 0
+        }
+      };
+    case "telegram.answerShippingQuery":
+      return {
+        type: actionType,
+        params: {
+          shipping_query_id: "{{event.shippingQueryId}}",
+          ok: true,
+          shipping_options: [
+            {
+              id: "standard",
+              title: "Standard",
+              prices: [{ label: "Shipping", amount: 0 }]
+            }
+          ]
+        }
+      };
+    case "telegram.answerPreCheckoutQuery":
+      return {
+        type: actionType,
+        params: {
+          pre_checkout_query_id: "{{event.preCheckoutQueryId}}",
+          ok: true
+        }
+      };
+    case "telegram.approveChatJoinRequest":
+      return {
+        type: actionType,
+        params: {
+          chat_id: "{{event.chatId}}",
+          user_id: "{{event.fromUserId}}"
+        }
+      };
+    case "telegram.declineChatJoinRequest":
+      return {
+        type: actionType,
+        params: {
+          chat_id: "{{event.chatId}}",
+          user_id: "{{event.fromUserId}}"
+        }
+      };
+    case "telegram.banChatMember":
+      return {
+        type: actionType,
+        params: {
+          chat_id: "{{event.chatId}}",
+          user_id: "{{event.fromUserId}}"
+        }
+      };
+    case "telegram.unbanChatMember":
+      return {
+        type: actionType,
+        params: {
+          chat_id: "{{event.chatId}}",
+          user_id: "{{event.fromUserId}}"
+        }
+      };
+    case "telegram.restrictChatMember":
+      return {
+        type: actionType,
+        params: {
+          chat_id: "{{event.chatId}}",
+          user_id: "{{event.fromUserId}}",
+          permissions: {
+            can_send_messages: false
+          }
+        }
+      };
     default:
       return {
         type: actionType,
@@ -284,6 +394,13 @@ function normalizeConditionData(data: unknown): ConditionPayload {
     } as ConditionPayload;
   }
 
+  if (type === "target_user_id_equals") {
+    return {
+      type,
+      value: asNumber(input.value) ?? 0
+    } as ConditionPayload;
+  }
+
   if (type === "message_source_equals") {
     const raw = String(input.value ?? "user");
     const value = raw === "group" || raw === "channel" ? raw : "user";
@@ -291,6 +408,10 @@ function normalizeConditionData(data: unknown): ConditionPayload {
       type,
       value
     } as ConditionPayload;
+  }
+
+  if (type.startsWith("message_has_")) {
+    return { type } as ConditionPayload;
   }
 
   return {

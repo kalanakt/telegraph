@@ -19,6 +19,8 @@ describe("evaluateAllConditions", () => {
     const ok = evaluateAllConditions(event, [
       { type: "text_contains", value: "hello" },
       { type: "text_equals", value: "hello world" },
+      { type: "text_starts_with", value: "hello" },
+      { type: "text_ends_with", value: "world" },
       { type: "from_user_id", value: 5566 }
     ]);
 
@@ -47,6 +49,33 @@ describe("evaluateAllConditions", () => {
         ]
       }
     ]);
+
+    expect(ok).toBe(true);
+  });
+
+  it("supports message feature and command/callback/status conditions", () => {
+    const ok = evaluateAllConditions(
+      {
+        ...event,
+        trigger: "command_received",
+        command: "/start",
+        commandArgs: "abc",
+        callbackData: "confirm_yes",
+        targetUserId: 99,
+        oldStatus: "left",
+        newStatus: "member",
+        hasPhoto: true
+      },
+      [
+        { type: "command_equals", value: "/start" },
+        { type: "command_args_contains", value: "a" },
+        { type: "callback_data_contains", value: "yes" },
+        { type: "target_user_id_equals", value: 99 },
+        { type: "old_status_equals", value: "left" },
+        { type: "new_status_equals", value: "member" },
+        { type: "message_has_photo" }
+      ]
+    );
 
     expect(ok).toBe(true);
   });

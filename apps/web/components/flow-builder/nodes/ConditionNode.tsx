@@ -17,6 +17,8 @@ import type { ConditionEditorData, NodeCallbacks } from "../types";
 const CONDITION_ICONS: Record<string, React.ElementType> = {
   text_contains: MessageSquare,
   text_equals: MessageSquare,
+  text_starts_with: MessageSquare,
+  text_ends_with: MessageSquare,
   from_user_id: User,
   from_username_equals: User,
   chat_id_equals: Hash,
@@ -25,6 +27,19 @@ const CONDITION_ICONS: Record<string, React.ElementType> = {
   variable_equals: Variable,
   variable_exists: Variable,
   callback_data_equals: MousePointerClick,
+  callback_data_contains: MousePointerClick,
+  command_equals: MessageSquare,
+  command_args_contains: MessageSquare,
+  inline_query_contains: MessageSquare,
+  target_user_id_equals: Users,
+  old_status_equals: Users,
+  new_status_equals: Users,
+  message_has_photo: MessageSquare,
+  message_has_video: MessageSquare,
+  message_has_document: MessageSquare,
+  message_has_sticker: MessageSquare,
+  message_has_location: MessageSquare,
+  message_has_contact: MessageSquare,
   all: GitBranch,
   any: GitBranch,
 };
@@ -36,6 +51,14 @@ function formatConditionSummary(data: ConditionEditorData): string {
   if (type === "all") return "All conditions match";
   if (type === "any") return "Any condition matches";
   if (type === "callback_data_equals") return `data = "${data.value ?? ""}"`;
+  if (type === "callback_data_contains") return `data contains "${data.value ?? ""}"`;
+  if (type === "command_equals") return `command = "${data.value ?? ""}"`;
+  if (type === "command_args_contains") return `args contains "${data.value ?? ""}"`;
+  if (type === "inline_query_contains") return `query contains "${data.value ?? ""}"`;
+  if (type === "target_user_id_equals") return `target = ${data.value ?? ""}`;
+  if (type === "old_status_equals") return `old = "${data.value ?? ""}"`;
+  if (type === "new_status_equals") return `new = "${data.value ?? ""}"`;
+  if (type.startsWith("message_has_")) return type.replace("message_has_", "has ");
   if (data.value !== undefined && data.value !== "") return String(data.value);
   return "Set value in inspector";
 }

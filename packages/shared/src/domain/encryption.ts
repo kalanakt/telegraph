@@ -1,8 +1,23 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "crypto";
 
+let warnedFallback = false;
+
 function getKey(): Buffer {
-  const source = process.env.ENCRYPTION_KEY ?? "fallback_change_me";
-  return createHash("sha256").update(source).digest();
+  const trimmed = (process.env.ENCRYPTION_KEY ?? "").trim();
+
+  if (trimmed.length < 32) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("ENCRYPTION_KEY is required and must be at least 32 characters in production");
+    }
+
+    if (!warnedFallback) {
+      warnedFallback = true;
+      console.warn("Using insecure fallback ENCRYPTION_KEY (set ENCRYPTION_KEY to 32+ chars)");
+    }
+  }
+
+  const keyMaterial = trimmed.length >= 32 ? trimmed : "fallback_change_me";
+  return createHash("sha256").update(keyMaterial).digest();
 }
 
 export function encrypt(text: string): string {

@@ -27,6 +27,33 @@ function mapMessageSource(chatType?: string): "user" | "channel" | "group" {
   return "user";
 }
 
+function extractMessageFeatures(message: unknown): Partial<Pick<NormalizedEvent, "hasPhoto" | "hasVideo" | "hasDocument" | "hasSticker" | "hasLocation" | "hasContact">> {
+  if (!message || typeof message !== "object") {
+    return {};
+  }
+
+  const msg = message as Record<string, unknown>;
+  const features = {
+    hasPhoto: Array.isArray(msg.photo) && msg.photo.length > 0,
+    hasVideo: typeof msg.video === "object" && msg.video !== null,
+    hasDocument: typeof msg.document === "object" && msg.document !== null,
+    hasSticker: typeof msg.sticker === "object" && msg.sticker !== null,
+    hasLocation: typeof msg.location === "object" && msg.location !== null,
+    hasContact: typeof msg.contact === "object" && msg.contact !== null
+  };
+
+  const enabled: Record<string, boolean> = {};
+  for (const [key, value] of Object.entries(features)) {
+    if (value) {
+      enabled[key] = true;
+    }
+  }
+
+  return enabled as unknown as Partial<
+    Pick<NormalizedEvent, "hasPhoto" | "hasVideo" | "hasDocument" | "hasSticker" | "hasLocation" | "hasContact">
+  >;
+}
+
 export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent {
   const messageSource = update.message;
   if (messageSource) {
@@ -45,6 +72,7 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
         text,
         command: command.command,
         commandArgs: command.commandArgs,
+        ...extractMessageFeatures(messageSource),
         variables: {}
       };
     }
@@ -59,6 +87,7 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
       fromUsername: messageSource.from?.username,
       messageSource: mapMessageSource(messageSource.chat.type),
       text,
+      ...extractMessageFeatures(messageSource),
       variables: {}
     };
   }
@@ -75,6 +104,7 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
       fromUsername: editedMessage.from?.username,
       messageSource: mapMessageSource(editedMessage.chat.type),
       text: editedMessage.text ?? editedMessage.caption ?? "",
+      ...extractMessageFeatures(editedMessage),
       variables: {}
     };
   }
@@ -88,6 +118,7 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
       chatType: update.channel_post.chat.type,
       messageSource: "channel",
       text: update.channel_post.text ?? update.channel_post.caption ?? "",
+      ...extractMessageFeatures(update.channel_post),
       variables: {}
     };
   }
@@ -101,6 +132,7 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
       chatType: update.edited_channel_post.chat.type,
       messageSource: "channel",
       text: update.edited_channel_post.text ?? update.edited_channel_post.caption ?? "",
+      ...extractMessageFeatures(update.edited_channel_post),
       variables: {}
     };
   }
@@ -119,6 +151,7 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
       messageSource: mapMessageSource(cb.message?.chat?.type),
       text: cb.data ?? "",
       callbackData: cb.data,
+      ...(cb.message ? extractMessageFeatures(cb.message) : {}),
       variables: {}
     };
   }
@@ -153,6 +186,7 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
     return {
       trigger: "shipping_query_received",
       updateId: update.update_id,
+      shippingQueryId: update.shipping_query.id,
       fromUserId: update.shipping_query.from.id,
       fromUsername: update.shipping_query.from.username,
       messageSource: "user",
@@ -165,6 +199,7 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
     return {
       trigger: "pre_checkout_query_received",
       updateId: update.update_id,
+      preCheckoutQueryId: update.pre_checkout_query.id,
       fromUserId: update.pre_checkout_query.from.id,
       fromUsername: update.pre_checkout_query.from.username,
       messageSource: "user",

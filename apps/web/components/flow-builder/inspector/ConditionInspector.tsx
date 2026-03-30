@@ -17,6 +17,8 @@ function asString(value: unknown): string {
 
 export function ConditionInspector({ data, trigger, onUpdate }: Props) {
   const conditionType = String(data.type ?? "text_contains");
+  const requiresNoValue =
+    conditionType.startsWith("message_has_");
 
   return (
     <>
@@ -51,6 +53,11 @@ export function ConditionInspector({ data, trigger, onUpdate }: Props) {
             onChange={(e) => onUpdate({ conditionsJson: e.target.value })}
           />
         </label>
+      ) : requiresNoValue ? (
+        <div className="builder-section">
+          <p className="builder-kicker">Condition value</p>
+          <p className="text-xs text-foreground/70">This condition does not require a value.</p>
+        </div>
       ) : (
         <label className="builder-label">
           <span>
@@ -76,6 +83,8 @@ export function ConditionInspector({ data, trigger, onUpdate }: Props) {
                   ? "e.g. confirm_yes"
                   : conditionType === "from_user_id"
                   ? "Telegram user ID"
+                  : conditionType === "target_user_id_equals"
+                  ? "Target user ID"
                   : "Value"
               }
               onChange={(e) => {
@@ -84,7 +93,7 @@ export function ConditionInspector({ data, trigger, onUpdate }: Props) {
                   return;
                 }
                 const val =
-                  conditionType === "from_user_id"
+                  conditionType === "from_user_id" || conditionType === "target_user_id_equals"
                     ? Number(e.target.value || 0)
                     : e.target.value;
                 onUpdate({ value: val });

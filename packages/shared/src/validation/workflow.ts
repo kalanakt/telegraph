@@ -16,6 +16,12 @@ const ALLOWED_TEMPLATE_FIELDS = new Set([
   "event.command",
   "event.commandArgs",
   "event.inlineQuery",
+  "event.inlineQueryId",
+  "event.shippingQueryId",
+  "event.preCheckoutQueryId",
+  "event.targetUserId",
+  "event.oldStatus",
+  "event.newStatus",
   "vars"
 ]);
 
@@ -25,6 +31,8 @@ export const conditionSchema: z.ZodType<ConditionPayload> = z.lazy(() =>
   z.discriminatedUnion("type", [
     z.object({ type: z.literal("text_contains"), value: z.string().min(1) }),
     z.object({ type: z.literal("text_equals"), value: z.string().min(1) }),
+    z.object({ type: z.literal("text_starts_with"), value: z.string().min(1) }),
+    z.object({ type: z.literal("text_ends_with"), value: z.string().min(1) }),
     z.object({ type: z.literal("from_user_id"), value: z.number().int() }),
     z.object({ type: z.literal("from_username_equals"), value: z.string().min(1) }),
     z.object({ type: z.literal("chat_id_equals"), value: z.string().min(1) }),
@@ -33,6 +41,19 @@ export const conditionSchema: z.ZodType<ConditionPayload> = z.lazy(() =>
     z.object({ type: z.literal("variable_equals"), key: z.string().min(1), value: z.string() }),
     z.object({ type: z.literal("variable_exists"), key: z.string().min(1) }),
     z.object({ type: z.literal("callback_data_equals"), value: z.string().min(1) }),
+    z.object({ type: z.literal("callback_data_contains"), value: z.string().min(1) }),
+    z.object({ type: z.literal("command_equals"), value: z.string().min(1) }),
+    z.object({ type: z.literal("command_args_contains"), value: z.string().min(1) }),
+    z.object({ type: z.literal("inline_query_contains"), value: z.string().min(1) }),
+    z.object({ type: z.literal("target_user_id_equals"), value: z.number().int() }),
+    z.object({ type: z.literal("old_status_equals"), value: z.string().min(1) }),
+    z.object({ type: z.literal("new_status_equals"), value: z.string().min(1) }),
+    z.object({ type: z.literal("message_has_photo") }),
+    z.object({ type: z.literal("message_has_video") }),
+    z.object({ type: z.literal("message_has_document") }),
+    z.object({ type: z.literal("message_has_sticker") }),
+    z.object({ type: z.literal("message_has_location") }),
+    z.object({ type: z.literal("message_has_contact") }),
     z.object({ type: z.literal("all"), conditions: z.array(conditionSchema).min(1) }),
     z.object({ type: z.literal("any"), conditions: z.array(conditionSchema).min(1) })
   ])

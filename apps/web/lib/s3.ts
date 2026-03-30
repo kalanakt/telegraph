@@ -2,26 +2,69 @@ import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { randomUUID } from "node:crypto";
 import { extname } from "node:path";
 
-const endpoint = process.env.S3_ENDPOINT!;
-const bucket = process.env.S3_BUCKET!;
-const region = process.env.S3_REGION ?? "auto";
+type S3Config = {
+  endpoint: string;
+  bucket: string;
+  region: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  publicUrl?: string;
+};
 
-export const s3 = new S3Client({
-  endpoint,
-  region,
-  credentials: {
-    accessKeyId: process.env.S3_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!
-  },
-  forcePathStyle: true
-});
+let cachedClient: S3Client | null = null;
+let cachedConfig: S3Config | null = null;
+
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value || value.trim().length === 0) {
+    throw new Error(`${name} is required`);
+  }
+  return value.trim();
+}
+
+function getS3Config(): S3Config {
+  if (cachedConfig) {
+    return cachedConfig;
+  }
+
+  cachedConfig = {
+    endpoint: requireEnv("S3_ENDPOINT"),
+    bucket: requireEnv("S3_BUCKET"),
+    region: (process.env.S3_REGION ?? "auto").trim() || "auto",
+    accessKeyId: requireEnv("S3_ACCESS_KEY_ID"),
+    secretAccessKey: requireEnv("S3_SECRET_ACCESS_KEY"),
+    publicUrl: process.env.S3_PUBLIC_URL?.trim() || undefined
+  };
+
+  return cachedConfig;
+}
+
+function getS3Client(): S3Client {
+  if (cachedClient) {
+    return cachedClient;
+  }
+
+  const config = getS3Config();
+  cachedClient = new S3Client({
+    endpoint: config.endpoint,
+    region: config.region,
+    credentials: {
+      accessKeyId: config.accessKeyId,
+      secretAccessKey: config.secretAccessKey
+    },
+    forcePathStyle: true
+  });
+
+  return cachedClient;
+}
 
 function publicBaseUrl(): string {
-  const override = process.env.S3_PUBLIC_URL;
+  const config = getS3Config();
+  const override = config.publicUrl;
   if (override && override.length > 0) {
     return override.replace(/\/$/, "");
   }
-  return `${endpoint.replace(/\/$/, "")}/${bucket}`;
+  return `${config.endpoint.replace(/\/$/, "")}/${config.bucket}`;
 }
 
 // Telegram file size limits when sending by URL
@@ -67,12 +110,14 @@ export async function uploadMedia(
   filename: string,
   contentType: string
 ): Promise<{ url: string; key: string }> {
+  const config = getS3Config();
+  const s3 = getS3Client();
   const ext = extname(filename) || "";
   const key = `media/${randomUUID()}${ext}`;
 
   await s3.send(
     new PutObjectCommand({
-      Bucket: bucket,
+      Bucket: config.bucket,
       Key: key,
       Body: buffer,
       ContentType: contentType,
