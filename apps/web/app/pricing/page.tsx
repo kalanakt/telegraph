@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { PricingTable } from "@clerk/nextjs";
 import { CheckCircle2 } from "lucide-react";
 import { PageHeading } from "@/components/PageHeading";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +11,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { isClerkConfigured } from "@/lib/auth-config";
-import { clerkCheckoutAppearance, clerkPricingAppearance } from "@/lib/clerk-appearance";
+import { getAuthUserId } from "@/lib/clerk-auth";
+import { requireAppUser } from "@/lib/user";
 
 function Feature({ children }: { children: ReactNode }) {
   return (
@@ -24,29 +24,13 @@ function Feature({ children }: { children: ReactNode }) {
 }
 
 export default function PricingPage() {
-  if (isClerkConfigured()) {
-    return (
-      <div className="space-y-6">
-        <PageHeading
-          title="Pricing"
-          subtitle="Upgrade or manage your subscription using Clerk Billing."
-        />
-        <PricingTable
-          for="user"
-          appearance={clerkPricingAppearance}
-          checkoutProps={{
-            appearance: clerkCheckoutAppearance,
-          }}
-        />
-      </div>
-    );
-  }
+  const hasClerk = isClerkConfigured();
 
   return (
     <div className="space-y-6">
       <PageHeading
         title="Pricing"
-        subtitle="Clerk billing is not configured in this environment."
+        subtitle="Upgrade or manage your subscription with Creem."
       />
 
       <div className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
@@ -68,8 +52,10 @@ export default function PricingPage() {
               <Feature>3 flows per bot</Feature>
               <Feature>1,000 runs each month</Feature>
             </ul>
-            <Button variant="outline" className="mt-auto w-full sm:w-auto">
+            <Button variant="outline" className="mt-auto w-full sm:w-auto" asChild>
+              <a href="/dashboard">
               Current baseline
+              </a>
             </Button>
           </CardContent>
         </Card>
@@ -90,10 +76,45 @@ export default function PricingPage() {
               <Feature>100 flows per bot</Feature>
               <Feature>200,000 runs each month</Feature>
             </ul>
-            <Button className="mt-auto w-full sm:w-auto">Upgrade to Pro</Button>
+            <UpgradeButton hasClerk={hasClerk} />
           </CardContent>
         </Card>
       </div>
     </div>
+  );
+}
+
+async function UpgradeButton({ hasClerk }: { hasClerk: boolean }) {
+  const userId = await getAuthUserId();
+
+  // Not signed in: send them to auth first.
+  if (hasClerk && !userId) {
+    return (
+      <Button className="mt-auto w-full sm:w-auto" asChild>
+        <a href="/sign-in?redirect_url=/pricing">Sign in to upgrade</a>
+      </Button>
+    );
+  }
+
+  let plan: string | null = null;
+  try {
+    const user = await requireAppUser();
+    plan = user.subscription?.plan ?? null;
+  } catch {
+    plan = null;
+  }
+
+  if (plan === "PRO") {
+    return (
+      <Button className="mt-auto w-full sm:w-auto" variant="outline" asChild>
+        <a href="/api/creem/portal">Manage billing</a>
+      </Button>
+    );
+  }
+
+  return (
+    <Button className="mt-auto w-full sm:w-auto" asChild>
+      <a href="/api/creem/checkout?plan=pro">Upgrade to Pro</a>
+    </Button>
   );
 }

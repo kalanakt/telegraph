@@ -8,7 +8,7 @@
     "dev:worker": "pnpm --filter worker dev",
     "build": "pnpm -r build",
     "build:shared": "pnpm --filter @telegram-builder/shared build",
-    "typecheck": "pnpm exec tsc -p packages/shared/tsconfig.json --noEmit && pnpm exec tsc -p apps/worker/tsconfig.json --noEmit && pnpm exec tsc -p apps/web/tsconfig.json --noEmit",
+    "typecheck": "pnpm exec tsc -p packages/shared/tsconfig.json --noEmit && pnpm exec tsc -p apps/worker/tsconfig.json --noEmit && node -e \"require('fs').rmSync('apps/web/.next/types',{recursive:true,force:true})\" && pnpm exec tsc -p apps/web/tsconfig.json --noEmit",
     "ci:verify": "pnpm prisma:generate && pnpm typecheck && pnpm test && pnpm build",
     "railway:build:web": "pnpm build:shared && pnpm --filter web build",
     "railway:start:web": "pnpm --filter web start",

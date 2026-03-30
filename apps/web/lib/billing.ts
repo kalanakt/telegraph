@@ -1,19 +1,12 @@
 import { PLAN_LIMITS, normalizePlanKey, type PlanKey } from "@telegram-builder/shared";
 import { prisma } from "./prisma";
-import { syncSubscriptionMirrorForUser } from "./clerk-billing";
 
 export async function getUserPlan(user: {
   id: string;
   clerkUserId: string;
   subscription?: { plan?: string | null; status?: string | null } | null;
 }): Promise<PlanKey> {
-  const result = await syncSubscriptionMirrorForUser({
-    appUserId: user.id,
-    clerkUserId: user.clerkUserId,
-    fallbackPlan: user.subscription?.plan,
-    fallbackStatus: user.subscription?.status
-  });
-  return normalizePlanKey(result.plan);
+  return normalizePlanKey(user.subscription?.plan);
 }
 
 export async function assertBotLimit(userId: string, plan: PlanKey) {

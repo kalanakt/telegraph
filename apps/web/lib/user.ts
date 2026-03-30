@@ -1,5 +1,4 @@
 import { isClerkConfigured } from "./auth-config";
-import { syncSubscriptionMirrorForUser } from "./clerk-billing";
 import { getAuthUserId, getCurrentUserOrNull } from "./clerk-auth";
 import { prisma } from "./prisma";
 
@@ -49,13 +48,6 @@ export async function requireAppUser() {
     include: {
       subscription: true
     }
-  });
-
-  await syncSubscriptionMirrorForUser({
-    appUserId: user.id,
-    clerkUserId: user.clerkUserId,
-    fallbackPlan: user.subscription?.plan,
-    fallbackStatus: user.subscription?.status
   });
 
   return prisma.user.findUniqueOrThrow({

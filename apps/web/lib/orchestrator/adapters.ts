@@ -16,7 +16,6 @@ import {
   normalizePlanKey,
   PLAN_LIMITS
 } from "@telegram-builder/shared";
-import { syncSubscriptionMirrorForUser } from "@/lib/clerk-billing";
 import { getActionQueue, type ActionJobName } from "@/lib/queue";
 import { prisma } from "@/lib/prisma";
 
@@ -90,19 +89,12 @@ export function createPrismaBotRepository(prismaClient = prisma): BotRepository 
         return null;
       }
 
-      const synced = await syncSubscriptionMirrorForUser({
-        appUserId: bot.user.id,
-        clerkUserId: bot.user.clerkUserId,
-        fallbackPlan: bot.user.subscription?.plan,
-        fallbackStatus: bot.user.subscription?.status
-      });
-
       return {
         botId: bot.id,
         userId: bot.userId,
         encryptedToken: bot.encryptedToken,
         status: bot.status,
-        plan: normalizePlanKey(synced.plan)
+        plan: normalizePlanKey(bot.user.subscription?.plan)
       };
     }
   };
