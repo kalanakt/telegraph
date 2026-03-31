@@ -5,26 +5,47 @@ const TELEGRAM_API = "https://api.telegram.org";
 
 export type { TelegramRequestResult } from "./types.js";
 
+function safeJsonParse(input: string): unknown {
+  try {
+    return JSON.parse(input) as unknown;
+  } catch {
+    return null;
+  }
+}
+
 export async function requestTelegram(token: string, method: string, payload?: Record<string, unknown>): Promise<TelegramRequestResult> {
   const response = await fetch(`${TELEGRAM_API}/bot${token}/${method}`, {
     method: payload ? "POST" : "GET",
     headers: payload
       ? {
+          accept: "application/json",
           "content-type": "application/json"
         }
       : undefined,
     body: payload ? JSON.stringify(payload) : undefined
   });
 
+  const bodyText = await response.text();
+  const parsed = bodyText ? safeJsonParse(bodyText) : null;
+  const json =
+    parsed && typeof parsed === "object" && parsed !== null && "ok" in parsed ? (parsed as TelegramApiResult) : null;
+
   if (!response.ok) {
     return {
       ok: false,
-      errorCode: response.status,
-      description: response.statusText
+      errorCode: (json?.error_code ?? response.status) || undefined,
+      description: json?.description ?? response.statusText ?? "Telegram API request failed"
     };
   }
 
-  const json = (await response.json()) as TelegramApiResult;
+  if (!json) {
+    return {
+      ok: false,
+      errorCode: response.status || undefined,
+      description: "Telegram API response was not valid JSON"
+    };
+  }
+
   return {
     ok: Boolean(json.ok),
     errorCode: json.error_code,
