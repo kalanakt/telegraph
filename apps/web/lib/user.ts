@@ -15,36 +15,35 @@ async function upsertUserAndEnsureSubscription(params: {
 }) {
   const { clerkUserId, email } = params;
 
-  return prisma.$transaction(async (tx) => {
-    const user = await tx.user.upsert({
-      where: { clerkUserId },
-      create: {
-        clerkUserId,
-        email
-      },
-      update: {
-        email
-      }
-    });
+  // Avoid interactive transactions here (this runs on most dashboard pages),
+  // since connection pools / pgbouncer can cause "Unable to start a transaction"
+  // under load. Two independent native upserts are sufficient and idempotent.
+  const user = await prisma.user.upsert({
+    where: { clerkUserId },
+    create: {
+      clerkUserId,
+      email
+    },
+    update: {
+      email
+    }
+  });
 
-    // Avoid nested writes inside `user.upsert()` so Prisma can use a native upsert
-    // and we don't trip over concurrent requests (e.g. Next.js dev double-renders).
-    await tx.subscription.upsert({
-      where: { userId: user.id },
-      create: {
-        userId: user.id,
-        plan: "FREE",
-        status: "active"
-      },
-      update: {}
-    });
+  await prisma.subscription.upsert({
+    where: { userId: user.id },
+    create: {
+      userId: user.id,
+      plan: "FREE",
+      status: "active"
+    },
+    update: {}
+  });
 
-    return tx.user.findUniqueOrThrow({
-      where: { id: user.id },
-      include: {
-        subscription: subscriptionSelect
-      }
-    });
+  return prisma.user.findUniqueOrThrow({
+    where: { id: user.id },
+    include: {
+      subscription: subscriptionSelect
+    }
   });
 }
 
