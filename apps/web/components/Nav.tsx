@@ -41,17 +41,12 @@ export async function Nav() {
               href="/"
               className="focus-ring inline-flex items-center gap-3 border rounded-sm px-3.5 py-2.5"
             >
-              <span className="flex flex-col">
-                <span className="text-sm font-semibold tracking-[0.02em]">
-                  Telegraph
-                </span>
-                <span className="text-[0.65rem] uppercase tracking-[0.18em]">
-                  automation studio
-                </span>
+              <span className="text-sm font-semibold tracking-[0.02em]">
+                Telegraph
               </span>
             </Link>
 
-            <div className="flex flex-wrap items-center gap-1.5 rounded-sm border border-border/70 bg-secondary/72 p-1.5 backdrop-blur-sm">
+            <div className="flex flex-wrap items-center gap-1.5">
               <NavLinks
                 signedInNavItems={signedInNavItems}
                 signedOutNavItems={signedOutNavItems}
@@ -63,12 +58,12 @@ export async function Nav() {
           {hasClerk ? (
             <div className="flex items-center gap-2 self-start xl:self-auto">
               {isSignedIn ? (
-                <div className="flex items-center justify-center rounded-sm border border-border/70 bg-background/80 p-1 backdrop-blur-sm">
+                <div className="flex items-center justify-center bg-background/80 p-1 backdrop-blur-sm">
                   <UserButton
                     afterSignOutUrl="/"
                     appearance={clerkUserButtonAppearance}
                     userProfileMode="navigation"
-                    userProfileUrl="/account/profile"
+                    userProfileUrl="/account"
                   />
                 </div>
               ) : (

@@ -1,5 +1,5 @@
 const clerkBaseVariables = {
-  borderRadius: "0.125rem",
+  borderRadius: "0px",
   colorPrimary: "hsl(var(--primary))",
   colorBackground: "transparent",
   colorInputBackground: "hsl(var(--background) / 0.88)",
@@ -10,8 +10,8 @@ const clerkBaseVariables = {
 };
 
 const flatSurface = {
-  border: "1px solid hsl(var(--border) / 0.8)",
-  borderRadius: "0.125rem",
+  border: "none",
+  borderRadius: "0px",
   boxShadow: "none",
   background: "hsl(var(--background) / 0.92)",
 };
@@ -22,7 +22,7 @@ const userButtonSurface = {
 };
 
 const userButtonActionButton = {
-  borderRadius: "0.125rem",
+  borderRadius: "0px",
   boxShadow: "none",
   background: "transparent",
   color: "hsl(var(--foreground))",
@@ -54,7 +54,7 @@ export const clerkAppearance = {
     },
     navbar: {
       background: "hsl(var(--background) / 0.92)",
-      borderRight: "1px solid hsl(var(--border) / 0.8)",
+      borderRight: "none",
       boxShadow: "none",
     },
     navbarButtons: {
@@ -62,12 +62,12 @@ export const clerkAppearance = {
       boxShadow: "none",
     },
     navbarButton: {
-      borderRadius: "0.125rem",
+      borderRadius: "0px",
       boxShadow: "none",
     },
     formButtonPrimary: {
       boxShadow: "none",
-      borderRadius: "0.125rem",
+      borderRadius: "0px",
     },
     socialButtonsBlockButton: flatSurface,
     socialButtonsBlockButtonText: {
@@ -78,13 +78,13 @@ export const clerkAppearance = {
     },
     formFieldInput: {
       boxShadow: "none",
-      borderRadius: "0.125rem",
+      borderRadius: "0px",
       border: "1px solid hsl(var(--input) / 0.9)",
       background: "hsl(var(--background) / 0.88)",
     },
     otpCodeFieldInput: {
       boxShadow: "none",
-      borderRadius: "0.125rem",
+      borderRadius: "0px",
       border: "1px solid hsl(var(--input) / 0.9)",
       background: "hsl(var(--background) / 0.88)",
     },
@@ -97,7 +97,7 @@ export const clerkAppearance = {
     },
     footerAction: {
       background: "transparent",
-      borderTop: "1px solid hsl(var(--border) / 0.8)",
+      borderTop: "none",
       boxShadow: "none",
     },
     footerActionText: {
@@ -124,17 +124,17 @@ export const clerkAppearance = {
     developmentModeWarning: {
       background: "transparent",
       boxShadow: "none",
-      borderTop: "1px solid hsl(var(--border) / 0.8)",
+      borderTop: "none",
     },
     developmentModeWarningText: {
       color: "hsl(var(--muted-foreground))",
     },
     identityPreviewEditButton: {
       boxShadow: "none",
-      borderRadius: "0.125rem",
+      borderRadius: "0px",
     },
     userButtonTrigger: {
-      borderRadius: "0.125rem",
+      borderRadius: "0px",
       boxShadow: "none",
     },
     userButtonPopoverCard: userButtonSurface,
@@ -153,7 +153,7 @@ export const clerkAppearance = {
     },
     userButtonPopoverFooter: {
       background: "hsl(var(--background) / 0.92)",
-      borderTop: "1px solid hsl(var(--border) / 0.8)",
+      borderTop: "none",
       boxShadow: "none",
     },
     userButtonPopoverFooterText: {
@@ -165,7 +165,6 @@ export const clerkAppearance = {
 export const clerkAuthAppearance = {
   ...clerkAppearance,
   elements: {
-    ...clerkAppearance.elements,
     rootBox: {
       width: "100%",
     },
@@ -175,23 +174,15 @@ export const clerkAuthAppearance = {
 export const clerkProfileAppearance = {
   ...clerkAppearance,
   elements: {
-    ...clerkAppearance.elements,
     rootBox: {
       width: "100%",
     },
     cardBox: {
       width: "100%",
-      boxShadow: "none",
     },
   },
 };
 
 export const clerkUserButtonAppearance = {
   ...clerkAppearance,
-  elements: {
-    ...clerkAppearance.elements,
-    avatarBox: {
-      boxShadow: "none",
-    },
-  },
 };
