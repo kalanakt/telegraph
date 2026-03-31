@@ -9,24 +9,50 @@ const subscriptionSelect = {
   }
 } as const;
 
-export async function requireAppUser() {
-  if (!isClerkConfigured()) {
-    return prisma.user.upsert({
-      where: { clerkUserId: "local-dev-user" },
+async function upsertUserAndEnsureSubscription(params: {
+  clerkUserId: string;
+  email?: string;
+}) {
+  const { clerkUserId, email } = params;
+
+  return prisma.$transaction(async (tx) => {
+    const user = await tx.user.upsert({
+      where: { clerkUserId },
       create: {
-        clerkUserId: "local-dev-user",
-        email: "local-dev@example.com",
-        subscription: {
-          create: {
-            plan: "FREE",
-            status: "active"
-          }
-        }
+        clerkUserId,
+        email
       },
-      update: {},
+      update: {
+        email
+      }
+    });
+
+    // Avoid nested writes inside `user.upsert()` so Prisma can use a native upsert
+    // and we don't trip over concurrent requests (e.g. Next.js dev double-renders).
+    await tx.subscription.upsert({
+      where: { userId: user.id },
+      create: {
+        userId: user.id,
+        plan: "FREE",
+        status: "active"
+      },
+      update: {}
+    });
+
+    return tx.user.findUniqueOrThrow({
+      where: { id: user.id },
       include: {
         subscription: subscriptionSelect
       }
+    });
+  });
+}
+
+export async function requireAppUser() {
+  if (!isClerkConfigured()) {
+    return upsertUserAndEnsureSubscription({
+      clerkUserId: "local-dev-user",
+      email: "local-dev@example.com"
     });
   }
 
@@ -37,30 +63,8 @@ export async function requireAppUser() {
 
   const clerkUser = await getCurrentUserOrNull();
 
-  const user = await prisma.user.upsert({
-    where: { clerkUserId: userId },
-    create: {
-      clerkUserId: userId,
-      email: clerkUser?.primaryEmailAddress?.emailAddress,
-      subscription: {
-        create: {
-          plan: "FREE",
-          status: "active"
-        }
-      }
-    },
-    update: {
-      email: clerkUser?.primaryEmailAddress?.emailAddress
-    },
-    include: {
-      subscription: subscriptionSelect
-    }
-  });
-
-  return prisma.user.findUniqueOrThrow({
-    where: { id: user.id },
-    include: {
-      subscription: subscriptionSelect
-    }
+  return upsertUserAndEnsureSubscription({
+    clerkUserId: userId,
+    email: clerkUser?.primaryEmailAddress?.emailAddress
   });
 }
