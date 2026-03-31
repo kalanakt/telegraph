@@ -195,24 +195,3 @@ export const clerkUserButtonAppearance = {
     },
   },
 };
-
-export const clerkPricingAppearance = {
-  ...clerkAppearance,
-  elements: {
-    ...clerkAppearance.elements,
-    pricingTable: {
-      boxShadow: "none",
-    },
-    pricingTableCard: flatSurface,
-  },
-};
-
-export const clerkCheckoutAppearance = {
-  ...clerkAppearance,
-  elements: {
-    ...clerkAppearance.elements,
-    cardBox: {
-      boxShadow: "none",
-    },
-  },
-};

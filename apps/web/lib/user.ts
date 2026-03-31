@@ -2,6 +2,13 @@ import { isClerkConfigured } from "./auth-config";
 import { getAuthUserId, getCurrentUserOrNull } from "./clerk-auth";
 import { prisma } from "./prisma";
 
+const subscriptionSelect = {
+  select: {
+    plan: true,
+    status: true
+  }
+} as const;
+
 export async function requireAppUser() {
   if (!isClerkConfigured()) {
     return prisma.user.upsert({
@@ -18,7 +25,7 @@ export async function requireAppUser() {
       },
       update: {},
       include: {
-        subscription: true
+        subscription: subscriptionSelect
       }
     });
   }
@@ -46,14 +53,14 @@ export async function requireAppUser() {
       email: clerkUser?.primaryEmailAddress?.emailAddress
     },
     include: {
-      subscription: true
+      subscription: subscriptionSelect
     }
   });
 
   return prisma.user.findUniqueOrThrow({
     where: { id: user.id },
     include: {
-      subscription: true
+      subscription: subscriptionSelect
     }
   });
 }

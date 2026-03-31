@@ -68,7 +68,7 @@ export async function Nav() {
                     afterSignOutUrl="/"
                     appearance={clerkUserButtonAppearance}
                     userProfileMode="navigation"
-                    userProfileUrl="/account"
+                    userProfileUrl="/account/profile"
                   />
                 </div>
               ) : (

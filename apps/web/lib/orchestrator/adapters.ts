@@ -79,7 +79,12 @@ export function createPrismaBotRepository(prismaClient = prisma): BotRepository 
         include: {
           user: {
             include: {
-              subscription: true
+              subscription: {
+                select: {
+                  plan: true,
+                  status: true
+                }
+              }
             }
           }
         }

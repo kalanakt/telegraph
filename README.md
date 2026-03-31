@@ -16,7 +16,7 @@ It includes:
 - Prisma + PostgreSQL
 - BullMQ + Redis
 - Clerk (auth)
-- Clerk Billing (subscription + entitlements)
+- Creem (Merchant of Record billing)
 - Vitest
 
 ## Architecture Overview
@@ -55,13 +55,14 @@ Required for authentication-enabled flows:
 
 Optional (billing/pro plan sync):
 
-- `CLERK_WEBHOOK_SIGNING_SECRET`
-- `CLERK_BILLING_PRO_PLAN_SLUGS` (comma-separated plan slugs treated as `PRO`, default: `pro`)
-- Configure Clerk webhook endpoint: `POST /api/webhooks/clerk`
+- `CREEM_API_KEY`
+- `CREEM_WEBHOOK_SECRET`
+- `CREEM_PRO_PRODUCT_ID`
+- Configure Creem webhook endpoint: `POST /api/webhooks/creem`
 
 Optional (public metadata and RSS canonical URLs):
 
-- `NEXT_PUBLIC_SITE_URL` (for example `https://telegraph.dev`)
+- `NEXT_PUBLIC_SITE_URL` (for example `https://telegraph.us.com`)
 
 ## Install
 
@@ -181,6 +182,5 @@ pnpm test
 ## Notes
 
 - Most app pages and API routes are user-protected via Clerk auth.
-- If `CLERK_WEBHOOK_SIGNING_SECRET` is missing, Clerk billing webhook sync is disabled.
+- If `CREEM_WEBHOOK_SECRET` is missing, Creem billing webhook sync is disabled.
 - If `ENCRYPTION_KEY` is unchanged/weak, bot token security is reduced.
-- Railway deployment runbook: `deploy.md`
