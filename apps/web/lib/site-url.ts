@@ -1,4 +1,4 @@
-const FALLBACK_SITE_URL = "https://telegraph.dev";
+const FALLBACK_SITE_URL = "https://telegraph.us.com";
 
 export function getSiteUrl() {
   const candidate = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.SITE_URL ?? FALLBACK_SITE_URL;
