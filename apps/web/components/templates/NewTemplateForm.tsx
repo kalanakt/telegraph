@@ -4,6 +4,13 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { createStarterTemplateFlow } from "@/lib/template-builder";
@@ -89,17 +96,21 @@ export function NewTemplateForm() {
             />
           </label>
 
-          <label className="builder-label">
+          <div className="builder-label">
             <span>Starting visibility</span>
-            <select
-              className="builder-field builder-field-soft"
+            <Select
               value={visibility}
-              onChange={(event) => setVisibility(event.target.value as "PRIVATE" | "PUBLIC")}
+              onValueChange={(value) => setVisibility(value as "PRIVATE" | "PUBLIC")}
             >
-              <option value="PRIVATE">Private draft</option>
-              <option value="PUBLIC">Public-ready draft</option>
-            </select>
-          </label>
+              <SelectTrigger className="builder-field builder-field-soft">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="PRIVATE">Private draft</SelectItem>
+                <SelectItem value="PUBLIC">Public-ready draft</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <Button type="button" onClick={createTemplate} disabled={isCreating}>

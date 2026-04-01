@@ -2,8 +2,15 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type BotOption = {
   id: string;
@@ -110,20 +117,24 @@ export function TemplateInstallPanel({ templateId, bots, signedIn, onBeforeInsta
 
   return (
     <div className="space-y-3">
-      <label className="builder-label">
+      <div className="builder-label">
         <span>Target bot</span>
-        <select
-          className="builder-field builder-field-soft"
+        <Select
           value={botId}
-          onChange={(event) => setBotId(event.target.value)}
+          onValueChange={setBotId}
         >
-          {bots.map((bot) => (
-            <option key={bot.id} value={bot.id}>
-              {bot.label}
-            </option>
-          ))}
-        </select>
-      </label>
+          <SelectTrigger className="builder-field builder-field-soft">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {bots.map((bot) => (
+              <SelectItem key={bot.id} value={bot.id}>
+                {bot.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       <Button type="button" onClick={installTemplate} disabled={!canInstall || isInstalling}>
         {isInstalling ? "Installing..." : "Install template"}

@@ -3,6 +3,13 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { BotOption, FlowNodeKind, RuleOption } from "./types";
 
 type Props = {
@@ -43,36 +50,44 @@ export function FlowToolbar({
   return (
     <>
       <div className="grid gap-3 lg:grid-cols-3">
-        <label className="builder-label">
+        <div className="builder-label">
           <span>Flow</span>
-          <select
-            className="builder-field builder-field-soft"
+          <Select
             value={selectedRuleId}
-            onChange={(e) => onRuleChange(e.target.value)}
+            onValueChange={onRuleChange}
           >
-            <option value="new">New flow</option>
-            {rules.map((rule) => (
-              <option key={rule.id} value={rule.id}>
-                {rule.name}
-              </option>
-            ))}
-          </select>
-        </label>
+            <SelectTrigger className="builder-field builder-field-soft">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="new">New flow</SelectItem>
+              {rules.map((rule) => (
+                <SelectItem key={rule.id} value={rule.id}>
+                  {rule.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <label className="builder-label">
+        <div className="builder-label">
           <span>Bot</span>
-          <select
-            className="builder-field builder-field-soft"
+          <Select
             value={botId}
-            onChange={(e) => onBotChange(e.target.value)}
+            onValueChange={onBotChange}
           >
-            {bots.map((bot) => (
-              <option key={bot.id} value={bot.id}>
-                {bot.label}
-              </option>
-            ))}
-          </select>
-        </label>
+            <SelectTrigger className="builder-field builder-field-soft">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {bots.map((bot) => (
+                <SelectItem key={bot.id} value={bot.id}>
+                  {bot.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         <label className="builder-label">
           <span>Flow name</span>

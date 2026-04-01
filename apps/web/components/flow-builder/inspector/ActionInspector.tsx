@@ -4,6 +4,15 @@ import { useMemo, useRef, useState, type ChangeEvent } from "react";
 import { AlertTriangle, LoaderCircle, Upload, X } from "lucide-react";
 import { isActionAllowedForTrigger, type ActionPayload, type TriggerType } from "@telegram-builder/shared";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { createActionTemplate, getActionTypeOptions, migrateLegacyActionData } from "@/lib/flow-builder";
@@ -29,6 +38,8 @@ type UploadState = {
   field: UploadableParam;
   filename: string;
 } | null;
+
+const NO_PARSE_MODE = "__none__";
 
 function normalizeActionNodeData(data: unknown): ActionEditorData {
   const normalized = migrateLegacyActionData(data);
@@ -130,27 +141,32 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
         ) : null}
       </div>
 
-      <label className="builder-label">
+      <div className="builder-label">
         <span>Action type</span>
-        <select
-          className="builder-field"
+        <Select
           value={action.type}
-          onChange={(e) => {
-            const template = createActionTemplate(e.target.value as ActionPayload["type"]);
+          onValueChange={(value) => {
+            const template = createActionTemplate(value as ActionPayload["type"]);
             onReplace(normalizeActionNodeData(template));
           }}
         >
-          {Array.from(categoryMap.entries()).map(([category, items]) => (
-            <optgroup key={category} label={category}>
-              {items.map((item) => (
-                <option key={item.actionType} value={item.actionType}>
-                  {item.label}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
-      </label>
+          <SelectTrigger className="builder-field">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Array.from(categoryMap.entries()).map(([category, items]) => (
+              <SelectGroup key={category}>
+                <SelectLabel>{category}</SelectLabel>
+                {items.map((item) => (
+                  <SelectItem key={item.actionType} value={item.actionType}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {isCoreComposer ? (
         <>
@@ -271,38 +287,40 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
               </div>
             ) : null}
 
-            <label className="builder-label mt-2">
+            <div className="builder-label mt-2">
               <span>Parse mode</span>
-              <select
-                className="builder-field"
-                value={asString(params.parse_mode)}
-                onChange={(e) => {
-                  const nextValue = e.target.value;
-                  if (!nextValue) {
+              <Select
+                value={asString(params.parse_mode) || NO_PARSE_MODE}
+                onValueChange={(value) => {
+                  if (value === NO_PARSE_MODE) {
                     const { parse_mode: _omit, ...rest } = params;
                     onReplace({ ...action, params: rest });
                     return;
                   }
-                  onUpdateParams({ parse_mode: nextValue });
+                  onUpdateParams({ parse_mode: value });
                 }}
               >
-                <option value="">None</option>
-                <option value="Markdown">Markdown</option>
-                <option value="MarkdownV2">MarkdownV2</option>
-                <option value="HTML">HTML</option>
-              </select>
-            </label>
+                <SelectTrigger className="builder-field">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_PARSE_MODE}>None</SelectItem>
+                  <SelectItem value="Markdown">Markdown</SelectItem>
+                  <SelectItem value="MarkdownV2">MarkdownV2</SelectItem>
+                  <SelectItem value="HTML">HTML</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="builder-section">
             <p className="builder-kicker">Buttons</p>
-            <label className="builder-label">
+            <div className="builder-label">
               <span>Keyboard type</span>
-              <select
-                className="builder-field"
+              <Select
                 value={replyMarkupKind}
-                onChange={(e) => {
-                  const kind = e.target.value as "none" | "inline" | "reply";
+                onValueChange={(value) => {
+                  const kind = value as "none" | "inline" | "reply";
                   if (kind === "none") {
                     const { reply_markup: _omit, ...rest } = params;
                     onReplace({ ...action, params: rest });
@@ -315,11 +333,16 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
                   onUpdateParams({ reply_markup: { keyboard: [[{ text: "Button" }]], resize_keyboard: true } });
                 }}
               >
-                <option value="none">None</option>
-                <option value="inline">Inline keyboard</option>
-                <option value="reply">Reply keyboard</option>
-              </select>
-            </label>
+                <SelectTrigger className="builder-field">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="inline">Inline keyboard</SelectItem>
+                  <SelectItem value="reply">Reply keyboard</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
             {replyMarkupKind === "inline" ? (
               <div className="mt-3 space-y-2">
@@ -354,11 +377,9 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
                           }}
                           placeholder="Button text"
                         />
-                        <select
-                          className="builder-field"
+                        <Select
                           value={button.url ? "url" : "callback_data"}
-                          onChange={(e) => {
-                            const mode = e.target.value;
+                          onValueChange={(mode) => {
                             const nextRows = updateInlineKeyboard(
                               inlineKeyboard,
                               rowIndex,
@@ -370,9 +391,14 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
                             onUpdateParams({ reply_markup: { inline_keyboard: nextRows } });
                           }}
                         >
-                          <option value="callback_data">callback_data</option>
-                          <option value="url">url</option>
-                        </select>
+                          <SelectTrigger className="builder-field">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="callback_data">callback_data</SelectItem>
+                            <SelectItem value="url">url</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <Input
                           value={button.url ?? button.callback_data ?? ""}
                           onChange={(e) => {

@@ -40,6 +40,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   createActionTemplate,
@@ -129,6 +138,8 @@ const CORE_COMPOSER_METHODS = new Set([
   "telegram.sendPhoto",
   "telegram.sendDocument",
 ]);
+
+const NO_PARSE_MODE = "__none__";
 
 const EDGE_STYLE = { stroke: "#4f46e5", strokeWidth: 1.6 };
 
@@ -990,55 +1001,68 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-3 lg:grid-cols-4">
-          <label className="builder-label">
+          <div className="builder-label">
             <span>Builder</span>
-            <select
-              className="builder-field builder-field-soft"
+            <Select
               value={selectedRuleId}
-              onChange={(e) => setSelectedRuleId(e.target.value)}
+              onValueChange={setSelectedRuleId}
             >
-              <option value="new">New builder</option>
-              {rules.map((rule) => (
-                <option key={rule.id} value={rule.id}>
-                  {rule.name}
-                </option>
-              ))}
-            </select>
-          </label>
+              <SelectTrigger className="builder-field builder-field-soft">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="new">New builder</SelectItem>
+                {rules.map((rule) => (
+                  <SelectItem key={rule.id} value={rule.id}>
+                    {rule.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          <label className="builder-label">
+          <div className="builder-label">
             <span>Bot</span>
-            <select
-              className="builder-field builder-field-soft"
+            <Select
               value={botId}
-              onChange={(e) => setBotId(e.target.value)}
+              onValueChange={setBotId}
             >
-              {bots.map((bot) => (
-                <option key={bot.id} value={bot.id}>
-                  {bot.label}
-                </option>
-              ))}
-            </select>
-          </label>
+              <SelectTrigger className="builder-field builder-field-soft">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {bots.map((bot) => (
+                  <SelectItem key={bot.id} value={bot.id}>
+                    {bot.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          <label className="builder-label">
+          <div className="builder-label">
             <span>Trigger</span>
-            <select
-              className="builder-field builder-field-soft"
+            <Select
               value={trigger}
-              onChange={(e) => setTrigger(e.target.value as TriggerType)}
+              onValueChange={(value) => setTrigger(value as TriggerType)}
             >
-              {triggerGroups.map((group) => (
-                <optgroup key={group.id} label={group.label}>
-                  {group.triggers.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-          </label>
+              <SelectTrigger className="builder-field builder-field-soft">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {triggerGroups.map((group) => (
+                  <SelectGroup key={group.id}>
+                    <SelectLabel>{group.label}</SelectLabel>
+                    {group.triggers.map((item) => (
+                      <SelectItem key={item} value={item}>
+                        {item}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           <label className="builder-label">
             <span>Builder name</span>
@@ -1151,22 +1175,26 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
                   </p>
                 </div>
 
-                <label className="builder-label">
+                <div className="builder-label">
                   <span>Condition type</span>
-                  <select
-                    className="builder-field"
+                  <Select
                     value={selectedConditionType}
-                    onChange={(e) =>
-                      updateSelectedNodeData({ type: e.target.value })
+                    onValueChange={(value) =>
+                      updateSelectedNodeData({ type: value })
                     }
                   >
-                    {CONDITION_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                    <SelectTrigger className="builder-field">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CONDITION_OPTIONS.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
                 {selectedConditionType === "all" ||
                 selectedConditionType === "any" ? (
@@ -1190,7 +1218,7 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
                     <p className="text-xs text-slate-600">This condition does not require a value.</p>
                   </div>
                 ) : (
-                  <label className="builder-label">
+                  <div className="builder-label">
                     <span>
                       {selectedConditionType === "variable_equals" ||
                       selectedConditionType === "variable_exists"
@@ -1198,17 +1226,21 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
                         : "Value"}
                     </span>
                     {selectedConditionType === "message_source_equals" ? (
-                      <select
-                        className="builder-field"
+                      <Select
                         value={String(selectedConditionData.value ?? "user")}
-                        onChange={(e) =>
-                          updateSelectedNodeData({ value: e.target.value })
+                        onValueChange={(value) =>
+                          updateSelectedNodeData({ value })
                         }
                       >
-                        <option value="user">user</option>
-                        <option value="group">group</option>
-                        <option value="channel">channel</option>
-                      </select>
+                        <SelectTrigger className="builder-field">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="user">user</SelectItem>
+                          <SelectItem value="group">group</SelectItem>
+                          <SelectItem value="channel">channel</SelectItem>
+                        </SelectContent>
+                      </Select>
                     ) : (
                       <Input
                         value={String(
@@ -1234,7 +1266,7 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
                         }}
                       />
                     )}
-                  </label>
+                  </div>
                 )}
 
                 {selectedConditionType === "variable_equals" ? (
@@ -1270,37 +1302,42 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
                   ) : null}
                 </div>
 
-                <label className="builder-label">
+                <div className="builder-label">
                   <span>Action type</span>
-                  <select
-                    className="builder-field"
+                  <Select
                     value={selectedAction.type}
-                    onChange={(e) => {
+                    onValueChange={(value) => {
                       replaceSelectedAction(
                         normalizeActionNodeData(
                           createActionTemplate(
-                            e.target.value as ActionPayload["type"],
+                            value as ActionPayload["type"],
                           ),
                         ),
                       );
                     }}
                   >
-                    {Array.from(categoryMap.entries()).map(
-                      ([category, items]) => (
-                        <optgroup key={category} label={category}>
-                          {items.map((item) => (
-                            <option
-                              key={item.actionType}
-                              value={item.actionType}
-                            >
-                              {item.label}
-                            </option>
-                          ))}
-                        </optgroup>
-                      ),
-                    )}
-                  </select>
-                </label>
+                    <SelectTrigger className="builder-field">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from(categoryMap.entries()).map(
+                        ([category, items]) => (
+                          <SelectGroup key={category}>
+                            <SelectLabel>{category}</SelectLabel>
+                            {items.map((item) => (
+                              <SelectItem
+                                key={item.actionType}
+                                value={item.actionType}
+                              >
+                                {item.label}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        ),
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
 
                 {isCoreComposerAction(selectedAction) ? (
                   <>
@@ -1389,14 +1426,15 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
                         </>
                       ) : null}
 
-                      <label className="builder-label mt-2">
+                      <div className="builder-label mt-2">
                         <span>Parse mode</span>
-                        <select
-                          className="builder-field"
-                          value={asString(selectedActionParams.parse_mode)}
-                          onChange={(e) => {
-                            const nextValue = e.target.value;
-                            if (!nextValue) {
+                        <Select
+                          value={
+                            asString(selectedActionParams.parse_mode) ||
+                            NO_PARSE_MODE
+                          }
+                          onValueChange={(value) => {
+                            if (value === NO_PARSE_MODE) {
                               const { parse_mode: _omit, ...rest } =
                                 selectedActionParams;
                               replaceSelectedAction({
@@ -1406,27 +1444,33 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
                               return;
                             }
                             updateSelectedActionParams({
-                              parse_mode: nextValue,
+                              parse_mode: value,
                             });
                           }}
                         >
-                          <option value="">None</option>
-                          <option value="Markdown">Markdown</option>
-                          <option value="MarkdownV2">MarkdownV2</option>
-                          <option value="HTML">HTML</option>
-                        </select>
-                      </label>
+                          <SelectTrigger className="builder-field">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={NO_PARSE_MODE}>None</SelectItem>
+                            <SelectItem value="Markdown">Markdown</SelectItem>
+                            <SelectItem value="MarkdownV2">
+                              MarkdownV2
+                            </SelectItem>
+                            <SelectItem value="HTML">HTML</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
 
                     <div className="builder-section">
                       <p className="builder-kicker">Buttons</p>
-                      <label className="builder-label">
+                      <div className="builder-label">
                         <span>Keyboard type</span>
-                        <select
-                          className="builder-field"
+                        <Select
                           value={replyMarkupKind}
-                          onChange={(e) => {
-                            const kind = e.target.value as
+                          onValueChange={(value) => {
+                            const kind = value as
                               | "none"
                               | "inline"
                               | "reply";
@@ -1464,11 +1508,20 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
                             });
                           }}
                         >
-                          <option value="none">None</option>
-                          <option value="inline">Inline keyboard</option>
-                          <option value="reply">Reply keyboard</option>
-                        </select>
-                      </label>
+                          <SelectTrigger className="builder-field">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            <SelectItem value="inline">
+                              Inline keyboard
+                            </SelectItem>
+                            <SelectItem value="reply">
+                              Reply keyboard
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
 
                       {replyMarkupKind === "inline" ? (
                         <div className="mt-3 space-y-2">
@@ -1532,11 +1585,9 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
                                     }}
                                     placeholder="Button text"
                                   />
-                                  <select
-                                    className="builder-field"
+                                  <Select
                                     value={button.url ? "url" : "callback_data"}
-                                    onChange={(e) => {
-                                      const mode = e.target.value;
+                                    onValueChange={(mode) => {
                                       const nextRows = updateInlineKeyboard(
                                         inlineKeyboard,
                                         rowIndex,
@@ -1558,11 +1609,16 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
                                       });
                                     }}
                                   >
-                                    <option value="callback_data">
-                                      callback_data
-                                    </option>
-                                    <option value="url">url</option>
-                                  </select>
+                                    <SelectTrigger className="builder-field">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="callback_data">
+                                        callback_data
+                                      </SelectItem>
+                                      <SelectItem value="url">url</SelectItem>
+                                    </SelectContent>
+                                  </Select>
                                   <Input
                                     value={
                                       button.url ?? button.callback_data ?? ""

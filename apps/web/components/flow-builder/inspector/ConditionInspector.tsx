@@ -2,6 +2,13 @@
 
 import type { TriggerType } from "@telegram-builder/shared";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { CONDITION_OPTIONS, type ConditionEditorData } from "../types";
 
@@ -29,20 +36,24 @@ export function ConditionInspector({ data, trigger, onUpdate }: Props) {
         </p>
       </div>
 
-      <label className="builder-label">
+      <div className="builder-label">
         <span>Condition type</span>
-        <select
-          className="builder-field"
+        <Select
           value={conditionType}
-          onChange={(e) => onUpdate({ type: e.target.value })}
+          onValueChange={(value) => onUpdate({ type: value })}
         >
-          {CONDITION_OPTIONS.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-      </label>
+          <SelectTrigger className="builder-field">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {CONDITION_OPTIONS.map((option) => (
+              <SelectItem key={option} value={option}>
+                {option}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {conditionType === "all" || conditionType === "any" ? (
         <label className="builder-label">
@@ -59,22 +70,26 @@ export function ConditionInspector({ data, trigger, onUpdate }: Props) {
           <p className="text-xs text-foreground/70">This condition does not require a value.</p>
         </div>
       ) : (
-        <label className="builder-label">
+        <div className="builder-label">
           <span>
             {conditionType === "variable_equals" || conditionType === "variable_exists"
               ? "Key"
               : "Value"}
           </span>
           {conditionType === "message_source_equals" ? (
-            <select
-              className="builder-field"
+            <Select
               value={asString(data.value ?? "user")}
-              onChange={(e) => onUpdate({ value: e.target.value })}
+              onValueChange={(value) => onUpdate({ value })}
             >
-              <option value="user">user</option>
-              <option value="group">group</option>
-              <option value="channel">channel</option>
-            </select>
+              <SelectTrigger className="builder-field">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="user">user</SelectItem>
+                <SelectItem value="group">group</SelectItem>
+                <SelectItem value="channel">channel</SelectItem>
+              </SelectContent>
+            </Select>
           ) : (
             <Input
               value={asString(data.value ?? data.key ?? "")}
@@ -100,7 +115,7 @@ export function ConditionInspector({ data, trigger, onUpdate }: Props) {
               }}
             />
           )}
-        </label>
+        </div>
       )}
 
       {conditionType === "variable_equals" ? (

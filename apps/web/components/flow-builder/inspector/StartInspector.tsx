@@ -1,6 +1,15 @@
 "use client";
 
 import type { TriggerType } from "@telegram-builder/shared";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getTriggerGroups } from "@/lib/flow-builder";
 import { getTriggerIcon, formatTriggerLabel } from "../TriggerPickerModal";
 
@@ -24,21 +33,29 @@ export function StartInspector({ trigger, onTriggerChange }: Props) {
           <p className="text-xs font-semibold text-foreground">{formatTriggerLabel(trigger)}</p>
           <p className="font-mono text-[9px] text-muted-foreground">{trigger}</p>
         </div>
-        <select
-          className="builder-field nodrag nopan h-8 max-w-[220px] py-1 text-xs"
+        <Select
           value={trigger}
-          onChange={(e) => onTriggerChange(e.target.value as TriggerType)}
+          onValueChange={(value) => onTriggerChange(value as TriggerType)}
         >
-          {groups.map((group) => (
-            <optgroup key={group.id} label={group.label}>
-              {group.triggers.map((t) => (
-                <option key={t} value={t}>
-                  {formatTriggerLabel(t)}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
+          <SelectTrigger
+            size="sm"
+            className="nodrag nopan h-8 w-[220px] max-w-full border-border/80 bg-background/90 px-3 py-1 text-xs"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {groups.map((group) => (
+              <SelectGroup key={group.id}>
+                <SelectLabel>{group.label}</SelectLabel>
+                {group.triggers.map((item) => (
+                  <SelectItem key={item} value={item}>
+                    {formatTriggerLabel(item)}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <p className="text-[11px] text-muted-foreground">
         This flow must contain exactly one trigger node. Use it as the entry point for the rest of the graph.

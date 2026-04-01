@@ -13,6 +13,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { createStarterTemplateFlow, type TemplateEditorFlow } from "@/lib/template-builder";
 import { TemplateInstallPanel } from "./TemplateInstallPanel";
@@ -430,17 +437,21 @@ export function TemplateBuilderStudio({ template, bots }: Props) {
                 <Input value={title} onChange={(event) => setTitle(event.target.value)} />
               </label>
 
-              <label className="builder-label">
+              <div className="builder-label">
                 <span>Draft visibility</span>
-                <select
-                  className="builder-field builder-field-soft"
+                <Select
                   value={visibility}
-                  onChange={(event) => setVisibility(event.target.value as "PRIVATE" | "PUBLIC")}
+                  onValueChange={(value) => setVisibility(value as "PRIVATE" | "PUBLIC")}
                 >
-                  <option value="PRIVATE">Private</option>
-                  <option value="PUBLIC">Public</option>
-                </select>
-              </label>
+                  <SelectTrigger className="builder-field builder-field-soft">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PRIVATE">Private</SelectItem>
+                    <SelectItem value="PUBLIC">Public</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <label className="builder-label">
