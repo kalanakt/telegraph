@@ -39,18 +39,26 @@ export async function generateMetadata({ params }: { params: Promise<PageParams>
   const canonicalUrl = toAbsoluteUrl(getBlogBasePath(post.slug));
 
   return {
-    title: `${post.title} | Telegraph Blog`,
+    title: `${post.title} | Telegraph`,
     description: post.description,
+    keywords: post.tags,
+    authors: post.author ? [{ name: post.author }] : undefined,
     alternates: {
       canonical: canonicalUrl
     },
     openGraph: {
-      title: post.title,
+      title: `${post.title} | Telegraph`,
       description: post.description,
       type: "article",
       publishedTime: post.publishedAt,
       modifiedTime: post.updatedAt,
-      url: canonicalUrl
+      url: canonicalUrl,
+      siteName: "Telegraph"
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${post.title} | Telegraph`,
+      description: post.description
     }
   };
 }

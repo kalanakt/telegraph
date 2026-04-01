@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PageHeading } from "@/components/PageHeading";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -30,20 +29,38 @@ function formatDate(input: string) {
   }).format(new Date(input));
 }
 
-export const metadata: Metadata = {
-  title: "Blog | Telegraph",
-  description: "Engineering notes and product updates from the Telegraph team.",
-  alternates: {
-    canonical: toAbsoluteUrl("/blog"),
-  },
-  openGraph: {
-    title: "Telegraph Blog",
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}): Promise<Metadata> {
+  const resolvedSearchParams = await searchParams;
+  const hasFilters = Boolean(
+    resolvedSearchParams?.q?.trim() || resolvedSearchParams?.tag?.trim(),
+  );
+
+  return {
+    title: "Telegraph Blog | Telegram Bot Automation Guides",
     description:
-      "Engineering notes and product updates from the Telegraph team.",
-    type: "website",
-    url: toAbsoluteUrl("/blog"),
-  },
-};
+      "Guides, product updates, and engineering notes for teams building Telegram bot automations with Telegraph.",
+    alternates: {
+      canonical: toAbsoluteUrl("/blog"),
+    },
+    robots: hasFilters
+      ? {
+          index: false,
+          follow: true,
+        }
+      : undefined,
+    openGraph: {
+      title: "Telegraph Blog | Telegram Bot Automation Guides",
+      description:
+        "Guides, product updates, and engineering notes for teams building Telegram bot automations with Telegraph.",
+      type: "website",
+      url: toAbsoluteUrl("/blog"),
+    },
+  };
+}
 
 export default async function BlogIndexPage({
   searchParams,
@@ -60,13 +77,23 @@ export default async function BlogIndexPage({
   return (
     <div className="space-y-8 pb-4 pt-2">
       <section className="surface-panel p-4 md:p-6">
+        <div className="mb-6 space-y-2">
+          <h1 className="page-title font-[var(--font-display)]">
+            Telegram bot automation blog
+          </h1>
+          <p className="page-subtitle">
+            Guides, product updates, and engineering notes for teams building
+            and operating Telegram workflows with Telegraph.
+          </p>
+        </div>
+
         <form action="/blog" className="grid gap-3 md:grid-cols-[1fr_auto]">
           <input
             aria-label="Search blog posts"
             className="focus-ring w-full rounded-sm border bg-white px-3 py-2 text-sm"
             defaultValue={query}
             name="q"
-            placeholder="Search posts by title, summary, or tag"
+            placeholder="Search Telegram bot guides, product updates, or workflow tips"
             type="search"
           />
 
@@ -107,14 +134,14 @@ export default async function BlogIndexPage({
 
       <section className="grid gap-4">
         {filteredPosts.length === 0 ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>No posts found</CardTitle>
-              <CardDescription>
-                Try a different search term or clear the active filters.
-              </CardDescription>
-            </CardHeader>
-          </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>No posts found</CardTitle>
+                <CardDescription>
+                  Try another keyword or remove the current filter.
+                </CardDescription>
+              </CardHeader>
+            </Card>
         ) : (
           filteredPosts.map((post) => (
             <Card key={post.slug} className="interactive-lift">

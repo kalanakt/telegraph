@@ -1,16 +1,30 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ClerkProvider } from "@clerk/nextjs";
+import { Oxanium, Source_Code_Pro } from "next/font/google";
 import { Nav } from "@/components/Nav";
 import { clerkAppearance } from "@/lib/clerk-appearance";
+import { cn } from "@/lib/utils";
 import { getSiteUrl, toAbsoluteUrl } from "@/lib/site-url";
 import "./globals.css";
 
+const oxanium = Oxanium({
+  subsets: ["latin"],
+  variable: "--font-oxanium",
+  display: "swap",
+});
+
+const sourceCodePro = Source_Code_Pro({
+  subsets: ["latin"],
+  variable: "--font-source-code-pro",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
-  title: "Telegraph | Telegram bot automation workspace",
+  title: "Telegraph | Telegram Bot Builder for Modern Teams",
   description:
-    "Build and run Telegram automations with a visual workflow builder, bot controls, and execution history.",
+    "Telegraph is a SaaS platform for building Telegram bots with a visual flow editor, reliable webhook processing, and run history.",
   applicationName: "Telegraph",
   alternates: {
     canonical: toAbsoluteUrl("/"),
@@ -20,17 +34,18 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: "Telegraph | Telegram bot automation workspace",
+    title: "Telegraph | Telegram Bot Builder for Modern Teams",
     description:
-      "Telegram automation workspace for teams shipping event-driven workflows.",
+      "Build Telegram bots with a visual flow editor, reliable execution, and clear run history in one workspace.",
     type: "website",
     url: toAbsoluteUrl("/"),
     siteName: "Telegraph",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Telegraph | Telegram bot automation workspace",
-    description: "Build and run Telegram automations with a visual workflow builder.",
+    title: "Telegraph | Telegram Bot Builder for Modern Teams",
+    description:
+      "Build Telegram bots with a visual flow editor, reliable execution, and clear run history.",
   },
 };
 
@@ -50,7 +65,7 @@ export default function RootLayout({
         <main id="main-content">{children}</main>
         <footer className="mt-12 border-t border-border/70 pt-5 text-sm text-muted-foreground">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p>Telegraph automation workspace</p>
+            <p>Telegraph, the Telegram bot builder with a visual flow editor.</p>
             <div className="flex items-center gap-4">
               <Link className="focus-ring" href="/blog">
                 Blog
@@ -69,7 +84,10 @@ export default function RootLayout({
   );
 
   return (
-    <html lang="en" className="font-sans">
+    <html
+      lang="en"
+      className={cn("font-sans", oxanium.variable, sourceCodePro.variable)}
+    >
       <body>
         <ClerkProvider appearance={clerkAppearance} publishableKey={publishableKey}>
           {appShell}

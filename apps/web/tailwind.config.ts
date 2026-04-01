@@ -11,32 +11,43 @@ const config: Config = {
         "2xl": "1200px"
       }
     },
+    borderRadius: {
+      none: "0px",
+      sm: "0px",
+      DEFAULT: "0px",
+      md: "0px",
+      lg: "0px",
+      xl: "0px",
+      "2xl": "0px",
+      "3xl": "0px",
+      full: "9999px"
+    },
     extend: {
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
+        border: "oklch(var(--border))",
+        input: "oklch(var(--input))",
+        ring: "oklch(var(--ring))",
+        background: "oklch(var(--background))",
+        foreground: "oklch(var(--foreground))",
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))"
+          DEFAULT: "oklch(var(--primary))",
+          foreground: "oklch(var(--primary-foreground))"
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))"
+          DEFAULT: "oklch(var(--secondary))",
+          foreground: "oklch(var(--secondary-foreground))"
         },
         muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))"
+          DEFAULT: "oklch(var(--muted))",
+          foreground: "oklch(var(--muted-foreground))"
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))"
+          DEFAULT: "oklch(var(--accent))",
+          foreground: "oklch(var(--accent-foreground))"
         },
         card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))"
+          DEFAULT: "oklch(var(--card))",
+          foreground: "oklch(var(--card-foreground))"
         }
       },
       borderRadius: {

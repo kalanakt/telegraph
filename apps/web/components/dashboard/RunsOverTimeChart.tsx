@@ -83,7 +83,7 @@ export function RunsOverTimeChart({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-sm border border-border/80 bg-background/82 p-3 backdrop-blur-sm",
+        "relative overflow-hidden border border-border bg-background p-3",
         className
       )}
     >
@@ -95,13 +95,13 @@ export function RunsOverTimeChart({
       >
         <defs>
           <linearGradient id={gradientId} x1="0%" x2="0%" y1="0%" y2="100%">
-            <stop offset="0%" stopColor="hsl(var(--primary) / 0.26)" />
-            <stop offset="75%" stopColor="hsl(var(--chart-2) / 0.12)" />
-            <stop offset="100%" stopColor="hsl(var(--primary) / 0.02)" />
+            <stop offset="0%" stopColor="oklch(var(--primary) / 0.14)" />
+            <stop offset="75%" stopColor="oklch(var(--chart-2) / 0.08)" />
+            <stop offset="100%" stopColor="oklch(var(--primary) / 0.02)" />
           </linearGradient>
           <linearGradient id={strokeId} x1="0%" x2="100%" y1="0%" y2="0%">
-            <stop offset="0%" stopColor="hsl(var(--chart-2))" />
-            <stop offset="100%" stopColor="hsl(var(--primary))" />
+            <stop offset="0%" stopColor="oklch(var(--chart-2))" />
+            <stop offset="100%" stopColor="oklch(var(--primary))" />
           </linearGradient>
         </defs>
 
@@ -113,7 +113,7 @@ export function RunsOverTimeChart({
               x2={SVG_WIDTH - CHART_PADDING.right}
               y1={row.y}
               y2={row.y}
-              stroke="hsl(var(--border) / 0.68)"
+              stroke="oklch(var(--border) / 0.68)"
               strokeDasharray="4 6"
             />
           ))}
@@ -125,7 +125,7 @@ export function RunsOverTimeChart({
                 x2={point.x}
                 y1={CHART_PADDING.top}
                 y2={baselineY}
-                stroke="hsl(var(--border) / 0.3)"
+                stroke="oklch(var(--border) / 0.3)"
               />
             ) : null
           )}
@@ -148,8 +148,8 @@ export function RunsOverTimeChart({
                 cx={point.x}
                 cy={point.y}
                 r={index === plottedPoints.length - 1 ? 5 : 3.5}
-                fill="hsl(var(--background))"
-                stroke="hsl(var(--primary))"
+                fill="oklch(var(--background))"
+                stroke="oklch(var(--primary))"
                 strokeWidth={index === plottedPoints.length - 1 ? 3 : 2}
               />
             ))
@@ -162,7 +162,7 @@ export function RunsOverTimeChart({
             y={label.y}
             textAnchor="end"
             dominantBaseline={label.value === 0 ? "auto" : "middle"}
-            fill="hsl(var(--muted-foreground) / 0.92)"
+            fill="oklch(var(--muted-foreground) / 0.92)"
             fontSize="10"
             fontWeight="600"
             letterSpacing="0.08em"
@@ -180,7 +180,7 @@ export function RunsOverTimeChart({
               textAnchor={
                 index === 0 ? "start" : index === plottedPoints.length - 1 ? "end" : "middle"
               }
-              fill="hsl(var(--muted-foreground) / 0.92)"
+              fill="oklch(var(--muted-foreground) / 0.92)"
               fontSize="10"
               fontWeight="600"
               letterSpacing="0.08em"
@@ -193,7 +193,7 @@ export function RunsOverTimeChart({
 
       {!hasData ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6 text-center">
-          <div className="max-w-xs rounded-sm border border-border/70 bg-background/90 px-4 py-3 shadow-[0_18px_40px_-30px_hsl(var(--foreground)/0.28)] backdrop-blur-sm">
+          <div className="max-w-xs border border-border bg-background px-4 py-3">
             <p className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Waiting for activity
             </p>

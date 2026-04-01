@@ -15,89 +15,91 @@ import { getAuthUserId } from "@/lib/clerk-auth";
 import { toAbsoluteUrl } from "@/lib/site-url";
 
 const heroHighlights = [
-  "Visual workflow builder",
-  "Telegram automation",
+  "Visual flow editor",
+  "Telegram webhook automation",
   "Run history",
 ] as const;
 
 const features = [
   {
-    title: "Visual Telegram workflow builder",
+    title: "Build flows in a visual editor",
     description:
-      "Build Telegram bot flows with triggers, conditions, and actions in one clear workspace.",
+      "Map Telegram triggers, conditions, and actions in a workspace your whole team can read.",
     points: [
-      "Drag-and-drop workflow editing",
-      "Readable bot logic for teams",
-      "Faster changes without custom scripts",
+      "Design automation logic faster",
+      "Keep bot behavior easy to review",
+      "Update flows without chasing custom scripts",
     ],
   },
   {
-    title: "Reliable Telegram automation",
+    title: "Run every workflow reliably",
     description:
-      "Receive Telegram updates, validate events, and queue actions before messages are sent.",
+      "Telegraph receives updates, evaluates matching rules, and pushes actions through a queue-backed execution pipeline.",
     points: [
-      "Built-in Telegram webhook handling",
-      "Idempotent event processing",
-      "Queue-backed worker execution",
+      "Webhook intake and event validation",
+      "Idempotent processing for repeat safety",
+      "Worker-backed delivery and retries",
     ],
   },
   {
-    title: "Bot runs and operation history",
+    title: "Monitor every bot run",
     description:
-      "Track every Telegram bot run from trigger to action so support and debugging stay simple.",
+      "Follow each workflow from trigger to action so support, ops, and engineering can debug with confidence.",
     points: [
-      "Action timelines for every run",
-      "Faster failure review",
-      "Bot controls in the same product",
+      "Action-by-action run timelines",
+      "Faster incident reviews",
+      "Bot controls and history together",
     ],
   },
 ] as const;
 
 const steps = [
   {
-    title: "Connect a bot",
+    title: "Connect your bot",
     description:
-      "Add your bot, connect the webhook, and keep token handling inside the app.",
+      "Add a bot token, register the webhook, and keep credentials encrypted at rest.",
   },
   {
-    title: "Build the automation",
+    title: "Build the flow",
     description:
-      "Set up triggers, conditions, and message actions in the visual workflow builder.",
+      "Use the flow editor to connect triggers, conditions, and actions for the path you want to automate.",
   },
   {
-    title: "Launch and monitor",
+    title: "Go live with confidence",
     description:
-      "Run queued actions, inspect results, and review what happened in every workflow run.",
+      "Launch the workflow, monitor runs, and see exactly how each update was handled.",
   },
 ] as const;
 
 export const metadata: Metadata = {
-  title: "Telegram Bot Builder and Automation Platform",
+  title: "Telegraph | Telegram Bot Builder with a Visual Flow Editor",
   description:
-    "Telegraph is a Telegram bot builder for visual workflows, webhook automation, queue-backed execution, and bot run history.",
+    "Telegraph is a Telegram bot builder for teams that want a visual flow editor, reliable webhook processing, and clear run history in one place.",
   keywords: [
     "telegram bot builder",
     "telegram automation",
+    "telegram flow editor",
     "telegram workflow builder",
     "telegram bot automation platform",
     "visual telegram bot builder",
     "telegram bot workflow software",
+    "telegram bot platform",
   ],
   alternates: {
     canonical: toAbsoluteUrl("/"),
   },
   openGraph: {
-    title: "Telegraph | Telegram bot builder and automation platform",
+    title: "Telegraph | Telegram Bot Builder with a Visual Flow Editor",
     description:
-      "Design Telegram workflows visually, process webhook traffic reliably, and review every run from one workspace.",
+      "Design Telegram bot workflows visually, process webhook traffic reliably, and review every run from one workspace.",
     url: toAbsoluteUrl("/"),
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Telegraph | Telegram Bot Builder and Automation Platform",
+    title: "Telegraph | Telegram Bot Builder with a Visual Flow Editor",
     description:
-      "Visual Telegram automation with queue-backed execution and clear run history.",
+      "Visual Telegram automation with reliable execution and clear run history.",
   },
 };
 
@@ -131,9 +133,9 @@ export default async function HomePage() {
     operatingSystem: "Web",
     url: toAbsoluteUrl("/"),
     description:
-      "Telegraph is a Telegram bot builder for visual workflows, Telegram automation, queue-backed execution, and bot run history.",
+      "Telegraph is a Telegram bot builder with a visual flow editor, reliable execution, and run history for modern teams.",
     featureList: [
-      "Telegram bot workflow builder",
+      "Visual flow editor for Telegram bots",
       "Telegram webhook automation",
       "Queue-backed execution",
       "Bot run history",
@@ -152,7 +154,7 @@ export default async function HomePage() {
           <div className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_360px] lg:items-start">
             <div className="flex flex-col gap-6">
               <Badge variant="secondary" className="w-fit">
-                Telegram bot builder
+                Telegram bot builder for modern teams
               </Badge>
 
               <div className="flex flex-col gap-4">
@@ -160,12 +162,11 @@ export default async function HomePage() {
                   className="max-w-[10ch] text-4xl font-semibold text-foreground md:text-6xl"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
-                  Telegram bot builder.
+                  Telegram bot builder with a visual flow editor.
                 </h1>
                 <p className="max-w-[60ch] text-base leading-7 text-muted-foreground md:text-lg md:leading-8">
-                  Build Telegram automation with a visual workflow builder,
-                  queue-backed execution, and clear run history from one
-                  workspace.
+                  Design Telegram automations, process updates reliably, and
+                  review every run from one workspace built for teams.
                 </p>
               </div>
 
@@ -198,18 +199,18 @@ export default async function HomePage() {
                 <Badge variant="outline" className="w-fit">
                   How it works
                 </Badge>
-                <CardTitle>From Telegram update to delivered action.</CardTitle>
+                <CardTitle>From Telegram update to completed run.</CardTitle>
                 <CardDescription>
-                  Capture Telegram webhook events, match the right workflow, and
-                  store the full result.
+                  Telegraph captures the event, matches the right flow, queues
+                  the work, and stores the result for review.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <FeatureList
                   items={[
-                    "Receive the Telegram update",
-                    "Create queued workflow actions",
-                    "Send the response and save the run",
+                    "Receive the Telegram event",
+                    "Evaluate the matching flow",
+                    "Run the action and save the outcome",
                   ]}
                 />
               </CardContent>
@@ -234,18 +235,17 @@ export default async function HomePage() {
         <section className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
           <div className="flex flex-col gap-4">
             <Badge variant="secondary" className="w-fit">
-              From setup to operations
+              Built for teams
             </Badge>
             <h2
               className="max-w-[13ch] text-3xl font-semibold text-foreground md:text-5xl"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              Telegram automation that stays easy to manage.
+              A Telegram automation platform your team can actually manage.
             </h2>
             <p className="max-w-[58ch] text-base leading-7 text-muted-foreground">
-              Telegraph keeps workflow design, message handling, and run
-              visibility in one place so teams can launch faster and support
-              bots with less friction.
+              Keep flow design, webhook handling, and run visibility in one
+              product so shipping, support, and iteration stay simple.
             </p>
           </div>
 
@@ -275,11 +275,10 @@ export default async function HomePage() {
                   className="max-w-[14ch] text-3xl font-semibold text-foreground md:text-5xl"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
-                  Start your Telegram bot automation.
+                  Launch your next Telegram workflow in Telegraph.
                 </h2>
                 <p className="max-w-[56ch] text-base leading-7 text-muted-foreground">
-                  Connect your bot, build the workflow, and launch with clear
-                  run history.
+                  Start with one bot, one flow, and a clear view of every run.
                 </p>
               </div>
             </div>

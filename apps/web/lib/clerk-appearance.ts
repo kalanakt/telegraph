@@ -1,37 +1,32 @@
 const clerkBaseVariables = {
   borderRadius: "0px",
-  colorPrimary: "hsl(var(--primary))",
-  colorPrimaryForeground: "hsl(var(--primary-foreground))",
-  colorDanger: "hsl(var(--destructive))",
-  colorNeutral: "hsl(var(--foreground))",
-  colorForeground: "hsl(var(--foreground))",
-  colorMuted: "hsl(var(--secondary) / 0.72)",
-  colorMutedForeground: "hsl(var(--muted-foreground))",
-  colorBackground: "hsl(var(--card) / 0.92)",
-  colorInput: "hsl(var(--background) / 0.88)",
-  colorInputForeground: "hsl(var(--foreground))",
-  colorBorder: "hsl(var(--border) / 0.95)",
-  colorRing: "hsl(var(--ring) / 0.22)",
+  colorPrimary: "oklch(var(--primary))",
+  colorPrimaryForeground: "oklch(var(--primary-foreground))",
+  colorDanger: "oklch(var(--destructive))",
+  colorNeutral: "oklch(var(--foreground))",
+  colorForeground: "oklch(var(--foreground))",
+  colorMuted: "oklch(var(--secondary) / 0.24)",
+  colorMutedForeground: "oklch(var(--muted-foreground))",
+  colorBackground: "oklch(var(--card))",
+  colorInput: "oklch(var(--background))",
+  colorInputForeground: "oklch(var(--foreground))",
+  colorBorder: "oklch(var(--border))",
+  colorRing: "oklch(var(--ring) / 0.35)",
   fontFamily: "var(--font-sans)",
 };
 
 const flatSurface = {
-  border: "1px solid hsl(var(--border) / 0.9)",
+  border: "1px solid oklch(var(--border))",
   borderRadius: "0px",
   boxShadow: "none",
-  background: "hsl(var(--card) / 0.92)",
-};
-
-const userButtonSurface = {
-  ...flatSurface,
-  backdropFilter: "blur(14px)",
+  background: "oklch(var(--card))",
 };
 
 const userButtonActionButton = {
   borderRadius: "0px",
   boxShadow: "none",
   background: "transparent",
-  color: "hsl(var(--foreground))",
+  color: "oklch(var(--foreground))",
 };
 
 export const clerkAppearance = {
@@ -48,7 +43,6 @@ export const clerkAppearance = {
     },
     card: {
       ...flatSurface,
-      backdropFilter: "blur(12px)",
     },
     modalContent: flatSurface,
     pageScrollBox: {
@@ -60,7 +54,7 @@ export const clerkAppearance = {
       boxShadow: "none",
     },
     navbar: {
-      background: "hsl(var(--card) / 0.86)",
+      background: "oklch(var(--card))",
       borderRight: "none",
       boxShadow: "none",
     },
@@ -78,7 +72,7 @@ export const clerkAppearance = {
     },
     socialButtonsBlockButton: flatSurface,
     socialButtonsBlockButtonText: {
-      color: "hsl(var(--foreground))",
+      color: "oklch(var(--foreground))",
     },
     socialButtonsProviderIcon: {
       boxShadow: "none",
@@ -86,14 +80,14 @@ export const clerkAppearance = {
     formFieldInput: {
       boxShadow: "none",
       borderRadius: "0px",
-      border: "1px solid hsl(var(--input) / 0.9)",
-      background: "hsl(var(--background) / 0.88)",
+      border: "1px solid oklch(var(--input))",
+      background: "oklch(var(--background))",
     },
     otpCodeFieldInput: {
       boxShadow: "none",
       borderRadius: "0px",
-      border: "1px solid hsl(var(--input) / 0.9)",
-      background: "hsl(var(--background) / 0.88)",
+      border: "1px solid oklch(var(--input))",
+      background: "oklch(var(--background))",
     },
     formFieldAction: {
       boxShadow: "none",
@@ -108,20 +102,20 @@ export const clerkAppearance = {
       boxShadow: "none",
     },
     footerActionText: {
-      color: "hsl(var(--muted-foreground))",
+      color: "oklch(var(--muted-foreground))",
     },
     footerActionLink: {
-      color: "hsl(var(--primary))",
+      color: "oklch(var(--primary))",
       textDecoration: "none",
     },
     pricingTable: {
       boxShadow: "none",
     },
     pricingTableCard: {
-      border: "1px solid hsl(var(--border) / 0.9)",
+      border: "1px solid oklch(var(--border))",
       borderRadius: "0px",
       boxShadow: "none",
-      background: "hsl(var(--card) / 0.92)",
+      background: "oklch(var(--card))",
     },
     pricingTableMatrixTable: {
       background: "transparent",
@@ -137,7 +131,7 @@ export const clerkAppearance = {
       boxShadow: "none",
     },
     clerkBadgeText: {
-      color: "hsl(var(--muted-foreground))",
+      color: "oklch(var(--muted-foreground))",
     },
     clerkBadgeIcon: {
       boxShadow: "none",
@@ -148,7 +142,7 @@ export const clerkAppearance = {
       borderTop: "none",
     },
     developmentModeWarningText: {
-      color: "hsl(var(--muted-foreground))",
+      color: "oklch(var(--muted-foreground))",
     },
     identityPreviewEditButton: {
       boxShadow: "none",
@@ -158,7 +152,7 @@ export const clerkAppearance = {
       borderRadius: "0px",
       boxShadow: "none",
     },
-    userButtonPopoverCard: userButtonSurface,
+    userButtonPopoverCard: flatSurface,
     userButtonPopoverMain: {
       background: "transparent",
     },
@@ -167,18 +161,18 @@ export const clerkAppearance = {
     },
     userButtonPopoverActionButton: userButtonActionButton,
     userButtonPopoverActionButtonText: {
-      color: "hsl(var(--foreground))",
+      color: "oklch(var(--foreground))",
     },
     userButtonPopoverActionButtonIcon: {
-      color: "hsl(var(--muted-foreground))",
+      color: "oklch(var(--muted-foreground))",
     },
     userButtonPopoverFooter: {
-      background: "hsl(var(--background) / 0.92)",
+      background: "oklch(var(--background))",
       borderTop: "none",
       boxShadow: "none",
     },
     userButtonPopoverFooterText: {
-      color: "hsl(var(--muted-foreground))",
+      color: "oklch(var(--muted-foreground))",
     },
   },
 };

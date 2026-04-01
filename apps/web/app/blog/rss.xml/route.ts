@@ -34,7 +34,7 @@ export async function GET() {
   <channel>
     <title>Telegraph Blog</title>
     <link>${siteUrl}/blog</link>
-    <description>Engineering notes and product updates from the Telegraph team.</description>
+    <description>Guides, product updates, and engineering notes for teams building Telegram bot automations with Telegraph.</description>
     <language>en-us</language>
     ${items}
   </channel>
