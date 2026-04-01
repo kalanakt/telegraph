@@ -81,16 +81,12 @@ export default async function FlowsPage({
 
   return (
     <div className="space-y-6">
-      <PageHeading
-        title="Flows"
-        subtitle="Build live automations for your bots and review installed template flows before enabling them."
-      />
-
       {params.installed === "1" ? (
         <Card className="interactive-lift">
           <CardContent className="pt-5">
             <p className="text-sm text-muted-foreground">
-              Template installed successfully. Imported flows start disabled so you can review and enable them intentionally.
+              Template installed successfully. Imported flows start disabled so
+              you can review and enable them intentionally.
             </p>
           </CardContent>
         </Card>
@@ -146,7 +142,10 @@ export default async function FlowsPage({
                       <Badge variant={rule.enabled ? "secondary" : "outline"}>
                         {rule.enabled ? "Enabled" : "Disabled"}
                       </Badge>
-                      <FlowStatusToggle ruleId={rule.id} enabled={rule.enabled} />
+                      <FlowStatusToggle
+                        ruleId={rule.id}
+                        enabled={rule.enabled}
+                      />
                     </div>
                   </TableCell>
                   <TableCell>{rule.conditionCount}</TableCell>
