@@ -1,3 +1,4 @@
+import { isClerkAPIResponseError } from "@clerk/nextjs/errors";
 import { auth, currentUser } from "@clerk/nextjs/server";
 
 function isClerkMiddlewareMissingError(error: unknown): boolean {
@@ -7,6 +8,14 @@ function isClerkMiddlewareMissingError(error: unknown): boolean {
 
   const message = error.message.toLowerCase();
   return message.includes("clerk") && message.includes("clerkmiddleware");
+}
+
+export function isRecoverableCurrentUserError(error: unknown): boolean {
+  return (
+    isClerkMiddlewareMissingError(error) ||
+    isClerkAPIResponseError(error) ||
+    (error instanceof Error && error.name === "ClerkAPIResponseError")
+  );
 }
 
 export async function getAuthUserId(): Promise<string | null> {
@@ -25,7 +34,7 @@ export async function getCurrentUserOrNull() {
   try {
     return await currentUser();
   } catch (error) {
-    if (isClerkMiddlewareMissingError(error)) {
+    if (isRecoverableCurrentUserError(error)) {
       return null;
     }
     throw error;
