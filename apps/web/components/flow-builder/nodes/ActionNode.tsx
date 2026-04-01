@@ -4,7 +4,7 @@ import { Handle, Position } from "@xyflow/react";
 import { Image, FileText, Video, Send, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { getCapabilityLabel, migrateLegacyActionData, summarizeAction } from "@/lib/flow-builder";
-import type { ActionEditorData, NodeCallbacks } from "../types";
+import type { ActionEditorData } from "../types";
 
 const ACTION_ICONS: Record<string, React.ElementType> = {
   "telegram.sendMessage": Send,
@@ -13,7 +13,7 @@ const ACTION_ICONS: Record<string, React.ElementType> = {
   "telegram.sendDocument": FileText,
 };
 
-export function ActionNode({ data }: { data: ActionEditorData & NodeCallbacks }) {
+export function ActionNode({ data }: { data: ActionEditorData }) {
   const payload = migrateLegacyActionData(data);
   const Icon = ACTION_ICONS[payload.type] ?? Zap;
   const label = getCapabilityLabel(payload.type);
@@ -24,11 +24,11 @@ export function ActionNode({ data }: { data: ActionEditorData & NodeCallbacks })
     payload.type === "telegram.sendDocument";
 
   return (
-    <div className="builder-node builder-node-action relative min-w-[280px] rounded-md text-xs">
+    <div className="builder-node builder-node-action relative min-w-[280px] rounded-sm text-xs">
       <Handle
         type="target"
         position={Position.Left}
-        className="!h-2.5 !w-2.5 !border-white !bg-primary"
+        className="!h-3 !w-3 !border-white !bg-primary"
       />
 
       <div className="px-3 pb-2 pt-3">
@@ -68,7 +68,7 @@ export function ActionNode({ data }: { data: ActionEditorData & NodeCallbacks })
           id="default"
           type="source"
           position={Position.Right}
-          className="!h-2.5 !w-2.5 !border-white !bg-primary"
+          className="!h-3 !w-3 !border-white !bg-primary"
         />
       </div>
     </div>

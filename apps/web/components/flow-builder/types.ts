@@ -41,10 +41,6 @@ export type ActionEditorData = {
   params: Record<string, unknown>;
 };
 
-export type NodeCallbacks = {
-  onTriggerChange?: (trigger: TriggerType) => void;
-};
-
 export const CONDITION_OPTIONS = [
   "text_contains",
   "text_equals",

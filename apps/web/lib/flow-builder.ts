@@ -516,21 +516,27 @@ export function summarizeAction(payload: ActionPayload): string {
   }
 
   if (payload.type === "telegram.sendPhoto") {
-    const caption = asString(params.caption);
-    const photo = asString(params.photo);
-    return caption ?? photo ?? "Send photo";
+    const caption = asString(params.caption)?.trim() ?? "";
+    const photo = asString(params.photo)?.trim() ?? "";
+    if (caption) return caption;
+    if (photo) return "Photo attached";
+    return "Send photo";
   }
 
   if (payload.type === "telegram.sendVideo") {
-    const caption = asString(params.caption);
-    const video = asString(params.video);
-    return caption ?? video ?? "Send video";
+    const caption = asString(params.caption)?.trim() ?? "";
+    const video = asString(params.video)?.trim() ?? "";
+    if (caption) return caption;
+    if (video) return "Video attached";
+    return "Send video";
   }
 
   if (payload.type === "telegram.sendDocument") {
-    const caption = asString(params.caption);
-    const document = asString(params.document);
-    return caption ?? document ?? "Send document";
+    const caption = asString(params.caption)?.trim() ?? "";
+    const document = asString(params.document)?.trim() ?? "";
+    if (caption) return caption;
+    if (document) return "Document attached";
+    return "Send document";
   }
 
   return `${getCapabilityLabel(payload.type)}`;

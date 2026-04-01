@@ -1,5 +1,6 @@
 import { isClerkConfigured } from "./auth-config";
 import { getAuthUserId, getCurrentUserOrNull } from "./clerk-auth";
+import { syncSubscriptionMirrorForUser } from "./clerk-billing";
 import { prisma } from "./prisma";
 
 const subscriptionSelect = {
@@ -62,8 +63,22 @@ export async function requireAppUser() {
 
   const clerkUser = await getCurrentUserOrNull();
 
-  return upsertUserAndEnsureSubscription({
+  const user = await upsertUserAndEnsureSubscription({
     clerkUserId: userId,
     email: clerkUser?.primaryEmailAddress?.emailAddress
+  });
+
+  await syncSubscriptionMirrorForUser({
+    appUserId: user.id,
+    clerkUserId: user.clerkUserId,
+    fallbackPlan: user.subscription?.plan,
+    fallbackStatus: user.subscription?.status
+  });
+
+  return prisma.user.findUniqueOrThrow({
+    where: { id: user.id },
+    include: {
+      subscription: subscriptionSelect
+    }
   });
 }

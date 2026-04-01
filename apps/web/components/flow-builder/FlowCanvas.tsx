@@ -4,6 +4,7 @@ import { useCallback, useRef } from "react";
 import {
   Background,
   BackgroundVariant,
+  ConnectionLineType,
   ConnectionMode,
   Controls,
   MiniMap,
@@ -91,12 +92,16 @@ export function FlowCanvas({
         edges={edges}
         nodeTypes={nodeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
-        connectionMode={ConnectionMode.Loose}
+        connectionMode={ConnectionMode.Strict}
+        connectionLineType={ConnectionLineType.SmoothStep}
         isValidConnection={isValidConnection}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onSelectionChange={onSelectionChange}
+        onNodeClick={(_, node) => onSelectionChange({ nodes: [node] })}
+        onPaneClick={() => onSelectionChange({ nodes: [] })}
+        connectionRadius={26}
         snapToGrid
         snapGrid={[20, 20]}
         fitView
@@ -132,9 +137,9 @@ export function FlowCanvas({
         <Controls showInteractive={false} position="bottom-left" />
         <Background
           variant={BackgroundVariant.Lines}
-          gap={24}
+          gap={26}
           size={0.6}
-          color="rgba(56, 189, 248, 0.14)"
+          color="rgba(15, 23, 42, 0.06)"
         />
       </ReactFlow>
     </div>

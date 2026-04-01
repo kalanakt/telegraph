@@ -1,4 +1,4 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { randomUUID } from "node:crypto";
 import { extname } from "node:path";
 
@@ -112,7 +112,32 @@ export async function uploadMedia(
 ): Promise<{ url: string; key: string }> {
   const config = getS3Config();
   const s3 = getS3Client();
-  const ext = extname(filename) || "";
+  const normalizedContentType = contentType.trim().toLowerCase();
+  let ext = (extname(filename) || "").toLowerCase();
+  if (!ext) {
+    const extByMime: Record<string, string> = {
+      "image/jpeg": ".jpg",
+      "image/png": ".png",
+      "image/gif": ".gif",
+      "image/webp": ".webp",
+      "video/mp4": ".mp4",
+      "video/mpeg": ".mpeg",
+      "video/quicktime": ".mov",
+      "video/webm": ".webm",
+      "application/pdf": ".pdf",
+      "application/zip": ".zip",
+      "application/x-zip-compressed": ".zip",
+      "text/plain": ".txt",
+      "application/msword": ".doc",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+      "application/vnd.ms-excel": ".xls",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
+      "application/vnd.ms-powerpoint": ".ppt",
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation": ".pptx"
+    };
+    ext = extByMime[normalizedContentType] ?? "";
+  }
+
   const key = `media/${randomUUID()}${ext}`;
 
   await s3.send(
@@ -120,11 +145,35 @@ export async function uploadMedia(
       Bucket: config.bucket,
       Key: key,
       Body: buffer,
-      ContentType: contentType,
+      ContentType: normalizedContentType,
+      CacheControl: "public, max-age=31536000, immutable",
+      ContentDisposition: "inline",
       ACL: "public-read"
     })
   );
 
   const url = `${publicBaseUrl()}/${key}`;
   return { url, key };
+}
+
+export async function downloadMedia(key: string): Promise<{
+  body: unknown;
+  contentType?: string;
+  contentLength?: number;
+}> {
+  const config = getS3Config();
+  const s3 = getS3Client();
+
+  const result = await s3.send(
+    new GetObjectCommand({
+      Bucket: config.bucket,
+      Key: key
+    })
+  );
+
+  return {
+    body: result.Body,
+    contentType: result.ContentType,
+    contentLength: result.ContentLength
+  };
 }

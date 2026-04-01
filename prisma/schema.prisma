@@ -61,12 +61,13 @@ model User {
 model Subscription {
   id                 String           @id @default(cuid())
   userId             String           @unique
-  creemCustomerId     String?         @unique
-  creemSubscriptionId String?         @unique
-  creemProductId      String?
+  clerkSubscriptionId String?         @unique
+  clerkPayerId        String?         @unique
+  clerkPlanSlug       String?
   plan               SubscriptionPlan @default(FREE)
   status             String           @default("inactive")
   activeAt           DateTime?
+  pastDueAt          DateTime?
   currentPeriodEnd   DateTime?
   canceledAt         DateTime?
   createdAt          DateTime         @default(now())

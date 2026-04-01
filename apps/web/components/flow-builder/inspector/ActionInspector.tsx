@@ -96,12 +96,16 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
         body: formData,
       });
 
-      const payload = (await response.json()) as { error?: string; url?: string };
+      const payload = (await response.json()) as { error?: string; url?: string; key?: string };
       if (!response.ok || !payload.url) {
         throw new Error(payload.error ?? "Upload failed");
       }
 
-      onUpdateParams({ [uploadConfig.field]: payload.url });
+      const resolvedUrl = payload.key
+        ? new URL(`/api/media/public/${payload.key}`, window.location.origin).toString()
+        : payload.url;
+
+      onUpdateParams({ [uploadConfig.field]: resolvedUrl });
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : "Upload failed");
     } finally {
@@ -256,7 +260,7 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
                   ) : null}
                 </div>
                 <p className="text-xs text-foreground/70">
-                  Upload a file to your configured S3 bucket, or paste an existing public URL / Telegram file ID.
+                  Upload to S3, or paste a direct file URL / Telegram `file_id`. The URL must return the raw media (not an HTML page or “preview” link).
                 </p>
                 {uploadState?.field === uploadConfig.field ? (
                   <p className="text-xs text-foreground/70">Uploading {uploadState.filename}...</p>

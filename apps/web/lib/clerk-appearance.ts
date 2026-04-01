@@ -186,3 +186,29 @@ export const clerkProfileAppearance = {
 export const clerkUserButtonAppearance = {
   ...clerkAppearance,
 };
+
+export const clerkPricingAppearance = {
+  ...clerkAppearance,
+  elements: {
+    ...clerkAppearance.elements,
+    pricingTable: {
+      boxShadow: "none",
+    },
+    pricingTableCard: {
+      border: "none",
+      borderRadius: "0px",
+      boxShadow: "none",
+      background: "hsl(var(--background) / 0.92)",
+    },
+  },
+};
+
+export const clerkCheckoutAppearance = {
+  ...clerkAppearance,
+  elements: {
+    ...clerkAppearance.elements,
+    cardBox: {
+      boxShadow: "none",
+    },
+  },
+};

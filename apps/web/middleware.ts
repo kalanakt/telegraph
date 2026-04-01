@@ -12,7 +12,6 @@ const isProtectedRoute = createRouteMatcher([
   "/api/flows(.*)",
   "/api/builder(.*)",
   "/api/runs(.*)",
-  "/api/creem(.*)",
 ]);
 
 function getAuthorizedParties() {

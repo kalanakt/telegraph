@@ -25,9 +25,8 @@ jobs:
       NEXT_PUBLIC_SITE_URL: https://example.com
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_ci
       CLERK_SECRET_KEY: sk_test_ci
-      CREEM_API_KEY: creem_test_ci
-      CREEM_WEBHOOK_SECRET: whsec_ci
-      CREEM_PRO_PRODUCT_ID: prod_ci
+      CLERK_WEBHOOK_SIGNING_SECRET: whsec_ci
+      CLERK_BILLING_PRO_PLAN_SLUGS: pro
       S3_ENDPOINT: https://example.com
       S3_BUCKET: telegraph-ci
       S3_REGION: auto

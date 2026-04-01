@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { IsValidConnection, Node } from "@xyflow/react";
 import { flowDefinitionSchema } from "@telegram-builder/shared";
 import {
@@ -79,18 +79,6 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
     setName(existing.name);
     loadFlow(existing.flowDefinition, existing.trigger);
   }, [bots, rules, selectedRuleId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const displayNodes = useMemo(
-    () =>
-      nodes.map((node) => ({
-        ...node,
-        data: {
-          ...(node.data as Record<string, unknown>),
-          onTriggerChange: setTrigger,
-        },
-      })),
-    [nodes, setTrigger],
-  );
 
   const isValidConnection: IsValidConnection = useCallback(
     (connection) => canCreateConnection(connection, nodes, edges),
@@ -198,7 +186,7 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">
           <FlowCanvas
-            nodes={displayNodes}
+            nodes={nodes}
             edges={edges}
             trigger={trigger}
             onNodesChange={onNodesChange}

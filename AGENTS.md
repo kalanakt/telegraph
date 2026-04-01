@@ -60,7 +60,7 @@ The orchestrator is injected with adapters (not direct Prisma calls), making the
 
 **Flow definition**: A `WorkflowRule` stores a `flowDefinition` JSON field representing the React Flow canvas state. `domain/flow.ts` in shared derives action payloads from this graph structure. `apps/web/lib/flow-builder.ts` defines the UI-level trigger/action/condition groups.
 
-**Billing enforcement**: Clerk handles auth. Creem handles subscriptions and entitlements; webhook at `/api/webhooks/creem` syncs plan status to the DB. Orchestrator checks entitlements via `packages/shared/src/config/limits.ts` before processing.
+**Billing enforcement**: Clerk handles auth + billing. Webhook at `/api/webhooks/clerk` syncs subscription status to the DB. Orchestrator checks entitlements via `packages/shared/src/config/limits.ts` before processing.
 
 **Bot token security**: Tokens are encrypted at rest using `ENCRYPTION_KEY` via `packages/shared/src/domain/encryption.ts`.
 

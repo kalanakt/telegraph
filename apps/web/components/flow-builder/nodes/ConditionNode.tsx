@@ -12,7 +12,7 @@ import {
   GitBranch,
   MousePointerClick,
 } from "lucide-react";
-import type { ConditionEditorData, NodeCallbacks } from "../types";
+import type { ConditionEditorData } from "../types";
 
 const CONDITION_ICONS: Record<string, React.ElementType> = {
   text_contains: MessageSquare,
@@ -70,17 +70,17 @@ function formatConditionLabel(type: string): string {
     .join(" ");
 }
 
-export function ConditionNode({ data }: { data: ConditionEditorData & NodeCallbacks }) {
+export function ConditionNode({ data }: { data: ConditionEditorData }) {
   const type = data.type ?? "text_contains";
   const Icon = CONDITION_ICONS[type] ?? Filter;
   const summary = formatConditionSummary(data);
 
   return (
-    <div className="builder-node builder-node-condition relative min-w-[250px] rounded-md px-3 py-3 text-xs">
+    <div className="builder-node builder-node-condition relative min-w-[250px] rounded-sm px-3 py-3 text-xs">
       <Handle
         type="target"
         position={Position.Left}
-        className="!h-2.5 !w-2.5 !border-white !bg-primary"
+        className="!h-3 !w-3 !border-white !bg-primary"
       />
 
       <div className="flex items-start gap-2">
@@ -112,14 +112,14 @@ export function ConditionNode({ data }: { data: ConditionEditorData & NodeCallba
         type="source"
         position={Position.Right}
         style={{ top: "35%" }}
-        className="!h-2.5 !w-2.5 !border-white !bg-primary"
+        className="!h-3 !w-3 !border-white !bg-primary"
       />
       <Handle
         id="false"
         type="source"
         position={Position.Right}
         style={{ top: "72%" }}
-        className="!h-2.5 !w-2.5 !border-white !bg-primary"
+        className="!h-3 !w-3 !border-white !bg-primary"
       />
     </div>
   );
