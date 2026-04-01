@@ -11,7 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { isClerkConfigured } from "@/lib/auth-config";
 import { getAuthUserId } from "@/lib/clerk-auth";
 import { toAbsoluteUrl } from "@/lib/site-url";
 
@@ -119,11 +118,9 @@ function FeatureList({ items }: { items: readonly string[] }) {
 }
 
 export default async function HomePage() {
-  if (isClerkConfigured()) {
-    const userId = await getAuthUserId();
-    if (userId) {
-      redirect("/dashboard");
-    }
+  const userId = await getAuthUserId();
+  if (userId) {
+    redirect("/dashboard");
   }
 
   const structuredData = {

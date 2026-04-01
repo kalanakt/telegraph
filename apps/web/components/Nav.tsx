@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { UserButton } from "@clerk/nextjs";
+import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
 import { NavLinks } from "@/components/NavLinks";
 import { Button } from "@/components/ui/button";
-import { isClerkConfigured } from "@/lib/auth-config";
 import { clerkUserButtonAppearance } from "@/lib/clerk-appearance";
 import { getAuthUserId } from "@/lib/clerk-auth";
 
@@ -28,8 +27,7 @@ const signedOutNavItems: SignedOutNavItem[] = [
 ];
 
 export async function Nav() {
-  const hasClerk = isClerkConfigured();
-  const userId = hasClerk ? await getAuthUserId() : "local-dev-user";
+  const userId = await getAuthUserId();
   const isSignedIn = Boolean(userId);
 
   return (
@@ -55,9 +53,18 @@ export async function Nav() {
             </div>
           </div>
 
-          {hasClerk ? (
-            <div className="flex items-center gap-2 self-start xl:self-auto">
-              {isSignedIn ? (
+          <div className="flex items-center gap-2 self-start xl:self-auto">
+            {isSignedIn ? (
+              <>
+                <div className="flex items-center justify-center bg-background/80 p-1 backdrop-blur-sm">
+                  <OrganizationSwitcher
+                    appearance={clerkUserButtonAppearance}
+                    afterSelectOrganizationUrl="/dashboard"
+                    afterCreateOrganizationUrl="/dashboard"
+                    organizationProfileMode="navigation"
+                    organizationProfileUrl="/orgs"
+                  />
+                </div>
                 <div className="flex items-center justify-center bg-background/80 p-1 backdrop-blur-sm">
                   <UserButton
                     afterSignOutUrl="/"
@@ -66,18 +73,18 @@ export async function Nav() {
                     userProfileUrl="/account"
                   />
                 </div>
-              ) : (
-                <>
-                  <Button asChild type="button" variant="ghost">
-                    <Link href="/sign-in">Sign in</Link>
-                  </Button>
-                  <Button asChild type="button">
-                    <Link href="/sign-up">Start free</Link>
-                  </Button>
-                </>
-              )}
-            </div>
-          ) : null}
+              </>
+            ) : (
+              <>
+                <Button asChild type="button" variant="ghost">
+                  <Link href="/sign-in">Sign in</Link>
+                </Button>
+                <Button asChild type="button">
+                  <Link href="/sign-up">Start free</Link>
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </header>

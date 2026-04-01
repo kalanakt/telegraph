@@ -13,11 +13,34 @@ const ACTION_ICONS: Record<string, React.ElementType> = {
   "telegram.sendDocument": FileText,
 };
 
+function getUploadedPhotoUrl(payload: { type: string; params: Record<string, unknown> }): string | null {
+  if (payload.type !== "telegram.sendPhoto") return null;
+
+  const raw = payload.params.photo;
+  if (typeof raw !== "string") return null;
+
+  const value = raw.trim();
+  if (!value) return null;
+  if (value.includes("{{")) return null;
+
+  if (value.startsWith("http://") || value.startsWith("https://")) {
+    return value;
+  }
+
+  // Allow local relative urls (for local dev and api proxies).
+  if (value.startsWith("/")) {
+    return value;
+  }
+
+  return null;
+}
+
 export function ActionNode({ data }: { data: ActionEditorData }) {
   const payload = migrateLegacyActionData(data);
   const Icon = ACTION_ICONS[payload.type] ?? Zap;
   const label = getCapabilityLabel(payload.type);
   const summary = summarizeAction(payload);
+  const photoUrl = getUploadedPhotoUrl(payload as unknown as { type: string; params: Record<string, unknown> });
   const isMedia =
     payload.type === "telegram.sendPhoto" ||
     payload.type === "telegram.sendVideo" ||
@@ -52,9 +75,23 @@ export function ActionNode({ data }: { data: ActionEditorData }) {
 
         {isMedia ? (
           <div className="mt-2 flex items-center gap-2">
-            <span className="builder-node-media-icon h-6 w-6">
-              <Icon className="h-3.5 w-3.5" />
-            </span>
+            {photoUrl ? (
+              <span className="builder-node-media-thumb">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={photoUrl}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                  referrerPolicy="no-referrer"
+                />
+              </span>
+            ) : (
+              <span className="builder-node-media-icon h-6 w-6">
+                <Icon className="h-3.5 w-3.5" />
+              </span>
+            )}
             <span className="line-clamp-1 font-mono text-[9px] text-muted-foreground">{summary}</span>
           </div>
         ) : (

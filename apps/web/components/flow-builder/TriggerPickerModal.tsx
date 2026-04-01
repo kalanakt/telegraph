@@ -82,7 +82,7 @@ export function TriggerPickerModal({ open, currentTrigger, onSelect, onClose }: 
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="relative w-full max-w-md rounded-sm border border-border/85 bg-white/96 shadow-2xl">
+      <div className="relative w-full max-w-md rounded-sm border border-border/85 bg-background/85 shadow-2xl">
         <div className="flex items-center justify-between border-b border-border/80 px-4 py-3">
           <h2 className="text-sm font-semibold text-foreground">Choose a trigger</h2>
           <button

@@ -1,19 +1,25 @@
 const clerkBaseVariables = {
   borderRadius: "0px",
   colorPrimary: "hsl(var(--primary))",
-  colorBackground: "transparent",
-  colorInputBackground: "hsl(var(--background) / 0.88)",
-  colorInputText: "hsl(var(--foreground))",
-  colorText: "hsl(var(--foreground))",
-  colorTextSecondary: "hsl(var(--muted-foreground))",
+  colorPrimaryForeground: "hsl(var(--primary-foreground))",
+  colorDanger: "hsl(var(--destructive))",
+  colorNeutral: "hsl(var(--foreground))",
+  colorForeground: "hsl(var(--foreground))",
+  colorMuted: "hsl(var(--secondary) / 0.72)",
+  colorMutedForeground: "hsl(var(--muted-foreground))",
+  colorBackground: "hsl(var(--card) / 0.92)",
+  colorInput: "hsl(var(--background) / 0.88)",
+  colorInputForeground: "hsl(var(--foreground))",
+  colorBorder: "hsl(var(--border) / 0.95)",
+  colorRing: "hsl(var(--ring) / 0.22)",
   fontFamily: "var(--font-sans)",
 };
 
 const flatSurface = {
-  border: "none",
+  border: "1px solid hsl(var(--border) / 0.9)",
   borderRadius: "0px",
   boxShadow: "none",
-  background: "hsl(var(--background) / 0.92)",
+  background: "hsl(var(--card) / 0.92)",
 };
 
 const userButtonSurface = {
@@ -36,6 +42,7 @@ export const clerkAppearance = {
   },
   variables: clerkBaseVariables,
   elements: {
+    actionCard: flatSurface,
     cardBox: {
       boxShadow: "none",
     },
@@ -53,7 +60,7 @@ export const clerkAppearance = {
       boxShadow: "none",
     },
     navbar: {
-      background: "hsl(var(--background) / 0.92)",
+      background: "hsl(var(--card) / 0.86)",
       borderRight: "none",
       boxShadow: "none",
     },
@@ -107,6 +114,20 @@ export const clerkAppearance = {
       color: "hsl(var(--primary))",
       textDecoration: "none",
     },
+    pricingTable: {
+      boxShadow: "none",
+    },
+    pricingTableCard: {
+      border: "1px solid hsl(var(--border) / 0.9)",
+      borderRadius: "0px",
+      boxShadow: "none",
+      background: "hsl(var(--card) / 0.92)",
+    },
+    pricingTableMatrixTable: {
+      background: "transparent",
+      boxShadow: "none",
+    },
+    subscriptionDetailsCard: flatSurface,
     clerkBadgeBox: {
       background: "transparent",
       boxShadow: "none",
@@ -165,6 +186,7 @@ export const clerkAppearance = {
 export const clerkAuthAppearance = {
   ...clerkAppearance,
   elements: {
+    ...clerkAppearance.elements,
     rootBox: {
       width: "100%",
     },
@@ -174,10 +196,12 @@ export const clerkAuthAppearance = {
 export const clerkProfileAppearance = {
   ...clerkAppearance,
   elements: {
+    ...clerkAppearance.elements,
     rootBox: {
       width: "100%",
     },
     cardBox: {
+      ...clerkAppearance.elements.cardBox,
       width: "100%",
     },
   },
@@ -191,15 +215,6 @@ export const clerkPricingAppearance = {
   ...clerkAppearance,
   elements: {
     ...clerkAppearance.elements,
-    pricingTable: {
-      boxShadow: "none",
-    },
-    pricingTableCard: {
-      border: "none",
-      borderRadius: "0px",
-      boxShadow: "none",
-      background: "hsl(var(--background) / 0.92)",
-    },
   },
 };
 

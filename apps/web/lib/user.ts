@@ -1,4 +1,3 @@
-import { isClerkConfigured } from "./auth-config";
 import { getAuthUserId, getCurrentUserOrNull } from "./clerk-auth";
 import { syncSubscriptionMirrorForUser } from "./clerk-billing";
 import { prisma } from "./prisma";
@@ -49,13 +48,6 @@ async function upsertUserAndEnsureSubscription(params: {
 }
 
 export async function requireAppUser() {
-  if (!isClerkConfigured()) {
-    return upsertUserAndEnsureSubscription({
-      clerkUserId: "local-dev-user",
-      email: "local-dev@example.com"
-    });
-  }
-
   const userId = await getAuthUserId();
   if (!userId) {
     throw new Error("Unauthorized");

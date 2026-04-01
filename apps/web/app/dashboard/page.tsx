@@ -24,7 +24,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { isClerkConfigured } from "@/lib/auth-config";
 import { getAuthUserId } from "@/lib/clerk-auth";
 import { prisma } from "@/lib/prisma";
 import { requireAppUser } from "@/lib/user";
@@ -106,11 +105,9 @@ function StatTile({
 }
 
 export default async function DashboardPage() {
-  if (isClerkConfigured()) {
-    const userId = await getAuthUserId();
-    if (!userId) {
-      redirect("/sign-in");
-    }
+  const userId = await getAuthUserId();
+  if (!userId) {
+    redirect("/sign-in");
   }
 
   const user = await requireAppUser();

@@ -22,12 +22,11 @@ import type {
 } from "./types";
 import { CONDITION_OPTIONS } from "./types";
 
-export const EDGE_STYLE = { stroke: "rgba(14, 165, 233, 0.46)", strokeWidth: 1.4 };
+export const EDGE_STYLE = { stroke: "rgba(14, 165, 233, 0.46)", strokeWidth: 1.5 };
 
 export const defaultEdgeOptions = {
-  type: "smoothstep",
+  type: "bezier",
   style: EDGE_STYLE,
-  pathOptions: { borderRadius: 14, offset: 18 },
   markerEnd: { type: MarkerType.ArrowClosed, color: "rgba(14, 165, 233, 0.56)" },
   animated: false,
 };

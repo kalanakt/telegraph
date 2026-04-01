@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
   "/account(.*)",
+  "/orgs(.*)",
   "/bots(.*)",
   "/flows(.*)",
   "/builder(.*)",
@@ -12,6 +13,14 @@ const isProtectedRoute = createRouteMatcher([
   "/api/flows(.*)",
   "/api/builder(.*)",
   "/api/runs(.*)",
+]);
+
+const isOrgRequiredRoute = createRouteMatcher([
+  "/dashboard(.*)",
+  "/bots(.*)",
+  "/flows(.*)",
+  "/builder(.*)",
+  "/runs(.*)",
 ]);
 
 function getAuthorizedParties() {
@@ -27,17 +36,9 @@ function getAuthorizedParties() {
   }
 }
 
-const isClerkConfigured = Boolean(
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY,
-);
-
 export default clerkMiddleware(
   async (auth, req) => {
-    if (!isClerkConfigured) {
-      return;
-    }
-
-    const { userId } = await auth();
+    const { userId, orgId } = await auth();
 
     if (
       userId &&
@@ -49,6 +50,10 @@ export default clerkMiddleware(
 
     if (isProtectedRoute(req)) {
       await auth.protect();
+    }
+
+    if (userId && isOrgRequiredRoute(req) && !orgId) {
+      return NextResponse.redirect(new URL("/orgs", req.url));
     }
   },
   {

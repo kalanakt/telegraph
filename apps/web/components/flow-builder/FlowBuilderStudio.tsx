@@ -158,7 +158,7 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
   }
 
   return (
-    <Card className="surface-panel border-white/70 bg-white/95">
+    <Card className="surface-panel">
       <CardHeader>
         <CardTitle className="text-xl">Flows Studio</CardTitle>
         <CardDescription>

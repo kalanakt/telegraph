@@ -980,7 +980,7 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
   }
 
   return (
-    <Card className="surface-panel border-white/90 bg-white/95">
+    <Card className="surface-panel">
       <CardHeader>
         <CardTitle className="text-xl">Builder Studio</CardTitle>
         <CardDescription>
@@ -1050,7 +1050,7 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
           </label>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200/80 bg-white/80 p-2">
+        <div className="flex flex-wrap items-center gap-2 rounded-sm border border-border/80 bg-background/70 p-2">
           <Button type="button" onClick={saveFlow} disabled={isSaving}>
             {isSaving
               ? "Saving..."
@@ -1090,14 +1090,14 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
             >
               <Panel
                 position="top-left"
-                className="rounded-lg border border-slate-200/80 bg-white/92 px-2.5 py-1.5 text-xs text-slate-700"
+                className="rounded-sm border border-border/80 bg-background/70 px-2.5 py-1.5 text-xs text-foreground/80"
               >
                 Trigger: {trigger}
               </Panel>
               <MiniMap
                 pannable
                 zoomable
-                className="!rounded-lg !border !border-slate-200 !bg-white/90"
+                className="!rounded-sm !border !border-border/80 !bg-background/70"
                 nodeBorderRadius={12}
                 maskColor="rgba(15, 23, 42, 0.08)"
               />

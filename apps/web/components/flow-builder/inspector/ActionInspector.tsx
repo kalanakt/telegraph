@@ -216,7 +216,7 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
             ) : null}
 
             {uploadConfig ? (
-              <div className="mt-2 space-y-2 rounded-md border border-border/80 bg-white/60 p-3">
+              <div className="mt-2 space-y-2 rounded-md border border-border/80 bg-background/65 p-3">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -324,7 +324,7 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
             {replyMarkupKind === "inline" ? (
               <div className="mt-3 space-y-2">
                 {inlineKeyboard.map((row, rowIndex) => (
-                  <div key={`inline-row-${rowIndex}`} className="space-y-2 rounded-md border border-border/80 bg-white/60 p-2">
+                  <div key={`inline-row-${rowIndex}`} className="space-y-2 rounded-md border border-border/80 bg-background/65 p-2">
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-medium text-foreground/72">Row {rowIndex + 1}</p>
                       <Button
@@ -420,7 +420,7 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
             {replyMarkupKind === "reply" ? (
               <div className="mt-3 space-y-2">
                 {replyKeyboard.map((row, rowIndex) => (
-                  <div key={`reply-row-${rowIndex}`} className="space-y-2 rounded-md border border-border/80 bg-white/60 p-2">
+                  <div key={`reply-row-${rowIndex}`} className="space-y-2 rounded-md border border-border/80 bg-background/65 p-2">
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-medium text-foreground/72">Row {rowIndex + 1}</p>
                       <Button

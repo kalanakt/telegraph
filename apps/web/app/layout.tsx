@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Nav } from "@/components/Nav";
-import { isClerkConfigured } from "@/lib/auth-config";
 import { clerkAppearance } from "@/lib/clerk-appearance";
 import { getSiteUrl, toAbsoluteUrl } from "@/lib/site-url";
 import "./globals.css";
@@ -40,8 +39,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-  const hasClerk = isClerkConfigured();
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!;
   const appShell = (
     <>
       <a className="skip-link focus-ring" href="#main-content">
@@ -73,13 +71,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="font-sans">
       <body>
-        {hasClerk && publishableKey ? (
-          <ClerkProvider appearance={clerkAppearance} publishableKey={publishableKey}>
-            {appShell}
-          </ClerkProvider>
-        ) : (
-          appShell
-        )}
+        <ClerkProvider appearance={clerkAppearance} publishableKey={publishableKey}>
+          {appShell}
+        </ClerkProvider>
       </body>
     </html>
   );

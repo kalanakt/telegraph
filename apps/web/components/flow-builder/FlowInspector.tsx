@@ -51,7 +51,7 @@ export function FlowInspector({
       </div>
 
       {!selectedNode ? (
-        <div className="rounded-md border border-dashed border-border/80 bg-white/55 px-4 py-6 text-center">
+        <div className="rounded-md border border-dashed border-border/80 bg-background/65 px-4 py-6 text-center">
           <p className="text-sm text-muted-foreground">Select a node to edit it, or add one from the toolbar.</p>
         </div>
       ) : null}

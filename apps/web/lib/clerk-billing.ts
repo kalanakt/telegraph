@@ -1,6 +1,5 @@
 import { normalizePlanKey, type PlanKey } from "@telegram-builder/shared";
 import { clerkClient } from "@clerk/nextjs/server";
-import { isClerkConfigured } from "./auth-config";
 import { prisma } from "./prisma";
 
 type BillingClient = Awaited<ReturnType<typeof clerkClient>>["billing"];
@@ -142,10 +141,6 @@ function mapSubscriptionToMirror(subscription: unknown) {
 }
 
 export async function fetchUserBillingSubscription(clerkUserId: string): Promise<SubscriptionLike | null> {
-  if (!isClerkConfigured()) {
-    return null;
-  }
-
   try {
     const client = await clerkClient();
     return await client.billing.getUserBillingSubscription(clerkUserId);

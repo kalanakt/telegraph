@@ -114,7 +114,7 @@ export function ConditionInspector({ data, trigger, onUpdate }: Props) {
       ) : null}
 
       {conditionType === "callback_data_equals" ? (
-        <div className="rounded-md border border-border/80 bg-white/60 px-3 py-2">
+        <div className="rounded-md border border-border/80 bg-background/65 px-3 py-2">
           <p className="text-[10px] font-semibold text-foreground/78">Callback query tip</p>
           <p className="mt-0.5 text-[10px] text-muted-foreground">
             Use this when the trigger is <code className="rounded-sm bg-secondary/70 px-0.5">callback_query_received</code> and you want to branch explicitly from a real condition node.
