@@ -3,7 +3,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { compileMDX } from "next-mdx-remote/rsc";
 import { blogMdxComponents } from "@/components/blog-mdx-components";
-import { getAllBlogPostMeta, getBlogBasePath, getBlogPostBySlug } from "@/lib/blog";
+import {
+  getAllBlogPostMeta,
+  getBlogBasePath,
+  getBlogPostBySlug,
+} from "@/lib/blog";
 import { toAbsoluteUrl } from "@/lib/site-url";
 
 type PageParams = {
@@ -14,7 +18,7 @@ function formatDate(input: string) {
   return new Intl.DateTimeFormat("en-US", {
     year: "numeric",
     month: "long",
-    day: "numeric"
+    day: "numeric",
   }).format(new Date(input));
 }
 
@@ -22,7 +26,11 @@ export function generateStaticParams() {
   return getAllBlogPostMeta().map((post) => ({ slug: post.slug }));
 }
 
-export async function generateMetadata({ params }: { params: Promise<PageParams> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<PageParams>;
+}): Promise<Metadata> {
   const resolvedParams = await params;
   const post = getBlogPostBySlug(resolvedParams.slug);
 
@@ -31,8 +39,8 @@ export async function generateMetadata({ params }: { params: Promise<PageParams>
       title: "Post not found | Telegraph",
       robots: {
         index: false,
-        follow: false
-      }
+        follow: false,
+      },
     };
   }
 
@@ -44,7 +52,7 @@ export async function generateMetadata({ params }: { params: Promise<PageParams>
     keywords: post.tags,
     authors: post.author ? [{ name: post.author }] : undefined,
     alternates: {
-      canonical: canonicalUrl
+      canonical: canonicalUrl,
     },
     openGraph: {
       title: `${post.title} | Telegraph`,
@@ -53,17 +61,21 @@ export async function generateMetadata({ params }: { params: Promise<PageParams>
       publishedTime: post.publishedAt,
       modifiedTime: post.updatedAt,
       url: canonicalUrl,
-      siteName: "Telegraph"
+      siteName: "Telegraph",
     },
     twitter: {
       card: "summary_large_image",
       title: `${post.title} | Telegraph`,
-      description: post.description
-    }
+      description: post.description,
+    },
   };
 }
 
-export default async function BlogPostPage({ params }: { params: Promise<PageParams> }) {
+export default async function BlogPostPage({
+  params,
+}: {
+  params: Promise<PageParams>;
+}) {
   const resolvedParams = await params;
   const post = getBlogPostBySlug(resolvedParams.slug);
 
@@ -75,8 +87,8 @@ export default async function BlogPostPage({ params }: { params: Promise<PagePar
     source: post.content,
     components: blogMdxComponents,
     options: {
-      parseFrontmatter: false
-    }
+      parseFrontmatter: false,
+    },
   });
 
   return (
@@ -96,14 +108,16 @@ export default async function BlogPostPage({ params }: { params: Promise<PagePar
 
           <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground md:text-sm">
             <span>{formatDate(post.publishedAt)}</span>
-            {post.updatedAt ? <span>Updated {formatDate(post.updatedAt)}</span> : null}
+            {post.updatedAt ? (
+              <span>Updated {formatDate(post.updatedAt)}</span>
+            ) : null}
             {post.author ? <span>By {post.author}</span> : null}
           </div>
         </div>
       </header>
 
       <section className="surface-panel p-6 md:p-8">
-        <div className="blog-prose">{content}</div>
+        <div>{content}</div>
       </section>
     </article>
   );
