@@ -11,63 +11,73 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { LandingFlowPreview } from "@/components/marketing/LandingFlowPreview";
 import { getAuthUserId } from "@/lib/clerk-auth";
 import { toAbsoluteUrl } from "@/lib/site-url";
 
-const heroHighlights = [
-  "Visual flow editor",
-  "Telegram webhook automation",
-  "Run history",
-] as const;
-
-const features = [
+const productCards = [
   {
-    title: "Build flows in a visual editor",
+    title: "Design flows without losing the logic",
     description:
-      "Map Telegram triggers, conditions, and actions in a workspace your whole team can read.",
+      "Model triggers, branches, and actions visually instead of stitching together brittle scripts.",
     points: [
-      "Design automation logic faster",
-      "Keep bot behavior easy to review",
-      "Update flows without chasing custom scripts",
+      "Keep routing logic legible for support, ops, and product",
+      "Update workflows faster when your bot behavior changes",
+      "Reuse the same builder language across templates and live flows",
     ],
   },
   {
-    title: "Run every workflow reliably",
+    title: "Run Telegram automations with operational guardrails",
     description:
-      "Telegraph receives updates, evaluates matching rules, and pushes actions through a queue-backed execution pipeline.",
+      "Telegraph validates updates, deduplicates events, and hands off work to workers built for reliable delivery.",
     points: [
-      "Webhook intake and event validation",
-      "Idempotent processing for repeat safety",
-      "Worker-backed delivery and retries",
+      "Webhook intake and normalization",
+      "Idempotent event processing",
+      "Queued action execution with run records",
     ],
   },
   {
-    title: "Monitor every bot run",
+    title: "Debug real conversations, not just diagrams",
     description:
-      "Follow each workflow from trigger to action so support, ops, and engineering can debug with confidence.",
+      "When a bot misfires, you can inspect what matched, what ran, and what needs to change next.",
     points: [
-      "Action-by-action run timelines",
-      "Faster incident reviews",
-      "Bot controls and history together",
+      "Action-by-action visibility",
+      "Faster support and incident review",
+      "Bot controls and execution history in one workspace",
     ],
   },
 ] as const;
 
-const steps = [
+const useCases = [
   {
-    title: "Connect your bot",
+    title: "Lead qualification",
     description:
-      "Add a bot token, register the webhook, and keep credentials encrypted at rest.",
+      "Catch intent in Telegram, reply instantly, and hand warm conversations to your team.",
+    recipe: [
+      "Trigger on inbound message",
+      'Branch on keywords like "pricing" or "demo"',
+      "Notify sales with the full chat context",
+    ],
   },
   {
-    title: "Build the flow",
+    title: "Support automation",
     description:
-      "Use the flow editor to connect triggers, conditions, and actions for the path you want to automate.",
+      "Route repetitive questions into fast replies while keeping a clean path for human follow-up.",
+    recipe: [
+      "Match common support intents",
+      "Send help content or recovery steps",
+      "Escalate edge cases to an operator flow",
+    ],
   },
   {
-    title: "Go live with confidence",
+    title: "Community operations",
     description:
-      "Launch the workflow, monitor runs, and see exactly how each update was handled.",
+      "Moderate groups, welcome members, and enforce lightweight policies without manual busywork.",
+    recipe: [
+      "Trigger on joins, reactions, or callbacks",
+      "Apply branch rules for member status and context",
+      "Send updates, approvals, or moderation actions automatically",
+    ],
   },
 ] as const;
 
@@ -109,9 +119,9 @@ function FeatureList({ items }: { items: readonly string[] }) {
       {items.map((item) => (
         <li
           key={item}
-          className="flex items-start gap-3 text-sm text-muted-foreground"
+          className="flex items-start gap-3 text-sm leading-6 text-muted-foreground"
         >
-          <CheckCircle2 className="mt-0.5 size-4 text-primary" />
+          <CheckCircle2 className="mt-1 size-4 text-primary" />
           <span>{item}</span>
         </li>
       ))}
@@ -150,147 +160,141 @@ export default async function HomePage() {
       />
 
       <div className="flex flex-col gap-16 pb-16 pt-4 md:gap-20">
-        <section className="surface-panel px-6 py-8 md:px-10 md:py-12">
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_360px] lg:items-start">
-            <div className="flex flex-col gap-6">
-              <Badge variant="secondary" className="w-fit">
-                Telegram bot builder for modern teams
-              </Badge>
+        <section className="surface-panel overflow-hidden p-0">
+          <div className="landing-grid-surface relative isolate min-h-[620px] border border-border/0">
+            <LandingFlowPreview />
 
-              <div className="flex flex-col gap-4">
+            <div className="relative z-10 flex min-h-[620px] items-end px-6 py-6 md:px-10 md:py-10">
+              <div className="flex max-w-2xl flex-col gap-5 md:p-8">
+                <Badge variant="secondary" className="w-fit">
+                  Telegram bot builder for modern teams
+                </Badge>
+
                 <h1
-                  className="max-w-[10ch] text-4xl font-semibold text-foreground md:text-6xl"
+                  className="max-w-xl text-5xl font-semibold text-foreground md:text-7xl"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
-                  Telegram bot builder with a visual flow editor.
+                  Build Telegram automations inside a real flow canvas.
                 </h1>
-                <p className="max-w-[60ch] text-base leading-7 text-muted-foreground md:text-lg md:leading-8">
-                  Design Telegram automations, process updates reliably, and
-                  review every run from one workspace built for teams.
+
+                <p className="max-w-[58ch] text-base leading-7 text-muted-foreground md:text-lg md:leading-8">
+                  Telegraph gives teams a visual builder for Telegram triggers,
+                  conditions, and actions, then runs those workflows through a
+                  reliable execution pipeline with clear history after launch.
                 </p>
-              </div>
 
-              <div className="flex flex-wrap items-center gap-3">
-                <Button asChild size="lg">
-                  <Link href="/sign-up">
-                    Start free
-                    <ArrowRight data-icon="inline-end" />
-                  </Link>
-                </Button>
-                <Button asChild size="lg" variant="outline">
-                  <Link href="/pricing">View pricing</Link>
-                </Button>
-              </div>
+                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <span className="section-chip">support flows</span>
+                  <span className="section-chip">lead routing</span>
+                  <span className="section-chip">community ops</span>
+                  <span className="section-chip">message automation</span>
+                </div>
 
-              <div className="grid gap-3 sm:grid-cols-3">
-                {heroHighlights.map((item) => (
-                  <div
-                    key={item}
-                    className="rounded-sm bg-muted/50 px-4 py-4 text-sm font-medium text-foreground"
-                  >
-                    {item}
-                  </div>
-                ))}
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button asChild size="lg">
+                    <Link href="/sign-up">
+                      Start free
+                      <ArrowRight data-icon="inline-end" />
+                    </Link>
+                  </Button>
+                  <Button asChild size="lg" variant="outline">
+                    <Link href="/pricing">View pricing</Link>
+                  </Button>
+                </div>
               </div>
             </div>
-
-            <Card>
-              <CardHeader>
-                <Badge variant="outline" className="w-fit">
-                  How it works
-                </Badge>
-                <CardTitle>From Telegram update to completed run.</CardTitle>
-                <CardDescription>
-                  Telegraph captures the event, matches the right flow, queues
-                  the work, and stores the result for review.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <FeatureList
-                  items={[
-                    "Receive the Telegram event",
-                    "Evaluate the matching flow",
-                    "Run the action and save the outcome",
-                  ]}
-                />
-              </CardContent>
-            </Card>
           </div>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-3">
-          {features.map((feature) => (
-            <Card key={feature.title}>
-              <CardHeader>
-                <CardTitle>{feature.title}</CardTitle>
-                <CardDescription>{feature.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <FeatureList items={feature.points} />
-              </CardContent>
-            </Card>
-          ))}
-        </section>
+        <section className="grid gap-4 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
+          <div className="surface-panel flex flex-col gap-6 px-6 py-6 md:px-8 md:py-8">
+            <div className="flex flex-col gap-4">
+              <Badge variant="outline" className="w-fit">
+                Product-led landing page
+              </Badge>
+              <h2
+                className="max-w-[13ch] text-3xl font-semibold leading-[0.98] tracking-[-0.04em] text-foreground md:text-5xl"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                Show the actual builder, not just a promise.
+              </h2>
+              <p className="max-w-[56ch] text-base leading-7 text-muted-foreground">
+                The homepage now leans into the sharp, structured style already
+                used throughout Telegraph and puts a believable flow canvas in
+                front of visitors immediately.
+              </p>
+            </div>
 
-        <section className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
-          <div className="flex flex-col gap-4">
-            <Badge variant="secondary" className="w-fit">
-              Built for teams
-            </Badge>
-            <h2
-              className="max-w-[13ch] text-3xl font-semibold text-foreground md:text-5xl"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              A Telegram automation platform your team can actually manage.
-            </h2>
-            <p className="max-w-[58ch] text-base leading-7 text-muted-foreground">
-              Keep flow design, webhook handling, and run visibility in one
-              product so shipping, support, and iteration stay simple.
-            </p>
+            <FeatureList
+              items={[
+                "Sharper hierarchy that matches the dashboard and builder surfaces",
+                "A live-looking mock flow that explains the product in seconds",
+                "More concrete examples of what teams can automate in Telegram",
+              ]}
+            />
           </div>
 
-          <div className="grid gap-4">
-            {steps.map((step, index) => (
-              <Card key={step.title}>
-                <CardHeader className="gap-3">
-                  <Badge variant="outline" className="w-fit">
-                    Step {index + 1}
-                  </Badge>
-                  <CardTitle>{step.title}</CardTitle>
-                  <CardDescription>{step.description}</CardDescription>
+          <div className="grid gap-4 md:grid-cols-2">
+            {productCards.map((card, index) => (
+              <Card
+                key={card.title}
+                className={index === 2 ? "md:col-span-2" : ""}
+              >
+                <CardHeader>
+                  <CardTitle>{card.title}</CardTitle>
+                  <CardDescription>{card.description}</CardDescription>
                 </CardHeader>
+                <CardContent>
+                  <FeatureList items={card.points} />
+                </CardContent>
               </Card>
             ))}
           </div>
         </section>
 
-        <section className="surface-panel px-6 py-8 md:px-10 md:py-10">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <section className="grid gap-4 md:grid-cols-3">
+          {useCases.map((useCase) => (
+            <Card key={useCase.title}>
+              <CardHeader>
+                <Badge variant="outline" className="w-fit">
+                  Example workflow
+                </Badge>
+                <CardTitle>{useCase.title}</CardTitle>
+                <CardDescription>{useCase.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <FeatureList items={useCase.recipe} />
+              </CardContent>
+            </Card>
+          ))}
+        </section>
+
+        <section className="surface-panel overflow-hidden p-0">
+          <div className="landing-grid-surface grid gap-8 px-6 py-8 md:px-10 md:py-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
             <div className="flex flex-col gap-4">
               <Badge variant="secondary" className="w-fit">
                 Ready to start
               </Badge>
-              <div className="flex flex-col gap-3">
-                <h2
-                  className="max-w-[14ch] text-3xl font-semibold text-foreground md:text-5xl"
-                  style={{ fontFamily: "var(--font-display)" }}
-                >
-                  Launch your next Telegram workflow in Telegraph.
-                </h2>
-                <p className="max-w-[56ch] text-base leading-7 text-muted-foreground">
-                  Start with one bot, one flow, and a clear view of every run.
-                </p>
-              </div>
+              <h2
+                className="max-w-md text-3xl font-semibold text-foreground md:text-5xl"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                Launch your next Telegram workflow in Telegraph.
+              </h2>
+              <p className="max-w-6xl text-base leading-7 text-muted-foreground">
+                Start with one bot, one flow, and a clearer path from inbound
+                message to finished action.
+              </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3 lg:justify-end">
               <Button asChild size="lg">
                 <Link href="/sign-up">
                   Start free
                   <ArrowRight data-icon="inline-end" />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="ghost">
+              <Button asChild size="lg" variant="outline">
                 <Link href="/blog">Read the blog</Link>
               </Button>
             </div>

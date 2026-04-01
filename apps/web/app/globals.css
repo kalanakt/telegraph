@@ -217,6 +217,30 @@
     @apply rounded-none border border-border/80 bg-background p-4;
   }
 
+  .landing-flow-shell {
+    background: linear-gradient(
+      180deg,
+      oklch(var(--background) / 0.8) 0%,
+      oklch(var(--card) / 0.96) 100%
+    );
+    box-shadow: 0 14px 30px rgba(58, 38, 14, 0.08);
+  }
+
+  .landing-grid-surface {
+    background:
+      radial-gradient(720px 320px at 0% 0%, oklch(var(--primary) / 0.09), transparent 60%),
+      radial-gradient(560px 260px at 100% 0%, oklch(var(--accent) / 0.08), transparent 58%),
+      linear-gradient(to right, oklch(var(--border) / 0.2) 1px, transparent 1px),
+      linear-gradient(to bottom, oklch(var(--border) / 0.2) 1px, transparent 1px),
+      linear-gradient(180deg, oklch(var(--card) / 0.98) 0%, oklch(var(--card) / 0.94) 100%);
+    background-size: auto, auto, 34px 34px, 34px 34px, auto;
+    background-position: 0 0, 100% 0, center center, center center, 0 0;
+  }
+
+  .landing-hero-copy {
+    box-shadow: 0 18px 34px rgba(58, 38, 14, 0.1);
+  }
+
   .builder-canvas {
     background:
       radial-gradient(720px 280px at 0% 0%, oklch(var(--primary) / 0.06), transparent 58%),
