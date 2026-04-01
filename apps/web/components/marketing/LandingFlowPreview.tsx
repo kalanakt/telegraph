@@ -46,7 +46,7 @@ const previewNodes: Node[] = [
       type: "telegram.sendMessage",
       params: {
         chat_id: "{{event.chatId}}",
-        text: "Send pricing guide and onboarding checklist",
+        text: "Send pricing options and a book-a-demo link",
       },
     },
   },
@@ -58,7 +58,7 @@ const previewNodes: Node[] = [
       type: "telegram.sendMessage",
       params: {
         chat_id: "{{ops.salesRoomId}}",
-        text: "New lead asked about pricing. Follow up in Telegram.",
+        text: "New sales-qualified lead in Telegram. Review and follow up.",
       },
     },
   },

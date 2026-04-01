@@ -17,33 +17,33 @@ import { toAbsoluteUrl } from "@/lib/site-url";
 
 const productCards = [
   {
-    title: "Design flows without losing the logic",
+    title: "Build flows your whole team can understand",
     description:
-      "Model triggers, branches, and actions visually instead of stitching together brittle scripts.",
+      "Map triggers, conditions, and actions on a visual canvas so product, ops, and engineering can review the same workflow.",
     points: [
-      "Keep routing logic legible for support, ops, and product",
-      "Update workflows faster when your bot behavior changes",
-      "Reuse the same builder language across templates and live flows",
+      "Replace scattered scripts with a shared source of truth",
+      "Launch new automation logic without rewriting backend glue",
+      "Reuse working flow patterns across bots and templates",
     ],
   },
   {
-    title: "Run Telegram automations with operational guardrails",
+    title: "Run every message through a reliable pipeline",
     description:
-      "Telegraph validates updates, deduplicates events, and hands off work to workers built for reliable delivery.",
+      "Telegraph validates incoming updates, deduplicates events, and queues actions so production traffic stays predictable.",
     points: [
-      "Webhook intake and normalization",
-      "Idempotent event processing",
-      "Queued action execution with run records",
+      "Webhook normalization before workflows execute",
+      "Idempotent processing to avoid duplicate actions",
+      "Queued execution with recorded workflow and action runs",
     ],
   },
   {
-    title: "Debug real conversations, not just diagrams",
+    title: "Fix issues without digging through raw logs",
     description:
-      "When a bot misfires, you can inspect what matched, what ran, and what needs to change next.",
+      "See what matched, what action fired, and where a run failed so your team can improve workflows with confidence.",
     points: [
-      "Action-by-action visibility",
+      "Action-by-action visibility for every run",
       "Faster support and incident review",
-      "Bot controls and execution history in one workspace",
+      "One workspace for bots, flows, and execution history",
     ],
   },
 ] as const;
@@ -52,39 +52,39 @@ const useCases = [
   {
     title: "Lead qualification",
     description:
-      "Catch intent in Telegram, reply instantly, and hand warm conversations to your team.",
+      "Turn high-intent Telegram chats into qualified leads before they cool off.",
     recipe: [
-      "Trigger on inbound message",
-      'Branch on keywords like "pricing" or "demo"',
-      "Notify sales with the full chat context",
+      'Trigger when a prospect asks about "pricing" or a "demo"',
+      "Send the right reply instantly",
+      "Alert sales with the full conversation context",
     ],
   },
   {
-    title: "Support automation",
+    title: "Support triage",
     description:
-      "Route repetitive questions into fast replies while keeping a clean path for human follow-up.",
+      "Answer common questions immediately and escalate edge cases with context.",
     recipe: [
-      "Match common support intents",
-      "Send help content or recovery steps",
-      "Escalate edge cases to an operator flow",
+      "Match recurring intents like billing, setup, or access",
+      "Send a helpful reply or next step",
+      "Route complex conversations to a human owner",
     ],
   },
   {
     title: "Community operations",
     description:
-      "Moderate groups, welcome members, and enforce lightweight policies without manual busywork.",
+      "Automate onboarding and moderation without babysitting every group.",
     recipe: [
-      "Trigger on joins, reactions, or callbacks",
-      "Apply branch rules for member status and context",
-      "Send updates, approvals, or moderation actions automatically",
+      "Trigger on joins, keywords, or callback actions",
+      "Branch on member status, intent, or group rules",
+      "Send welcomes, approvals, or moderation actions automatically",
     ],
   },
 ] as const;
 
 export const metadata: Metadata = {
-  title: "Telegraph | Telegram Bot Builder with a Visual Flow Editor",
+  title: "Telegraph | Visual Telegram Bot Builder for Production Teams",
   description:
-    "Telegraph is a Telegram bot builder for teams that want a visual flow editor, reliable webhook processing, and clear run history in one place.",
+    "Build Telegram bot workflows in a visual editor, run them through a reliable execution pipeline, and review every run in one workspace.",
   keywords: [
     "telegram bot builder",
     "telegram automation",
@@ -99,15 +99,15 @@ export const metadata: Metadata = {
     canonical: toAbsoluteUrl("/"),
   },
   openGraph: {
-    title: "Telegraph | Telegram Bot Builder with a Visual Flow Editor",
+    title: "Telegraph | Visual Telegram Bot Builder for Production Teams",
     description:
-      "Design Telegram bot workflows visually, process webhook traffic reliably, and review every run from one workspace.",
+      "Build Telegram replies, routing, and ops workflows visually, then run and debug them from one workspace.",
     url: toAbsoluteUrl("/"),
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Telegraph | Telegram Bot Builder with a Visual Flow Editor",
+    title: "Telegraph | Visual Telegram Bot Builder for Production Teams",
     description:
       "Visual Telegram automation with reliable execution and clear run history.",
   },
@@ -121,7 +121,7 @@ function FeatureList({ items }: { items: readonly string[] }) {
           key={item}
           className="flex items-start gap-3 text-sm leading-6 text-muted-foreground"
         >
-          <CheckCircle2 className="mt-1 size-4 text-primary" />
+          <CheckCircle2 className="mt-1 size-4 text-secondary" />
           <span>{item}</span>
         </li>
       ))}
@@ -167,38 +167,39 @@ export default async function HomePage() {
             <div className="relative z-10 flex min-h-[620px] items-end px-6 py-6 md:px-10 md:py-10">
               <div className="flex max-w-2xl flex-col gap-5 md:p-8">
                 <Badge variant="secondary" className="w-fit">
-                  Telegram bot builder for modern teams
+                  Telegram bot builder for teams that move fast
                 </Badge>
 
                 <h1
                   className="max-w-xl text-5xl font-semibold text-foreground md:text-7xl"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
-                  Build Telegram automations inside a real flow canvas.
+                  Launch Telegram bot workflows without another backend release.
                 </h1>
 
                 <p className="max-w-[58ch] text-base leading-7 text-muted-foreground md:text-lg md:leading-8">
-                  Telegraph gives teams a visual builder for Telegram triggers,
-                  conditions, and actions, then runs those workflows through a
-                  reliable execution pipeline with clear history after launch.
+                  Build replies, routing, and ops automations in a visual flow
+                  editor. Telegraph handles Telegram webhook intake, queued
+                  execution, and run history so your team can ship faster and
+                  debug with confidence.
                 </p>
 
                 <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  <span className="section-chip">support flows</span>
-                  <span className="section-chip">lead routing</span>
-                  <span className="section-chip">community ops</span>
-                  <span className="section-chip">message automation</span>
+                  <span className="section-chip">lead qualification</span>
+                  <span className="section-chip">support triage</span>
+                  <span className="section-chip">community moderation</span>
+                  <span className="section-chip">ops alerts</span>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
                   <Button asChild size="lg">
                     <Link href="/sign-up">
-                      Start free
+                      Build my first flow
                       <ArrowRight data-icon="inline-end" />
                     </Link>
                   </Button>
                   <Button asChild size="lg" variant="outline">
-                    <Link href="/pricing">View pricing</Link>
+                    <Link href="/pricing">See pricing</Link>
                   </Button>
                 </div>
               </div>
@@ -210,26 +211,27 @@ export default async function HomePage() {
           <div className="surface-panel flex flex-col gap-6 px-6 py-6 md:px-8 md:py-8">
             <div className="flex flex-col gap-4">
               <Badge variant="outline" className="w-fit">
-                Product-led landing page
+                Why teams switch
               </Badge>
               <h2
                 className="max-w-[13ch] text-3xl font-semibold leading-[0.98] tracking-[-0.04em] text-foreground md:text-5xl"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                Show the actual builder, not just a promise.
+                Ship faster without losing control of your bot logic.
               </h2>
               <p className="max-w-[56ch] text-base leading-7 text-muted-foreground">
-                The homepage now leans into the sharp, structured style already
-                used throughout Telegraph and puts a believable flow canvas in
-                front of visitors immediately.
+                Most Telegram automations begin as quick scripts, then become
+                harder to change, review, and debug. Telegraph keeps flow
+                design, execution, and run history in one workspace so product,
+                ops, and engineering can work from the same source of truth.
               </p>
             </div>
 
             <FeatureList
               items={[
-                "Sharper hierarchy that matches the dashboard and builder surfaces",
-                "A live-looking mock flow that explains the product in seconds",
-                "More concrete examples of what teams can automate in Telegram",
+                "Replace brittle backend changes with a visual flow your team can review",
+                "Publish new Telegram automation logic without rebuilding the same plumbing",
+                "See what happened on every run when production behavior needs attention",
               ]}
             />
           </div>
@@ -273,29 +275,29 @@ export default async function HomePage() {
           <div className="landing-grid-surface grid gap-8 px-6 py-8 md:px-10 md:py-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
             <div className="flex flex-col gap-4">
               <Badge variant="secondary" className="w-fit">
-                Ready to start
+                Start with one bot
               </Badge>
               <h2
                 className="max-w-md text-3xl font-semibold text-foreground md:text-5xl"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                Launch your next Telegram workflow in Telegraph.
+                Create your first Telegram workflow today.
               </h2>
               <p className="max-w-6xl text-base leading-7 text-muted-foreground">
-                Start with one bot, one flow, and a clearer path from inbound
-                message to finished action.
+                Connect a bot, publish one flow, and give your team a cleaner
+                way to automate replies, routing, and operations in Telegram.
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3 lg:justify-end">
               <Button asChild size="lg">
                 <Link href="/sign-up">
-                  Start free
+                  Build my first flow
                   <ArrowRight data-icon="inline-end" />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline">
-                <Link href="/blog">Read the blog</Link>
+                <Link href="/pricing">See pricing</Link>
               </Button>
             </div>
           </div>
