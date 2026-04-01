@@ -76,6 +76,9 @@ export default function RootLayout({
               <Link className="focus-ring" href="/terms">
                 Terms of service
               </Link>
+              <Link className="focus-ring" href="/cookies">
+                Cookie policy
+              </Link>
             </div>
           </div>
         </footer>

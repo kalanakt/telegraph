@@ -3,7 +3,7 @@ import { getPublishedBlogPostMeta, getBlogBasePath } from "@/lib/blog";
 import { toAbsoluteUrl } from "@/lib/site-url";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const staticRoutes = ["/", "/pricing", "/privacy", "/terms", "/blog"];
+  const staticRoutes = ["/", "/pricing", "/privacy", "/terms", "/cookies", "/blog"];
   const blogPosts = getPublishedBlogPostMeta();
 
   return [
