@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { FlowStatusToggle } from "@/components/FlowStatusToggle";
 import { PageHeading } from "@/components/PageHeading";
 import { FlowBuilderStudio } from "@/components/flow-builder";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +27,7 @@ import { requireAppUser } from "@/lib/user";
 export default async function FlowsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ edit?: string }>;
+  searchParams: Promise<{ edit?: string; installed?: string }>;
 }) {
   const userId = await getAuthUserId();
   if (!userId) {
@@ -67,6 +68,7 @@ export default async function FlowsPage({
         botId: rule.botId,
         name: rule.name,
         trigger: rule.trigger,
+        enabled: rule.enabled,
         flowDefinition,
         actionCount,
         conditionCount,
@@ -79,6 +81,21 @@ export default async function FlowsPage({
 
   return (
     <div className="space-y-6">
+      <PageHeading
+        title="Flows"
+        subtitle="Build live automations for your bots and review installed template flows before enabling them."
+      />
+
+      {params.installed === "1" ? (
+        <Card className="interactive-lift">
+          <CardContent className="pt-5">
+            <p className="text-sm text-muted-foreground">
+              Template installed successfully. Imported flows start disabled so you can review and enable them intentionally.
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <FlowBuilderStudio
         bots={bots.map((bot) => ({
           id: bot.id,
@@ -110,6 +127,7 @@ export default async function FlowsPage({
                 <TableHead>Flow</TableHead>
                 <TableHead>Bot</TableHead>
                 <TableHead>Trigger</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Conditions</TableHead>
                 <TableHead>Actions</TableHead>
                 <TableHead>Edit</TableHead>
@@ -122,6 +140,14 @@ export default async function FlowsPage({
                   <TableCell>{rule.botLabel}</TableCell>
                   <TableCell>
                     <Badge variant="secondary">{rule.trigger}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant={rule.enabled ? "secondary" : "outline"}>
+                        {rule.enabled ? "Enabled" : "Disabled"}
+                      </Badge>
+                      <FlowStatusToggle ruleId={rule.id} enabled={rule.enabled} />
+                    </div>
                   </TableCell>
                   <TableCell>{rule.conditionCount}</TableCell>
                   <TableCell>{rule.actionCount}</TableCell>

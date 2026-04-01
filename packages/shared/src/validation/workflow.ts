@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isActionAllowedForTrigger } from "../domain/actions.js";
 import { TELEGRAM_CAPABILITIES, TELEGRAM_METHODS, TELEGRAM_TRIGGER_TYPES } from "../telegram/capabilities.js";
-import type { ActionPayload, ConditionPayload } from "../types/workflow.js";
+import type { ActionPayload, ConditionPayload, FlowDefinition, TriggerType } from "../types/workflow.js";
 
 const TEMPLATE_FIELD_REGEX = /\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g;
 const ALLOWED_TEMPLATE_FIELDS = new Set([
@@ -174,6 +174,28 @@ function validateTemplates(action: ActionPayload, ctx: z.RefinementCtx, nodeId: 
   }
 }
 
+export function validateFlowForTrigger(
+  flowDefinition: FlowDefinition,
+  trigger: TriggerType,
+  ctx: z.RefinementCtx
+) {
+  for (const node of flowDefinition.nodes) {
+    if (node.type !== "action") {
+      continue;
+    }
+
+    const action = node.data as ActionPayload;
+    if (!isActionAllowedForTrigger(action.type, trigger)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Action ${action.type} is not allowed for trigger ${trigger}.`
+      });
+    }
+
+    validateTemplates(action, ctx, node.id);
+  }
+}
+
 export const flowDefinitionSchema = z
   .object({
     nodes: z.array(flowNodeSchema).min(1),
@@ -310,21 +332,7 @@ export const createFlowSchema = z
     flowDefinition: flowDefinitionSchema
   })
   .superRefine((flow, ctx) => {
-    for (const node of flow.flowDefinition.nodes) {
-      if (node.type !== "action") {
-        continue;
-      }
-
-      const action = node.data as ActionPayload;
-      if (!isActionAllowedForTrigger(action.type, flow.trigger)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `Action ${action.type} is not allowed for trigger ${flow.trigger}.`
-        });
-      }
-
-      validateTemplates(action, ctx, node.id);
-    }
+    validateFlowForTrigger(flow.flowDefinition, flow.trigger, ctx);
   });
 
 export const addBotSchema = z.object({

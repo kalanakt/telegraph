@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
-import { Bot, Gauge, ListChecks, ReceiptText, Sparkles } from "lucide-react";
+import { Bot, Gauge, LayoutTemplate, ListChecks, ReceiptText, Sparkles } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-type IconName = "gauge" | "bot" | "sparkles" | "list-checks" | "receipt";
+type IconName = "gauge" | "bot" | "sparkles" | "templates" | "list-checks" | "receipt";
 type SignedInNavItem = { href: string; label: string; icon: IconName };
 type SignedOutNavItem = { href: string; label: string };
 
@@ -14,6 +14,7 @@ const iconMap: Record<IconName, LucideIcon> = {
   gauge: Gauge,
   bot: Bot,
   sparkles: Sparkles,
+  templates: LayoutTemplate,
   "list-checks": ListChecks,
   receipt: ReceiptText
 };

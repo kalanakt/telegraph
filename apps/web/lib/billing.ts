@@ -40,6 +40,28 @@ export async function assertRuleLimit(userId: string, botId: string, plan: PlanK
   }
 }
 
+export async function getRemainingRuleCapacity(userId: string, botId: string, plan: PlanKey) {
+  const bot = await prisma.bot.findFirst({
+    where: {
+      id: botId,
+      userId
+    }
+  });
+
+  if (!bot) {
+    throw new Error("Bot not found");
+  }
+
+  const ruleCount = await prisma.workflowRule.count({
+    where: {
+      userId,
+      botId
+    }
+  });
+
+  return Math.max(PLAN_LIMITS[plan].maxRulesPerBot - ruleCount, 0);
+}
+
 export async function isMonthlyExecutionExceeded(userId: string, plan: PlanKey) {
   const start = new Date();
   start.setUTCDate(1);

@@ -46,6 +46,11 @@ enum ActionStatus {
   failed
 }
 
+enum TemplateVisibility {
+  PRIVATE
+  PUBLIC
+}
+
 model User {
   id            String         @id @default(cuid())
   clerkUserId   String         @unique
@@ -55,6 +60,7 @@ model User {
   subscription  Subscription?
   bots          Bot[]
   workflowRules WorkflowRule[]
+  workflowTemplates WorkflowTemplate[]
   workflowRuns  WorkflowRun[]
 }
 
@@ -184,4 +190,63 @@ model ActionRun {
   workflowRun  WorkflowRun  @relation(fields: [workflowRunId], references: [id], onDelete: Cascade)
 
   @@index([workflowRunId, createdAt])
+}
+
+model WorkflowTemplate {
+  id                String             @id @default(cuid())
+  userId            String
+  title             String
+  slug              String             @unique
+  description       String?
+  visibility        TemplateVisibility @default(PRIVATE)
+  publishedVersionId String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  draftFlows        WorkflowTemplateDraftFlow[]
+  versions          WorkflowTemplateVersion[]
+
+  @@index([userId, createdAt])
+  @@index([visibility, updatedAt])
+}
+
+model WorkflowTemplateDraftFlow {
+  id             String           @id @default(cuid())
+  templateId     String
+  name           String
+  trigger        WorkflowTrigger
+  flowDefinition Json
+  sortOrder      Int
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  template       WorkflowTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId, sortOrder])
+}
+
+model WorkflowTemplateVersion {
+  id          String                      @id @default(cuid())
+  templateId  String
+  version     Int
+  title       String
+  description String?
+  createdAt   DateTime                    @default(now())
+  template    WorkflowTemplate            @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  flows       WorkflowTemplateVersionFlow[]
+
+  @@unique([templateId, version])
+  @@index([templateId, createdAt])
+}
+
+model WorkflowTemplateVersionFlow {
+  id                String                  @id @default(cuid())
+  templateVersionId String
+  name              String
+  trigger           WorkflowTrigger
+  flowDefinition    Json
+  sortOrder         Int
+  createdAt         DateTime                @default(now())
+  templateVersion   WorkflowTemplateVersion @relation(fields: [templateVersionId], references: [id], onDelete: Cascade)
+
+  @@index([templateVersionId, sortOrder])
 }

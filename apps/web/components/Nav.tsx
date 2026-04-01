@@ -8,7 +8,7 @@ import { getAuthUserId } from "@/lib/clerk-auth";
 type SignedInNavItem = {
   href: string;
   label: string;
-  icon: "gauge" | "bot" | "sparkles" | "list-checks" | "receipt";
+  icon: "gauge" | "bot" | "sparkles" | "templates" | "list-checks" | "receipt";
 };
 type SignedOutNavItem = { href: string; label: string };
 
@@ -16,6 +16,7 @@ const signedInNavItems: SignedInNavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: "gauge" },
   { href: "/bots", label: "Bots", icon: "bot" },
   { href: "/flows", label: "Flows", icon: "sparkles" },
+  { href: "/templates", label: "Templates", icon: "templates" },
   { href: "/runs", label: "Runs", icon: "list-checks" },
   { href: "/pricing", label: "Pricing", icon: "receipt" },
 ];

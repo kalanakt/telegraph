@@ -8,10 +8,12 @@ const isProtectedRoute = createRouteMatcher([
   "/bots(.*)",
   "/flows(.*)",
   "/builder(.*)",
+  "/templates(.*)",
   "/runs(.*)",
   "/api/bots(.*)",
   "/api/flows(.*)",
   "/api/builder(.*)",
+  "/api/templates(.*)",
   "/api/runs(.*)",
 ]);
 
@@ -20,6 +22,7 @@ const isOrgRequiredRoute = createRouteMatcher([
   "/bots(.*)",
   "/flows(.*)",
   "/builder(.*)",
+  "/templates(.*)",
   "/runs(.*)",
 ]);
 
@@ -39,6 +42,8 @@ function getAuthorizedParties() {
 export default clerkMiddleware(
   async (auth, req) => {
     const { userId, orgId } = await auth();
+    const isPublicTemplateRoute = req.nextUrl.pathname.startsWith("/templates/public");
+    const isPublicTemplateApiRoute = req.nextUrl.pathname.startsWith("/api/templates/public");
 
     if (
       userId &&
@@ -48,11 +53,11 @@ export default clerkMiddleware(
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
-    if (isProtectedRoute(req)) {
+    if (isProtectedRoute(req) && !isPublicTemplateRoute && !isPublicTemplateApiRoute) {
       await auth.protect();
     }
 
-    if (userId && isOrgRequiredRoute(req) && !orgId) {
+    if (userId && isOrgRequiredRoute(req) && !isPublicTemplateRoute && !orgId) {
       return NextResponse.redirect(new URL("/orgs", req.url));
     }
   },
