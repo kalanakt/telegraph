@@ -96,6 +96,25 @@ describe("verifyCheckoutRedirectSignature", () => {
     ).toBe(true);
   });
 
+  it("accepts the legacy Creem redirect signature format", () => {
+    process.env.CREEM_API_KEY = "creem_secret";
+
+    const payload =
+      "checkout_id=ch_123|order_id=ord_123|customer_id=cust_123|subscription_id=sub_123|product_id=prod_pro|salt=creem_secret";
+    const signature = crypto.createHash("sha256").update(payload).digest("hex");
+
+    expect(
+      verifyCheckoutRedirectSignature({
+        checkout_id: "ch_123",
+        customer_id: "cust_123",
+        order_id: "ord_123",
+        product_id: "prod_pro",
+        signature,
+        subscription_id: "sub_123"
+      })
+    ).toBe(true);
+  });
+
   it("rejects an invalid Creem redirect signature", () => {
     process.env.CREEM_API_KEY = "creem_secret";
 

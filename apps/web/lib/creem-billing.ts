@@ -58,6 +58,14 @@ type RedirectDetails = {
 
 const TERMINAL_FREE_STATUSES = new Set(["paused", "expired", "canceled"]);
 const ACTIVE_PRO_STATUSES = new Set(["active", "trialing", "paid", "past_due", "scheduled_cancel", "unpaid"]);
+const LEGACY_REDIRECT_PARAM_ORDER = [
+  "request_id",
+  "checkout_id",
+  "order_id",
+  "customer_id",
+  "subscription_id",
+  "product_id"
+] as const;
 
 function firstValue(value: SearchParamValue): string | null {
   if (Array.isArray(value)) {
@@ -73,6 +81,14 @@ function firstValue(value: SearchParamValue): string | null {
 
 function hasStringValue(pair: [string, string | null]): pair is [string, string] {
   return Boolean(pair[1]);
+}
+
+function safeCompareSignature(expected: string, actual: string) {
+  if (expected.length !== actual.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(actual));
 }
 
 function normalizeNullableString(value: unknown): string | null {
@@ -326,14 +342,23 @@ export function verifyCheckoutRedirectSignature(searchParams: SearchParamRecord)
     .filter(hasStringValue)
     .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey));
 
-  const payload = signedPairs.map(([key, value]) => `${key}=${value}`).join("&");
-  const computed = crypto.createHmac("sha256", apiKey).update(payload).digest("hex");
+  const hmacPayload = signedPairs.map(([key, value]) => `${key}=${value}`).join("&");
+  const hmacSignature = crypto.createHmac("sha256", apiKey).update(hmacPayload).digest("hex");
 
-  if (computed.length !== details.signature.length) {
-    return false;
+  if (safeCompareSignature(hmacSignature, details.signature)) {
+    return true;
   }
 
-  return crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(details.signature));
+  const signedPairMap = new Map(signedPairs);
+  const legacyPayload = LEGACY_REDIRECT_PARAM_ORDER.flatMap((key) => {
+    const value = signedPairMap.get(key);
+    return value ? [`${key}=${value}`] : [];
+  })
+    .concat(`salt=${apiKey}`)
+    .join("|");
+  const legacySignature = crypto.createHash("sha256").update(legacyPayload).digest("hex");
+
+  return safeCompareSignature(legacySignature, details.signature);
 }
 
 export async function syncSubscriptionMirrorFromCheckoutReturn(input: {
