@@ -9,7 +9,17 @@ function parseBoolean(value: string | undefined) {
 }
 
 export function isCreemTestMode() {
-  return parseBoolean(process.env.CREEM_TEST_MODE);
+  const explicit = process.env.CREEM_TEST_MODE;
+
+  if (explicit !== undefined && explicit !== "") {
+    return parseBoolean(explicit);
+  }
+
+  const apiKey = process.env.CREEM_API_KEY ?? "";
+
+  // Creem test keys must use the test API endpoint; infer that automatically
+  // so local environments do not break when the mode flag is omitted.
+  return apiKey.startsWith("creem_test_");
 }
 
 export function getCreemApiKey() {
