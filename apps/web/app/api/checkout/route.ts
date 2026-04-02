@@ -1,7 +1,11 @@
 import { Checkout } from "@creem_io/nextjs";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUserId } from "@/lib/clerk-auth";
-import { getCreemApiKey, getCreemProProductId, isCreemTestMode } from "@/lib/creem";
+import {
+  getCreemApiKey,
+  getCreemProProductIdForInterval,
+  isCreemTestMode
+} from "@/lib/creem";
 import { requireAppUser } from "@/lib/user";
 
 const checkoutHandler = Checkout({
@@ -20,10 +24,15 @@ export async function GET(req: NextRequest) {
   }
 
   const appUser = await requireAppUser();
-  const productId = getCreemProProductId();
+  const interval = req.nextUrl.searchParams.get("interval");
+  const normalizedInterval = interval === "yearly" ? "yearly" : "monthly";
+  const productId = getCreemProProductIdForInterval(normalizedInterval);
 
   if (!productId) {
-    return NextResponse.json({ error: "Missing CREEM_PRO_PRODUCT_ID" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Missing Creem Pro product ID for the selected interval" },
+      { status: 500 }
+    );
   }
 
   if (!appUser.email) {
@@ -37,6 +46,7 @@ export async function GET(req: NextRequest) {
     customer: JSON.stringify({ email: appUser.email }),
     metadata: JSON.stringify({
       appUserId: appUser.id,
+      billingInterval: normalizedInterval,
       clerkUserId: appUser.clerkUserId,
       source: "telegraph-account"
     }),

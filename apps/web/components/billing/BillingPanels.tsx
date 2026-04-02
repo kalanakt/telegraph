@@ -1,4 +1,7 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { useState } from "react";
 import { PLAN_LIMITS, normalizePlanKey } from "@telegram-builder/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,7 +17,7 @@ import {
   getBillingStatusTone,
   getDisplayPlan,
   getDisplayStatus,
-} from "@/lib/creem-billing";
+} from "@/lib/billing-display";
 
 type SubscriptionSummary = {
   creemCustomerId?: string | null;
@@ -28,10 +31,23 @@ type BillingPanelsProps = {
   subscription?: SubscriptionSummary | null;
 };
 
+type BillingInterval = "monthly" | "yearly";
+
 const numberFormatter = new Intl.NumberFormat("en-US");
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
 });
+
+const DISPLAY_PRICES: Record<BillingInterval, { label: string; note: string }> = {
+  monthly: {
+    label: "$5",
+    note: "per month"
+  },
+  yearly: {
+    label: "$50",
+    note: "per year"
+  }
+};
 
 function formatLimit(value: number) {
   return `${numberFormatter.format(value)} runs / month`;
@@ -52,6 +68,8 @@ function PlanCard({
   highlighted = false,
   limits,
   title,
+  price,
+  priceNote,
 }: {
   cta: ReactNode;
   description: string;
@@ -59,6 +77,8 @@ function PlanCard({
   highlighted?: boolean;
   limits: Array<string>;
   title: string;
+  price: string;
+  priceNote?: string;
 }) {
   return (
     <Card
@@ -74,6 +94,16 @@ function PlanCard({
         <CardTitle className="font-[var(--font-display)] text-[1.35rem] tracking-[-0.03em]">
           {title}
         </CardTitle>
+        <div className="flex items-end gap-2">
+          <CardDescription className="text-2xl text-foreground">
+            {price}
+          </CardDescription>
+          {priceNote ? (
+            <CardDescription className="pb-0.5 text-xs uppercase tracking-[0.12em]">
+              {priceNote}
+            </CardDescription>
+          ) : null}
+        </div>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -92,15 +122,44 @@ export function PricingPanels({
   isSignedIn,
   subscription,
 }: BillingPanelsProps) {
+  const [billingInterval, setBillingInterval] = useState<BillingInterval>("monthly");
   const currentPlan = normalizePlanKey(subscription?.plan);
   const freeLimits = PLAN_LIMITS.FREE;
   const proLimits = PLAN_LIMITS.PRO;
+  const proPrice = DISPLAY_PRICES[billingInterval];
 
   return (
-    <div className="grid gap-4 xl:grid-cols-2">
+    <div className="space-y-4">
+      <div className="flex justify-center">
+        <div
+          data-slot="button-group"
+          className="inline-flex border border-border bg-background/90 p-1"
+        >
+          <Button
+            type="button"
+            size="sm"
+            variant={billingInterval === "monthly" ? "default" : "ghost"}
+            onClick={() => setBillingInterval("monthly")}
+          >
+            Monthly
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={billingInterval === "yearly" ? "default" : "ghost"}
+            onClick={() => setBillingInterval("yearly")}
+          >
+            Yearly
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
       <PlanCard
         eyebrow={currentPlan === "FREE" ? "Current plan" : "Included"}
         title="Free"
+        price="$0"
+        priceNote="forever"
         description="Build and validate your first Telegram automation workspace without entering payment details."
         limits={[
           `${freeLimits.maxBots} bot connected at a time`,
@@ -125,6 +184,8 @@ export function PricingPanels({
       <PlanCard
         eyebrow={currentPlan === "PRO" ? "Current plan" : "Recommended"}
         title="Pro"
+        price={proPrice.label}
+        priceNote={proPrice.note}
         description="Unlock higher execution volume and more automation capacity while keeping Telegraph’s current workflow model."
         limits={[
           `${proLimits.maxBots} bots connected`,
@@ -140,16 +201,17 @@ export function PricingPanels({
               </Button>
             ) : (
               <Button asChild type="button">
-                <a href="/api/checkout">Upgrade to Pro</a>
+                <a href={`/api/checkout?interval=${billingInterval}`}>Upgrade to Pro</a>
               </Button>
             )
           ) : (
             <Button asChild type="button">
-              <a href="/sign-in?redirect_url=/pricing">Sign in to upgrade</a>
+              <a href={`/sign-in?redirect_url=/pricing`}>Sign in to upgrade</a>
             </Button>
           )
         }
       />
+      </div>
     </div>
   );
 }

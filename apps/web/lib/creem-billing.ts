@@ -435,39 +435,6 @@ export async function syncSubscriptionMirrorFromSubscriptionEvent(data: FlatSubs
   return true;
 }
 
-export function getBillingStatusTone(status?: string | null) {
-  const normalized = normalizeStatus(status);
-
-  if (normalized === "past_due" || normalized === "unpaid" || normalized === "scheduled_cancel") {
-    return "warning" as const;
-  }
-
-  if (normalized === "canceled" || normalized === "expired" || normalized === "paused") {
-    return "secondary" as const;
-  }
-
-  return "default" as const;
-}
-
-export function getDisplayPlan(plan?: string | null) {
-  return normalizePlanKey(plan) === "PRO" ? "Pro" : "Free";
-}
-
-export function getDisplayStatus(status?: string | null) {
-  const normalized = normalizeStatus(status);
-
-  switch (normalized) {
-    case "past_due":
-      return "Past due";
-    case "scheduled_cancel":
-      return "Cancels at period end";
-    case "unpaid":
-      return "Payment issue";
-    default:
-      return normalized.charAt(0).toUpperCase() + normalized.slice(1);
-  }
-}
-
 export function mapCreemProductIdToPlanKey(productId?: string | null): PlanKey {
   return mapProductIdToPlan(productId);
 }
