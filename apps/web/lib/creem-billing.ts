@@ -313,14 +313,16 @@ export function verifyCheckoutRedirectSignature(searchParams: SearchParamRecord)
     return false;
   }
 
-  const signedPairs = [
+  const signedPairsInput: Array<[string, string | null]> = [
     ["checkout_id", details.checkoutId],
     ["order_id", details.orderId],
     ["subscription_id", details.subscriptionId],
     ["customer_id", details.customerId],
     ["product_id", details.productId],
     ["request_id", details.requestId]
-  ]
+  ];
+
+  const signedPairs = signedPairsInput
     .filter(hasStringValue)
     .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey));
 
