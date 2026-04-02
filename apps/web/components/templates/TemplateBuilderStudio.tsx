@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { IsValidConnection, Node } from "@xyflow/react";
 import { workflowTemplateDraftSchema } from "@telegram-builder/shared";
 import { FlowCanvas } from "@/components/flow-builder/FlowCanvas";
+import { FlowEditorLayout } from "@/components/flow-builder/FlowEditorLayout";
 import { FlowInspector } from "@/components/flow-builder/FlowInspector";
 import { useFlowCallbacks } from "@/components/flow-builder/hooks/useFlowCallbacks";
 import { useFlowState } from "@/components/flow-builder/hooks/useFlowState";
@@ -609,75 +610,79 @@ export function TemplateBuilderStudio({ template, bots }: Props) {
             </Button>
           </div>
 
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
-            <Card className="surface-panel">
-              <CardHeader>
-                <CardTitle className="text-xl">Flow builder</CardTitle>
-                <CardDescription>
-                  Work on one flow at a time. Save the whole template draft whenever you want to keep progress.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
-                  <label className="builder-label">
-                    <span>Flow name</span>
-                    <Input value={selectedFlow?.name ?? ""} onChange={(event) => updateSelectedFlowName(event.target.value)} />
-                  </label>
+          <FlowEditorLayout
+            hasInspector={Boolean(selectedNode)}
+            canvas={
+              <Card className="surface-panel">
+                <CardHeader>
+                  <CardTitle className="text-xl">Flow builder</CardTitle>
+                  <CardDescription>
+                    Work on one flow at a time. Save the whole template draft whenever you want to keep progress.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+                    <label className="builder-label">
+                      <span>Flow name</span>
+                      <Input value={selectedFlow?.name ?? ""} onChange={(event) => updateSelectedFlowName(event.target.value)} />
+                    </label>
 
-                  <div className="flex flex-wrap items-end gap-2">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => addNode("start")}
-                      disabled={nodes.some((node) => node.type === "start")}
-                    >
-                      Add trigger
-                    </Button>
-                    <Button type="button" variant="secondary" onClick={() => addNode("condition")}>
-                      Add condition
-                    </Button>
-                    <Button type="button" variant="secondary" onClick={() => addNode("action")}>
-                      Add action
-                    </Button>
+                    <div className="flex flex-wrap items-end gap-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => addNode("start")}
+                        disabled={nodes.some((node) => node.type === "start")}
+                      >
+                        Add trigger
+                      </Button>
+                      <Button type="button" variant="secondary" onClick={() => addNode("condition")}>
+                        Add condition
+                      </Button>
+                      <Button type="button" variant="secondary" onClick={() => addNode("action")}>
+                        Add action
+                      </Button>
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex flex-wrap items-center gap-2 rounded-sm border border-border/85 bg-background/70 px-3 py-3 shadow-sm backdrop-blur-sm">
-                  <Badge variant="secondary" className="border border-border/80 bg-secondary/75 text-secondary-foreground">
-                    {selectedFlow?.name ?? "Flow"}
-                  </Badge>
-                  <Badge variant="outline" className="border border-border/80 bg-background/70 text-foreground/76">
-                    Nodes: {nodes.length}
-                  </Badge>
-                  <Badge variant="outline" className="border border-border/80 bg-background/70 text-foreground/76">
-                    Edges: {edges.length}
-                  </Badge>
-                </div>
+                  <div className="flex flex-wrap items-center gap-2 rounded-sm border border-border/85 bg-background/70 px-3 py-3 shadow-sm backdrop-blur-sm">
+                    <Badge variant="secondary" className="border border-border/80 bg-secondary/75 text-secondary-foreground">
+                      {selectedFlow?.name ?? "Flow"}
+                    </Badge>
+                    <Badge variant="outline" className="border border-border/80 bg-background/70 text-foreground/76">
+                      Nodes: {nodes.length}
+                    </Badge>
+                    <Badge variant="outline" className="border border-border/80 bg-background/70 text-foreground/76">
+                      Edges: {edges.length}
+                    </Badge>
+                  </div>
 
-                <FlowCanvas
-                  nodes={nodes}
-                  edges={edges}
-                  trigger={trigger}
-                  onNodesChange={onNodesChange}
-                  onEdgesChange={onEdgesChange}
-                  onConnect={onConnect}
-                  onSelectionChange={onSelectionChange}
-                  isValidConnection={isValidConnection}
-                  onViewportCenterChange={setViewportCenter}
-                />
-              </CardContent>
-            </Card>
-
-            <FlowInspector
-              selectedNode={selectedNode}
-              trigger={trigger}
-              onTriggerChange={setTrigger}
-              onUpdateNodeData={updateSelectedNodeData}
-              onReplaceAction={replaceSelectedAction}
-              onUpdateActionParams={updateSelectedActionParams}
-              onDeleteNode={deleteSelectedNode}
-            />
-          </div>
+                  <FlowCanvas
+                    nodes={nodes}
+                    edges={edges}
+                    trigger={trigger}
+                    onNodesChange={onNodesChange}
+                    onEdgesChange={onEdgesChange}
+                    onConnect={onConnect}
+                    onSelectionChange={onSelectionChange}
+                    isValidConnection={isValidConnection}
+                    onViewportCenterChange={setViewportCenter}
+                  />
+                </CardContent>
+              </Card>
+            }
+            inspector={
+              <FlowInspector
+                selectedNode={selectedNode}
+                trigger={trigger}
+                onTriggerChange={setTrigger}
+                onUpdateNodeData={updateSelectedNodeData}
+                onReplaceAction={replaceSelectedAction}
+                onUpdateActionParams={updateSelectedActionParams}
+                onDeleteNode={deleteSelectedNode}
+              />
+            }
+          />
         </CardContent>
       </Card>
     </div>

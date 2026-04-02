@@ -15,6 +15,7 @@ import { useFlowCallbacks } from "./hooks/useFlowCallbacks";
 import { canCreateConnection, defaultFlowDefinition, toFlowDefinition } from "./utils";
 import { FlowToolbar } from "./FlowToolbar";
 import { FlowCanvas } from "./FlowCanvas";
+import { FlowEditorLayout } from "./FlowEditorLayout";
 import { FlowInspector } from "./FlowInspector";
 import type { BotOption, RuleOption } from "./types";
 
@@ -184,29 +185,33 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
           onSave={saveFlow}
         />
 
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">
-          <FlowCanvas
-            nodes={nodes}
-            edges={edges}
-            trigger={trigger}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onSelectionChange={onSelectionChange}
-            isValidConnection={isValidConnection}
-            onViewportCenterChange={setViewportCenter}
-          />
-
-          <FlowInspector
-            selectedNode={selectedNode}
-            trigger={trigger}
-            onTriggerChange={setTrigger}
-            onUpdateNodeData={updateSelectedNodeData}
-            onReplaceAction={replaceSelectedAction}
-            onUpdateActionParams={updateSelectedActionParams}
-            onDeleteNode={deleteSelectedNode}
-          />
-        </div>
+        <FlowEditorLayout
+          hasInspector={Boolean(selectedNode)}
+          canvas={
+            <FlowCanvas
+              nodes={nodes}
+              edges={edges}
+              trigger={trigger}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              onSelectionChange={onSelectionChange}
+              isValidConnection={isValidConnection}
+              onViewportCenterChange={setViewportCenter}
+            />
+          }
+          inspector={
+            <FlowInspector
+              selectedNode={selectedNode}
+              trigger={trigger}
+              onTriggerChange={setTrigger}
+              onUpdateNodeData={updateSelectedNodeData}
+              onReplaceAction={replaceSelectedAction}
+              onUpdateActionParams={updateSelectedActionParams}
+              onDeleteNode={deleteSelectedNode}
+            />
+          }
+        />
       </CardContent>
     </Card>
   );
