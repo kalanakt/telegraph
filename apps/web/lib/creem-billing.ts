@@ -71,6 +71,10 @@ function firstValue(value: SearchParamValue): string | null {
   return null;
 }
 
+function hasStringValue(pair: [string, string | null]): pair is [string, string] {
+  return Boolean(pair[1]);
+}
+
 function normalizeNullableString(value: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
 }
@@ -317,8 +321,8 @@ export function verifyCheckoutRedirectSignature(searchParams: SearchParamRecord)
     ["product_id", details.productId],
     ["request_id", details.requestId]
   ]
-    .filter(([, value]) => Boolean(value))
-    .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey)) as Array<[string, string]>;
+    .filter(hasStringValue)
+    .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey));
 
   const payload = signedPairs.map(([key, value]) => `${key}=${value}`).join("&");
   const computed = crypto.createHmac("sha256", apiKey).update(payload).digest("hex");
