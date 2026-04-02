@@ -8,12 +8,12 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle
+  CardTitle,
 } from "@/components/ui/card";
 import {
   getBillingStatusTone,
   getDisplayPlan,
-  getDisplayStatus
+  getDisplayStatus,
 } from "@/lib/creem-billing";
 
 type SubscriptionSummary = {
@@ -30,11 +30,11 @@ type BillingPanelsProps = {
 
 const numberFormatter = new Intl.NumberFormat("en-US");
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
-  dateStyle: "medium"
+  dateStyle: "medium",
 });
 
 function formatLimit(value: number) {
-  return value >= 100000 ? `${numberFormatter.format(value)} runs / month` : numberFormatter.format(value);
+  return `${numberFormatter.format(value)} runs / month`;
 }
 
 function formatDate(value?: Date | null) {
@@ -51,7 +51,7 @@ function PlanCard({
   eyebrow,
   highlighted = false,
   limits,
-  title
+  title,
 }: {
   cta: ReactNode;
   description: string;
@@ -61,9 +61,14 @@ function PlanCard({
   title: string;
 }) {
   return (
-    <Card className={highlighted ? "border-primary/55 bg-primary/5" : undefined}>
+    <Card
+      className={highlighted ? "border-primary/55 bg-primary/5" : undefined}
+    >
       <CardHeader>
-        <Badge variant={highlighted ? "default" : "secondary"} className="w-fit">
+        <Badge
+          variant={highlighted ? "default" : "secondary"}
+          className="w-fit"
+        >
           {eyebrow}
         </Badge>
         <CardTitle className="font-[var(--font-display)] text-[1.35rem] tracking-[-0.03em]">
@@ -78,14 +83,15 @@ function PlanCard({
           ))}
         </ul>
       </CardContent>
-      <CardFooter className="justify-start bg-transparent">
-        {cta}
-      </CardFooter>
+      <CardFooter className="justify-start bg-transparent">{cta}</CardFooter>
     </Card>
   );
 }
 
-export function PricingPanels({ isSignedIn, subscription }: BillingPanelsProps) {
+export function PricingPanels({
+  isSignedIn,
+  subscription,
+}: BillingPanelsProps) {
   const currentPlan = normalizePlanKey(subscription?.plan);
   const freeLimits = PLAN_LIMITS.FREE;
   const proLimits = PLAN_LIMITS.PRO;
@@ -99,12 +105,14 @@ export function PricingPanels({ isSignedIn, subscription }: BillingPanelsProps) 
         limits={[
           `${freeLimits.maxBots} bot connected at a time`,
           `${freeLimits.maxRulesPerBot} flow per bot`,
-          formatLimit(freeLimits.monthlyExecutions)
+          formatLimit(freeLimits.monthlyExecutions),
         ]}
         cta={
           isSignedIn ? (
             <Button type="button" variant="secondary" disabled>
-              {currentPlan === "FREE" ? "Current plan" : "Downgrade by canceling"}
+              {currentPlan === "FREE"
+                ? "Current plan"
+                : "Downgrade by canceling"}
             </Button>
           ) : (
             <Button asChild type="button" variant="secondary">
@@ -121,7 +129,7 @@ export function PricingPanels({ isSignedIn, subscription }: BillingPanelsProps) 
         limits={[
           `${proLimits.maxBots} bots connected`,
           `${proLimits.maxRulesPerBot} flows per bot`,
-          formatLimit(proLimits.monthlyExecutions)
+          formatLimit(proLimits.monthlyExecutions),
         ]}
         highlighted
         cta={
@@ -146,7 +154,11 @@ export function PricingPanels({ isSignedIn, subscription }: BillingPanelsProps) 
   );
 }
 
-export function BillingOverviewCard({ subscription }: { subscription?: SubscriptionSummary | null }) {
+export function BillingOverviewCard({
+  subscription,
+}: {
+  subscription?: SubscriptionSummary | null;
+}) {
   const plan = getDisplayPlan(subscription?.plan);
   const status = getDisplayStatus(subscription?.status);
   const statusTone = getBillingStatusTone(subscription?.status);
@@ -157,14 +169,24 @@ export function BillingOverviewCard({ subscription }: { subscription?: Subscript
   return (
     <Card className="interactive-lift">
       <CardHeader>
-        <Badge variant={statusTone === "default" ? "default" : statusTone === "warning" ? "outline" : "secondary"} className="w-fit">
+        <Badge
+          variant={
+            statusTone === "default"
+              ? "default"
+              : statusTone === "warning"
+                ? "outline"
+                : "secondary"
+          }
+          className="w-fit"
+        >
           Telegraph billing
         </Badge>
         <CardTitle className="font-[var(--font-display)] text-[1.35rem] tracking-[-0.03em]">
           {plan} plan
         </CardTitle>
         <CardDescription>
-          Subscription access is mirrored into Telegraph and enforced from this workspace state.
+          Subscription access is mirrored into Telegraph and enforced from this
+          workspace state.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4 md:grid-cols-3">
@@ -172,7 +194,15 @@ export function BillingOverviewCard({ subscription }: { subscription?: Subscript
           <p className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             Status
           </p>
-          <Badge variant={statusTone === "default" ? "default" : statusTone === "warning" ? "outline" : "secondary"}>
+          <Badge
+            variant={
+              statusTone === "default"
+                ? "default"
+                : statusTone === "warning"
+                  ? "outline"
+                  : "secondary"
+            }
+          >
             {status}
           </Badge>
         </div>
@@ -180,7 +210,9 @@ export function BillingOverviewCard({ subscription }: { subscription?: Subscript
           <p className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             Current period end
           </p>
-          <p className="text-sm text-foreground">{formatDate(subscription?.currentPeriodEnd)}</p>
+          <p className="text-sm text-foreground">
+            {formatDate(subscription?.currentPeriodEnd)}
+          </p>
         </div>
         <div className="space-y-1">
           <p className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
@@ -193,7 +225,9 @@ export function BillingOverviewCard({ subscription }: { subscription?: Subscript
         {showRecoveryWarning ? (
           <div className="md:col-span-3">
             <p className="border border-border/80 bg-muted px-4 py-3 text-sm text-muted-foreground">
-              Your paid plan is active, but the Creem customer link has not been saved locally yet. Refresh after the webhook lands or re-open the checkout return link.
+              Your paid plan is active, but the Creem customer link has not been
+              saved locally yet. Refresh after the webhook lands or re-open the
+              checkout return link.
             </p>
           </div>
         ) : null}
