@@ -108,20 +108,6 @@ export const clerkAppearance = {
       color: "oklch(var(--primary))",
       textDecoration: "none",
     },
-    pricingTable: {
-      boxShadow: "none",
-    },
-    pricingTableCard: {
-      border: "1px solid oklch(var(--border))",
-      borderRadius: "0px",
-      boxShadow: "none",
-      background: "oklch(var(--card))",
-    },
-    pricingTableMatrixTable: {
-      background: "transparent",
-      boxShadow: "none",
-    },
-    subscriptionDetailsCard: flatSurface,
     clerkBadgeBox: {
       background: "transparent",
       boxShadow: "none",
@@ -203,21 +189,4 @@ export const clerkProfileAppearance = {
 
 export const clerkUserButtonAppearance = {
   ...clerkAppearance,
-};
-
-export const clerkPricingAppearance = {
-  ...clerkAppearance,
-  elements: {
-    ...clerkAppearance.elements,
-  },
-};
-
-export const clerkCheckoutAppearance = {
-  ...clerkAppearance,
-  elements: {
-    ...clerkAppearance.elements,
-    cardBox: {
-      boxShadow: "none",
-    },
-  },
 };

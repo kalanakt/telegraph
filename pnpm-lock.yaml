@@ -38,6 +38,9 @@ importers:
       '@clerk/nextjs':
         specifier: ^6.18.2
         version: 6.39.1(next@15.5.14(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(babel-plugin-macros@3.1.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@creem_io/nextjs':
+        specifier: ^0.6.0
+        version: 0.6.0(next@15.5.14(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(babel-plugin-macros@3.1.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
       '@hugeicons/core-free-icons':
         specifier: ^4.0.0
         version: 4.0.0
@@ -74,6 +77,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      creem:
+        specifier: ^1.4.4
+        version: 1.4.4
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
@@ -493,6 +499,12 @@ packages:
   '@clerk/types@4.101.21':
     resolution: {integrity: sha512-/70W603A6bRv1n24dDNAs3kWHLSIgXebEyzXZ46IuROWcq0+guSqqLa+nKekxxIdk6I/vnI9SWjBvBRuZVMnhQ==}
     engines: {node: '>=18.17.0'}
+
+  '@creem_io/nextjs@0.6.0':
+    resolution: {integrity: sha512-ORUn7FBvf9kq2YyS18kexRf7x/kUw3W3vXD7nnWKWmGdT3/RbvMkPHqPoLOjZp30zEnig72y1C0ALe7tmZH6Kw==}
+    peerDependencies:
+      next: '>=13.0.0'
+      react: '>=18.0.0'
 
   '@dotenvx/dotenvx@1.57.3':
     resolution: {integrity: sha512-R+UGp7snpdd1D+a5F365ix/BOIS9Mqb4FrfAjKwTBTgDXVlGrd2FUKbsl2Qr5WW4E7wPmr6HsuyxKymlJqIEiw==}
@@ -3111,6 +3123,10 @@ packages:
     peerDependenciesMeta:
       typescript:
         optional: true
+
+  creem@1.4.4:
+    resolution: {integrity: sha512-hfnHOIqNERf783FMJOOpbmD701y4t6HuVKR8kIm16X3l5OK6yMM0ifd2zY8CbRqSLeqK/iQV1D8FLgZEVs7Alg==}
+    hasBin: true
 
   cron-parser@4.9.0:
     resolution: {integrity: sha512-p0SaNjrHOnQeR8/VnfGbmg9te2kfyYSQ7Sc/j/6DtPL3JQvKxmjO9TSjNFpujqV3vEYYBvNNvXSxzyksBWAx1Q==}
@@ -5931,6 +5947,15 @@ snapshots:
       - react
       - react-dom
 
+  '@creem_io/nextjs@0.6.0(next@15.5.14(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(babel-plugin-macros@3.1.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)':
+    dependencies:
+      creem: 1.4.4
+      next: 15.5.14(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(babel-plugin-macros@3.1.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      react: 19.2.4
+    transitivePeerDependencies:
+      - '@cfworker/json-schema'
+      - supports-color
+
   '@dotenvx/dotenvx@1.57.3':
     dependencies:
       commander: 11.1.0
@@ -8698,6 +8723,14 @@ snapshots:
       parse-json: 5.2.0
     optionalDependencies:
       typescript: 5.9.3
+
+  creem@1.4.4:
+    dependencies:
+      '@modelcontextprotocol/sdk': 1.28.0(zod@3.25.76)
+      zod: 3.25.76
+    transitivePeerDependencies:
+      - '@cfworker/json-schema'
+      - supports-color
 
   cron-parser@4.9.0:
     dependencies:

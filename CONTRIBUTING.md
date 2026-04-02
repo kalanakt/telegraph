@@ -119,7 +119,7 @@ pnpm vitest run tests/unit/evaluator.test.ts
 Optional but commonly needed variables:
 
 - Clerk auth: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`
-- Clerk billing sync: `CLERK_BILLING_PRO_PLAN_SLUGS`, `CLERK_WEBHOOK_SIGNING_SECRET`
+- Creem billing: `CREEM_API_KEY`, `CREEM_WEBHOOK_SECRET`, `CREEM_PRO_PRODUCT_ID`, `CREEM_TEST_MODE`
 - Public URLs: `NEXT_PUBLIC_SITE_URL`
 - File storage: `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PUBLIC_URL`
 - Error monitoring: `SENTRY_DSN`, `SENTRY_TRACES_SAMPLE_RATE`, `SENTRY_ENVIRONMENT`
@@ -183,7 +183,9 @@ At minimum, production should define:
 Usually also:
 
 - Clerk keys
-- `CLERK_WEBHOOK_SIGNING_SECRET`
+- `CREEM_API_KEY`
+- `CREEM_WEBHOOK_SECRET`
+- `CREEM_PRO_PRODUCT_ID`
 - `NEXT_PUBLIC_SITE_URL`
 - S3-compatible storage credentials if uploads are enabled
 - `TELEGRAM_WEBHOOK_SECRET_TOKEN` for webhook verification

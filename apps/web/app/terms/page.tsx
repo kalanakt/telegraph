@@ -85,10 +85,11 @@ export default function TermsPage() {
 
       <LegalSection title="Third-party services">
         <p>
-          Telegraph depends on third-party services such as Telegram, Clerk, hosting
-          providers, database infrastructure, queue infrastructure, and monitoring
-          providers. Your use of connected services may also be governed by the
-          terms and policies of those third parties.
+          Telegraph depends on third-party services such as Telegram, Clerk,
+          Creem, hosting providers, database infrastructure, queue
+          infrastructure, and monitoring providers. Your use of connected
+          services may also be governed by the terms and policies of those third
+          parties.
         </p>
       </LegalSection>
 

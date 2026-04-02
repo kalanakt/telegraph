@@ -34,9 +34,9 @@ export default function PrivacyPage() {
           This policy explains what data Telegraph processes when you create an
           account, connect Telegram bots, publish workflows, and review run
           history. It is written to match the current application architecture:
-          Clerk for authentication and billing, PostgreSQL for application data,
-          Redis-backed job processing, encrypted bot tokens, and Telegram webhook
-          intake.
+          Clerk for authentication, Creem for billing, PostgreSQL for
+          application data, Redis-backed job processing, encrypted bot tokens,
+          and Telegram webhook intake.
         </p>
       }
     >
@@ -48,7 +48,7 @@ export default function PrivacyPage() {
         <LegalList
           items={[
             "Account information such as your Clerk user identifier, email address when available, and organization or workspace context.",
-            "Subscription and billing mirror data such as plan, status, current period end, and billing identifiers returned by Clerk Billing.",
+            "Subscription and billing mirror data such as plan, status, current period end, and billing identifiers returned by Creem.",
             "Connected bot data such as Telegram bot ID, username, display name, and the bot token you submit. Bot tokens are stored encrypted at rest.",
             "Workflow content such as flow definitions, conditions, actions, template drafts, and published template versions you create in the app.",
             "Execution data such as incoming Telegram update payloads, workflow runs, action runs, error states, and related timestamps.",

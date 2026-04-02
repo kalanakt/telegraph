@@ -27,9 +27,9 @@ export default function CookiesPage() {
       summary={
         <p>
           This page describes the current cookie posture for Telegraph. It is based
-          on the present application setup, which uses Clerk for authentication and
-          billing-related account flows and does not include ad-tech or product
-          analytics trackers in the app code.
+          on the present application setup, which uses Clerk for authentication,
+          Creem for billing-related account flows, and does not include ad-tech
+          or product analytics trackers in the app code.
         </p>
       }
     >
@@ -38,7 +38,7 @@ export default function CookiesPage() {
           items={[
             "Signing users in and keeping sessions active.",
             "Protecting the service from abuse, unauthorized access, and security threats.",
-            "Supporting account, organization, and billing-related user flows delivered through Clerk.",
+            "Supporting account, organization, and billing-related user flows delivered through Clerk and Creem.",
           ]}
         />
       </LegalSection>

@@ -67,9 +67,9 @@ model User {
 model Subscription {
   id                 String           @id @default(cuid())
   userId             String           @unique
-  clerkSubscriptionId String?         @unique
-  clerkPayerId        String?         @unique
-  clerkPlanSlug       String?
+  creemCustomerId     String?         @unique
+  creemSubscriptionId String?         @unique
+  creemProductId      String?
   plan               SubscriptionPlan @default(FREE)
   status             String           @default("inactive")
   activeAt           DateTime?

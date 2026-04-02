@@ -58,7 +58,7 @@ export default async function RunsPage() {
               <TableRow>
                 <TableHead>Time</TableHead>
                 <TableHead>Bot</TableHead>
-                <TableHead>Rule</TableHead>
+                <TableHead>Flow</TableHead>
                 <TableHead>Trigger</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Action Statuses</TableHead>

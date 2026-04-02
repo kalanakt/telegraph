@@ -174,7 +174,7 @@ export default async function HomePage() {
                   className="max-w-xl text-5xl font-semibold text-foreground md:text-7xl"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
-                  Launch Telegram bot workflows without another backend release.
+                  Launch Telegram Workflows.
                 </h1>
 
                 <p className="max-w-[58ch] text-base leading-7 text-muted-foreground md:text-lg md:leading-8">

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { PricingTable } from "@clerk/nextjs";
 import { PageHeading } from "@/components/PageHeading";
-import { clerkCheckoutAppearance, clerkPricingAppearance } from "@/lib/clerk-appearance";
+import { PricingPanels } from "@/components/billing/BillingPanels";
+import { getAuthUserId } from "@/lib/clerk-auth";
 import { toAbsoluteUrl } from "@/lib/site-url";
+import { requireAppUser } from "@/lib/user";
 
 export const metadata: Metadata = {
   title: "Pricing | Telegraph",
@@ -20,7 +21,10 @@ export const metadata: Metadata = {
   },
 };
 
-export default function PricingPage() {
+export default async function PricingPage() {
+  const authUserId = await getAuthUserId();
+  const user = authUserId ? await requireAppUser() : null;
+
   return (
     <div className="space-y-6">
       <PageHeading
@@ -28,13 +32,7 @@ export default function PricingPage() {
         subtitle="Choose the plan that fits your bots, workflow volume, and team operations."
       />
 
-      <PricingTable
-        for="user"
-        appearance={clerkPricingAppearance}
-        checkoutProps={{
-          appearance: clerkCheckoutAppearance,
-        }}
-      />
+      <PricingPanels isSignedIn={Boolean(user)} subscription={user?.subscription} />
     </div>
   );
 }
