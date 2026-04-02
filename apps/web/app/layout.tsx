@@ -65,7 +65,9 @@ export default function RootLayout({
         <main id="main-content">{children}</main>
         <footer className="mt-12 border-t border-border/70 pt-5 text-sm text-muted-foreground">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p>Telegraph, the Telegram bot builder with a visual flow editor.</p>
+            <p>
+              Telegraph, the Telegram bot builder with a visual flow editor.
+            </p>
             <div className="flex items-center gap-4">
               <Link className="focus-ring" href="/blog">
                 Blog
@@ -91,8 +93,14 @@ export default function RootLayout({
       lang="en"
       className={cn("font-sans", oxanium.variable, sourceCodePro.variable)}
     >
+      <head>
+        <script src="https://t.contentsquare.net/uxa/a9fc3266e0d26.js"></script>
+      </head>
       <body>
-        <ClerkProvider appearance={clerkAppearance} publishableKey={publishableKey}>
+        <ClerkProvider
+          appearance={clerkAppearance}
+          publishableKey={publishableKey}
+        >
           {appShell}
         </ClerkProvider>
       </body>
