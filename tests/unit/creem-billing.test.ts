@@ -61,13 +61,33 @@ describe("verifyCheckoutRedirectSignature", () => {
     process.env.CREEM_API_KEY = "creem_secret";
 
     const payload =
-      "checkout_id=ch_123&subscription_id=sub_123&customer_id=cust_123&product_id=prod_pro&request_id=req_123";
+      "checkout_id=ch_123&customer_id=cust_123&product_id=prod_pro&request_id=req_123&subscription_id=sub_123";
     const signature = crypto.createHmac("sha256", "creem_secret").update(payload).digest("hex");
 
     expect(
       verifyCheckoutRedirectSignature({
         checkout_id: "ch_123",
         customer_id: "cust_123",
+        product_id: "prod_pro",
+        request_id: "req_123",
+        signature,
+        subscription_id: "sub_123"
+      })
+    ).toBe(true);
+  });
+
+  it("includes order ids in the alphabetically sorted payload when present", () => {
+    process.env.CREEM_API_KEY = "creem_secret";
+
+    const payload =
+      "checkout_id=ch_123&customer_id=cust_123&order_id=ord_123&product_id=prod_pro&request_id=req_123&subscription_id=sub_123";
+    const signature = crypto.createHmac("sha256", "creem_secret").update(payload).digest("hex");
+
+    expect(
+      verifyCheckoutRedirectSignature({
+        checkout_id: "ch_123",
+        customer_id: "cust_123",
+        order_id: "ord_123",
         product_id: "prod_pro",
         request_id: "req_123",
         signature,

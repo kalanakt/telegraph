@@ -316,7 +316,9 @@ export function verifyCheckoutRedirectSignature(searchParams: SearchParamRecord)
     ["customer_id", details.customerId],
     ["product_id", details.productId],
     ["request_id", details.requestId]
-  ].filter(([, value]) => Boolean(value)) as Array<[string, string]>;
+  ]
+    .filter(([, value]) => Boolean(value))
+    .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey)) as Array<[string, string]>;
 
   const payload = signedPairs.map(([key, value]) => `${key}=${value}`).join("&");
   const computed = crypto.createHmac("sha256", apiKey).update(payload).digest("hex");
