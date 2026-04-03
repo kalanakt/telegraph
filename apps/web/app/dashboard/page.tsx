@@ -8,11 +8,9 @@ import {
   Sparkles,
 } from "lucide-react";
 import { redirect } from "next/navigation";
-import {
-  RunsOverTimeChart,
-  type RunsOverTimePoint,
-} from "@/components/dashboard/RunsOverTimeChart";
+import type { RunsOverTimePoint } from "@/components/dashboard/RunsOverTimeChart";
 import { PageHeading } from "@/components/PageHeading";
+import { RunsOverTimeChartClient } from "@/components/dashboard/RunsOverTimeChartClient";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -238,7 +236,7 @@ export default async function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-1">
-            <RunsOverTimeChart points={runActivity} />
+            <RunsOverTimeChartClient points={runActivity} />
           </CardContent>
           <CardFooter className="grid gap-3 sm:grid-cols-3">
             <StatTile

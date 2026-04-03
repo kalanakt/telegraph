@@ -1,6 +1,10 @@
-import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, HeadBucketCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { randomUUID } from "node:crypto";
 import { extname } from "node:path";
+
+function isTruthyEnv(value: string | undefined): boolean {
+  return ["1", "true", "yes", "on"].includes((value ?? "").trim().toLowerCase());
+}
 
 type S3Config = {
   endpoint: string;
@@ -20,6 +24,10 @@ function requireEnv(name: string): string {
     throw new Error(`${name} is required`);
   }
   return value.trim();
+}
+
+export function areMediaUploadsEnabled() {
+  return isTruthyEnv(process.env.ENABLE_MEDIA_UPLOADS);
 }
 
 function getS3Config(): S3Config {
@@ -176,4 +184,19 @@ export async function downloadMedia(key: string): Promise<{
     contentType: result.ContentType,
     contentLength: result.ContentLength
   };
+}
+
+export async function checkS3Readiness(): Promise<void> {
+  if (!areMediaUploadsEnabled()) {
+    return;
+  }
+
+  const config = getS3Config();
+  const s3 = getS3Client();
+
+  await s3.send(
+    new HeadBucketCommand({
+      Bucket: config.bucket
+    })
+  );
 }

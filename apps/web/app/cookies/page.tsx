@@ -5,14 +5,14 @@ import { toAbsoluteUrl } from "@/lib/site-url";
 export const metadata: Metadata = {
   title: "Cookie Policy | Telegraph",
   description:
-    "Understand the essential cookies and similar technologies used by Telegraph for authentication, security, and account access.",
+    "Understand the essential cookies and consent-based analytics controls used by Telegraph.",
   alternates: {
     canonical: toAbsoluteUrl("/cookies"),
   },
   openGraph: {
     title: "Cookie Policy | Telegraph",
     description:
-      "Understand the essential cookies and similar technologies used by Telegraph for authentication, security, and account access.",
+      "Understand the essential cookies and consent-based analytics controls used by Telegraph.",
     url: toAbsoluteUrl("/cookies"),
     type: "website",
   },
@@ -22,14 +22,15 @@ export default function CookiesPage() {
   return (
     <LegalDocument
       title="Cookie policy"
-      subtitle="How Telegraph uses essential cookies and similar technologies."
-      effectiveDate="April 1, 2026"
+      subtitle="How Telegraph uses essential cookies and consent-gated analytics technologies."
+      effectiveDate="April 3, 2026"
       summary={
         <p>
-          This page describes the current cookie posture for Telegraph. It is based
-          on the present application setup, which uses Clerk for authentication,
-          Creem for billing-related account flows, and does not include ad-tech
-          or product analytics trackers in the app code.
+          This page describes the current cookie posture for Telegraph. The app
+          uses Clerk for authentication, Creem for billing-related account
+          flows, and keeps third-party product analytics disabled by default.
+          If analytics are enabled in production, Telegraph loads them only
+          after an explicit user consent choice.
         </p>
       }
     >
@@ -43,12 +44,16 @@ export default function CookiesPage() {
         />
       </LegalSection>
 
-      <LegalSection title="What Telegraph does not currently use cookies for">
+      <LegalSection title="Optional analytics technologies">
         <p>
-          Based on the current codebase, Telegraph does not currently include
-          advertising cookies, cross-site behavioral tracking tags, or third-party
-          product analytics trackers. If that changes, this page should be updated
-          before the new tools are enabled in production.
+          Telegraph does not load third-party product analytics by default. If
+          an analytics integration such as Contentsquare is enabled for the
+          production workspace, Telegraph shows a consent prompt first and only
+          loads that script after the visitor opts in.
+        </p>
+        <p>
+          Telegraph does not currently use advertising cookies or cross-site
+          behavioral marketing tags.
         </p>
       </LegalSection>
 
@@ -66,6 +71,10 @@ export default function CookiesPage() {
           Most browsers let you block or delete cookies. If you disable essential
           cookies, key parts of Telegraph such as sign-in, account security, and
           protected product areas may not work correctly.
+        </p>
+        <p>
+          If optional analytics are enabled, you can accept or decline them from
+          the consent prompt. Declining keeps those scripts disabled.
         </p>
       </LegalSection>
     </LegalDocument>

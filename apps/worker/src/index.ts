@@ -2,8 +2,24 @@ import { captureWorkerException, flushSentry } from "./sentry.js";
 import { Queue, Worker } from "bullmq";
 import IORedis from "ioredis";
 import { PrismaClient } from "@prisma/client";
-import { QUEUES, type ActionJob } from "@telegram-builder/shared";
+import { QUEUES, logError, logInfo, logWarn, type ActionJob } from "@telegram-builder/shared";
 import { handleActionJobFailure, processActionJob, type WorkerProcessorDeps, workerTelegramDeps } from "./processor.js";
+import { getWorkerRuntimeEnv, type WorkerRuntimeEnv } from "./env.js";
+import { startRetentionSweeper } from "./retention.js";
+
+let workerEnv: WorkerRuntimeEnv;
+
+try {
+  workerEnv = getWorkerRuntimeEnv();
+} catch (error) {
+  captureWorkerException(error, {
+    tags: {
+      area: "boot-config",
+      service: "worker"
+    }
+  });
+  throw error;
+}
 
 const redisUrl = process.env.REDIS_URL;
 if (!redisUrl) {
@@ -13,6 +29,12 @@ if (!redisUrl) {
 const redis = new IORedis(redisUrl, { maxRetriesPerRequest: null });
 const prisma = new PrismaClient();
 const deadLetterQueue = new Queue(QUEUES.DEAD_LETTER, { connection: redis });
+const stopRetentionSweeper = startRetentionSweeper(prisma, deadLetterQueue, {
+  deadLetterRetentionDays: workerEnv.deadLetterRetentionDays,
+  incomingEventRetentionDays: workerEnv.incomingEventRetentionDays,
+  intervalMinutes: workerEnv.retentionSweepIntervalMinutes,
+  runRetentionDays: workerEnv.runRetentionDays
+});
 
 const deps: WorkerProcessorDeps = {
   async updateActionRun(input) {
@@ -40,7 +62,25 @@ const deps: WorkerProcessorDeps = {
     });
   },
   async enqueueDeadLetter(input) {
-    await deadLetterQueue.add("failed-action", input);
+    try {
+      await deadLetterQueue.add("failed-action", input);
+      logWarn("dead_letter_enqueued", {
+        actionRunId: input.job.actionRunId,
+        classification: input.classification,
+        code: input.code,
+        queue: QUEUES.DEAD_LETTER,
+        route: "worker-dead-letter",
+        runId: input.job.runId
+      });
+    } catch (error) {
+      captureWorkerException(error, {
+        tags: {
+          area: "dead-letter-write",
+          queue: QUEUES.DEAD_LETTER
+        }
+      });
+      throw error;
+    }
   },
   ...workerTelegramDeps
 };
@@ -50,7 +90,10 @@ const worker = new Worker<ActionJob>(
   async (job) => {
     await processActionJob(deps, job.data, job.attemptsStarted);
   },
-  { connection: redis }
+  {
+    connection: redis,
+    concurrency: workerEnv.concurrency
+  }
 );
 
 worker.on("failed", async (job, err) => {
@@ -85,7 +128,11 @@ worker.on("failed", async (job, err) => {
 });
 
 worker.on("ready", () => {
-  console.log("Action worker is ready");
+  logInfo("worker_ready", {
+    concurrency: workerEnv.concurrency,
+    queue: QUEUES.ACTIONS,
+    route: "worker-runtime"
+  });
 });
 
 worker.on("error", (error) => {
@@ -95,12 +142,21 @@ worker.on("error", (error) => {
       queue: QUEUES.ACTIONS,
     },
   });
-  console.error("Worker error", error);
+  logError("worker_runtime_error", {
+    error,
+    queue: QUEUES.ACTIONS,
+    route: "worker-runtime"
+  });
 });
 
 async function shutdown(signal: string) {
-  console.log(`Shutting down action worker on ${signal}`);
+  logInfo("worker_shutdown_started", {
+    queue: QUEUES.ACTIONS,
+    route: "worker-runtime",
+    signal
+  });
 
+  stopRetentionSweeper();
   await worker.close();
   await deadLetterQueue.close();
   await prisma.$disconnect();

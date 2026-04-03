@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { redirect } from "next/navigation";
+import { LandingFlowPreviewClient } from "@/components/marketing/LandingFlowPreviewClient";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +12,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { LandingFlowPreview } from "@/components/marketing/LandingFlowPreview";
 import { getAuthUserId } from "@/lib/clerk-auth";
 import { toAbsoluteUrl } from "@/lib/site-url";
 
@@ -162,7 +162,7 @@ export default async function HomePage() {
       <div className="flex flex-col gap-16 pb-16 pt-4 md:gap-20">
         <section className="surface-panel overflow-hidden p-0">
           <div className="landing-grid-surface relative isolate min-h-[620px] border border-border/0">
-            <LandingFlowPreview />
+            <LandingFlowPreviewClient />
 
             <div className="relative z-10 flex min-h-[620px] items-end px-6 py-6 md:px-10 md:py-10">
               <div className="flex max-w-2xl flex-col gap-5 md:p-8">

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { AddBotForm } from "@/components/AddBotForm";
+import { DeleteBotButton } from "@/components/DeleteBotButton";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -52,6 +53,7 @@ export default async function BotsPage() {
                 <TableHead>Username</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Created</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -62,6 +64,9 @@ export default async function BotsPage() {
                   <TableCell>{statusBadge(bot.status)}</TableCell>
                   <TableCell>
                     {new Date(bot.createdAt).toLocaleString()}
+                  </TableCell>
+                  <TableCell>
+                    <DeleteBotButton botId={bot.id} />
                   </TableCell>
                 </TableRow>
               ))}

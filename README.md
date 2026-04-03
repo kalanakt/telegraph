@@ -33,9 +33,11 @@ pnpm dev:web
 pnpm dev:worker
 pnpm test
 pnpm build
+pnpm railway:migrate
 ```
 
 ## Docs
 
 - Contributor guide: `CONTRIBUTING.md`
 - Agent guidance: `AGENTS.md`
+- Railway production runbook: `docs/railway-production.md`

@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ALLOWED_MIME_TYPES, maxSizeForMime, uploadMedia } from "@/lib/s3";
+import { ALLOWED_MIME_TYPES, areMediaUploadsEnabled, maxSizeForMime, uploadMedia } from "@/lib/s3";
 import { requireAppUser } from "@/lib/user";
 
 export async function POST(req: NextRequest) {
+  if (!areMediaUploadsEnabled()) {
+    return NextResponse.json({ error: "Media uploads are disabled" }, { status: 503 });
+  }
+
   try {
     await requireAppUser();
   } catch {

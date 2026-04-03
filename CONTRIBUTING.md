@@ -165,6 +165,12 @@ pnpm railway:build:worker
 pnpm railway:start:worker
 ```
 
+Migration step:
+
+```bash
+pnpm railway:migrate
+```
+
 ### Production Requirements
 
 Make sure both services have access to the same:
@@ -179,6 +185,9 @@ At minimum, production should define:
 - `REDIS_URL`
 - `ENCRYPTION_KEY`
 - `TELEGRAM_WEBHOOK_BASE_URL`
+- `TELEGRAM_WEBHOOK_SECRET_TOKEN`
+- `NEXT_PUBLIC_SITE_URL`
+- `WORKER_CONCURRENCY`
 
 Usually also:
 
@@ -188,7 +197,11 @@ Usually also:
 - `CREEM_PRO_PRODUCT_ID`
 - `NEXT_PUBLIC_SITE_URL`
 - S3-compatible storage credentials if uploads are enabled
-- `TELEGRAM_WEBHOOK_SECRET_TOKEN` for webhook verification
+- `ENABLE_MEDIA_UPLOADS=true` when media uploads should be available
+- `ENABLE_CONTENTSQUARE=true` and `CONTENTSQUARE_SITE_ID` only when analytics should be enabled after consent
+- retention envs (`INCOMING_EVENT_RETENTION_DAYS`, `DEAD_LETTER_RETENTION_DAYS`, `WORKFLOW_RUN_RETENTION_DAYS`, `ACTION_RUN_RETENTION_DAYS`)
+
+See `docs/railway-production.md` for the full deploy checklist and env ownership split.
 
 ## Before Opening a PR
 

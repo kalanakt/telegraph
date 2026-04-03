@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { DeleteFlowButton } from "@/components/DeleteFlowButton";
 import { FlowStatusToggle } from "@/components/FlowStatusToggle";
 import { PageHeading } from "@/components/PageHeading";
 import { FlowBuilderStudio } from "@/components/flow-builder";
@@ -127,6 +128,7 @@ export default async function FlowsPage({
                 <TableHead>Conditions</TableHead>
                 <TableHead>Actions</TableHead>
                 <TableHead>Edit</TableHead>
+                <TableHead>Delete</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -157,6 +159,9 @@ export default async function FlowsPage({
                     >
                       Edit flow
                     </Link>
+                  </TableCell>
+                  <TableCell>
+                    <DeleteFlowButton ruleId={rule.id} />
                   </TableCell>
                 </TableRow>
               ))}

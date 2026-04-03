@@ -1,8 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Script from "next/script";
+import { cookies } from "next/headers";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Oxanium, Source_Code_Pro } from "next/font/google";
+import { AnalyticsConsentBanner } from "@/components/analytics/AnalyticsConsentBanner";
 import { Nav } from "@/components/Nav";
+import {
+  ANALYTICS_CONSENT_COOKIE,
+  getAnalyticsConsent,
+  getContentsquareScriptUrl,
+  isContentsquareEnabled
+} from "@/lib/analytics";
+import { getServerAnalyticsConsent } from "@/lib/analytics.server";
 import { clerkAppearance } from "@/lib/clerk-appearance";
 import { cn } from "@/lib/utils";
 import { getSiteUrl, toAbsoluteUrl } from "@/lib/site-url";
@@ -49,12 +59,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!;
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const cookieStore = await cookies();
+  const analyticsConsent = await getServerAnalyticsConsent();
+  const contentsquareEnabled = isContentsquareEnabled();
+  const contentsquareScriptUrl = contentsquareEnabled && analyticsConsent === "granted" ? getContentsquareScriptUrl() : null;
   const appShell = (
     <>
       <a className="skip-link focus-ring" href="#main-content">
@@ -85,6 +99,7 @@ export default function RootLayout({
           </div>
         </footer>
       </div>
+      {contentsquareEnabled && analyticsConsent === "unknown" ? <AnalyticsConsentBanner /> : null}
     </>
   );
 
@@ -94,15 +109,16 @@ export default function RootLayout({
       className={cn("font-sans", oxanium.variable, sourceCodePro.variable)}
     >
       <head>
-        <script src="https://t.contentsquare.net/uxa/a9fc3266e0d26.js"></script>
+        {contentsquareScriptUrl ? <Script src={contentsquareScriptUrl} strategy="afterInteractive" /> : null}
       </head>
       <body>
-        <ClerkProvider
-          appearance={clerkAppearance}
-          publishableKey={publishableKey}
-        >
-          {appShell}
-        </ClerkProvider>
+        {publishableKey ? (
+          <ClerkProvider appearance={clerkAppearance} publishableKey={publishableKey}>
+            {appShell}
+          </ClerkProvider>
+        ) : (
+          appShell
+        )}
       </body>
     </html>
   );

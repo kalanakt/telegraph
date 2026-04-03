@@ -28,7 +28,7 @@ export default function PrivacyPage() {
     <LegalDocument
       title="Privacy policy"
       subtitle="How Telegraph handles account data, workflow records, and Telegram bot credentials."
-      effectiveDate="April 1, 2026"
+      effectiveDate="April 3, 2026"
       summary={
         <p>
           This policy explains what data Telegraph processes when you create an
@@ -79,9 +79,11 @@ export default function PrivacyPage() {
           itself.
         </p>
         <p>
-          Based on the current codebase, Telegraph does not run advertising cookies
-          or third-party behavioral marketing trackers. If that changes, this
-          policy and the{" "}
+          Telegraph keeps third-party product analytics disabled by default. If
+          an analytics tool such as Contentsquare is enabled in production, the
+          app requires an explicit consent choice before loading it. Telegraph
+          does not currently run advertising cookies or third-party behavioral
+          marketing trackers. If that changes, this policy and the{" "}
           <Link
             className="text-primary underline underline-offset-4"
             href="/cookies"

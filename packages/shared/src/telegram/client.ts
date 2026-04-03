@@ -102,3 +102,11 @@ export async function telegramSetWebhook(
 
   return result.ok;
 }
+
+export async function telegramDeleteWebhook(token: string): Promise<boolean> {
+  const result = await requestTelegram(token, "deleteWebhook", {
+    drop_pending_updates: false
+  });
+
+  return result.ok;
+}

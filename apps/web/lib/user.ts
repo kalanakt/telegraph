@@ -68,3 +68,17 @@ export async function requireAppUser() {
     }
   });
 }
+
+export async function requireOperatorUser() {
+  const user = await requireAppUser();
+  const allowedEmails = (process.env.OPERATOR_EMAILS ?? "")
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter((email) => email.length > 0);
+
+  if (allowedEmails.length === 0 || !user.email || !allowedEmails.includes(user.email.toLowerCase())) {
+    throw new Error("Forbidden");
+  }
+
+  return user;
+}

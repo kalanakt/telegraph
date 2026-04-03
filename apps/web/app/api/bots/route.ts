@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { addBotSchema, encrypt, telegramGetMe, telegramSetWebhook } from "@telegram-builder/shared";
+import { getWebRuntimeEnv } from "@/lib/env";
+import { logInfo } from "@/lib/logger";
 import { requireAppUser } from "@/lib/user";
 import { assertBotLimit, getUserPlan } from "@/lib/billing";
 import { prisma } from "@/lib/prisma";
@@ -31,6 +33,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    getWebRuntimeEnv();
     const user = await requireAppUser();
     const json = await req.json();
     const data = addBotSchema.parse(json);
@@ -82,6 +85,12 @@ export async function POST(req: Request) {
       await prisma.bot.update({ where: { id: bot.id }, data: { status: "webhook_error" } });
       return NextResponse.json({ error: "Webhook setup failed" }, { status: 502 });
     }
+
+    logInfo("bot_connected", {
+      botId: bot.id,
+      route: "create-bot",
+      telegramBotId: me.result.id
+    });
 
     return NextResponse.json({ bot: serializeBot(bot) }, { status: 201 });
   } catch (error) {

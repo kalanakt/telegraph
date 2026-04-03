@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import type { TelegramUpdate } from "@telegram-builder/shared";
-import { logError, logInfo } from "@/lib/logger";
+import { logError, logInfo, logWarn } from "@/lib/logger";
 import { getAutomationOrchestrator } from "@/lib/orchestrator/service";
 
 export async function POST(req: Request, { params }: { params: Promise<{ botId: string }> }) {
@@ -12,7 +12,17 @@ export async function POST(req: Request, { params }: { params: Promise<{ botId: 
   if (expectedSecret) {
     const provided = req.headers.get("x-telegram-bot-api-secret-token");
     if (provided !== expectedSecret) {
-      logInfo("webhook_unauthorized", { botId });
+      Sentry.captureMessage("Telegram webhook secret rejected", {
+        level: "warning",
+        tags: {
+          area: "telegram-webhook",
+          route: "telegram-webhook-reject"
+        },
+        extra: {
+          botId
+        }
+      });
+      logWarn("webhook_unauthorized", { botId, route: "telegram-webhook", statusCode: 401 });
       return NextResponse.json({ ok: false }, { status: 401 });
     }
   }
@@ -22,6 +32,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ botId: 
 
     logInfo("webhook_received", {
       botId,
+      route: "telegram-webhook",
       updateId: update.update_id
     });
 
@@ -44,7 +55,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ botId: 
 
     logError("webhook_failed", {
       botId,
-      error: error instanceof Error ? error.message : "Unknown error"
+      error: error instanceof Error ? error.message : "Unknown error",
+      route: "telegram-webhook"
     });
 
     return NextResponse.json({ ok: false }, { status: 500 });

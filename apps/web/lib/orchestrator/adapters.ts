@@ -1,7 +1,11 @@
 import { Prisma } from "@prisma/client";
 import type { JobsOptions } from "bullmq";
+import * as Sentry from "@sentry/nextjs";
 import {
+  decrypt,
+  encrypt,
   getExecutionPolicy,
+  isLegacyEncryptedPayload,
   type ActionJob,
   type ActionPayload,
   type ActionQueue,
@@ -94,10 +98,22 @@ export function createPrismaBotRepository(prismaClient = prisma): BotRepository 
         return null;
       }
 
+      let encryptedToken = bot.encryptedToken;
+      if (isLegacyEncryptedPayload(bot.encryptedToken)) {
+        const rotatedToken = encrypt(decrypt(bot.encryptedToken));
+        await prismaClient.bot.update({
+          where: { id: bot.id },
+          data: {
+            encryptedToken: rotatedToken
+          }
+        });
+        encryptedToken = rotatedToken;
+      }
+
       return {
         botId: bot.id,
         userId: bot.userId,
-        encryptedToken: bot.encryptedToken,
+        encryptedToken,
         status: bot.status,
         plan: normalizePlanKey(bot.user.subscription?.plan)
       };
@@ -230,16 +246,31 @@ export function createBullMqActionQueueAdapter(queue?: QueueWriter | null): Acti
     async enqueueAction(job: ActionJob) {
       const jobName: ActionJobName = `action:${job.actionType}`;
 
-      await queueWriter.add(jobName, job, {
-        jobId: job.idempotencyKey,
-        attempts: 5,
-        backoff: {
-          type: "exponential",
-          delay: 2000
-        },
-        removeOnComplete: 100,
-        removeOnFail: false
-      });
+      try {
+        await queueWriter.add(jobName, job, {
+          jobId: job.idempotencyKey,
+          attempts: 5,
+          backoff: {
+            type: "exponential",
+            delay: 2000
+          },
+          removeOnComplete: 100,
+          removeOnFail: false
+        });
+      } catch (error) {
+        Sentry.captureException(error, {
+          tags: {
+            area: "action-queue-write",
+            queue: "actions"
+          },
+          extra: {
+            actionRunId: job.actionRunId,
+            actionType: job.actionType,
+            runId: job.runId
+          }
+        });
+        throw error;
+      }
     }
   };
 }

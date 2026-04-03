@@ -10,7 +10,9 @@
     "build:shared": "pnpm --filter @telegram-builder/shared build",
     "typecheck": "pnpm exec tsc -p packages/shared/tsconfig.json --noEmit && pnpm exec tsc -p apps/worker/tsconfig.json --noEmit && node -e \"require('fs').rmSync('apps/web/.next/types',{recursive:true,force:true})\" && pnpm exec tsc -p apps/web/tsconfig.json --noEmit",
     "ci:verify": "pnpm prisma:generate && pnpm typecheck && pnpm test",
-    "railway:build:web": "pnpm build:shared && pnpm --filter web build",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "railway:migrate": "pnpm prisma:migrate:deploy",
+    "railway:build:web": "pnpm exec prisma generate && pnpm build:shared && pnpm --filter web build",
     "railway:start:web": "pnpm --filter web start",
     "railway:build:worker": "pnpm exec prisma generate && pnpm build:shared && pnpm --filter worker build",
     "railway:start:worker": "pnpm --filter worker start",
@@ -18,9 +20,7 @@
     "test:watch": "vitest",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:push": "prisma db push",
-    "migrate:flow-backfill": "pnpm tsx scripts/backfill-rule-flow-definitions.ts",
-    "db:reset:v2": "./scripts/reset-v2-db.sh"
+    "prisma:push": "prisma db push"
   },
   "devDependencies": {
     "@prisma/client": "^6.19.2",

@@ -20,14 +20,34 @@ function getKey(): Buffer {
   return createHash("sha256").update(keyMaterial).digest();
 }
 
+export function isLegacyEncryptedPayload(payload: string): boolean {
+  return !payload.startsWith("v2:");
+}
+
 export function encrypt(text: string): string {
-  const iv = randomBytes(16);
-  const cipher = createCipheriv("aes-256-cbc", getKey(), iv);
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", getKey(), iv);
   const encrypted = Buffer.concat([cipher.update(text, "utf8"), cipher.final()]);
-  return `${iv.toString("hex")}:${encrypted.toString("hex")}`;
+  const authTag = cipher.getAuthTag();
+  return `v2:${iv.toString("hex")}:${encrypted.toString("hex")}:${authTag.toString("hex")}`;
 }
 
 export function decrypt(payload: string): string {
+  if (payload.startsWith("v2:")) {
+    const [, ivHex, dataHex, authTagHex] = payload.split(":");
+    if (!ivHex || !dataHex || !authTagHex) {
+      throw new Error("Invalid encrypted payload");
+    }
+
+    const iv = Buffer.from(ivHex, "hex");
+    const encrypted = Buffer.from(dataHex, "hex");
+    const authTag = Buffer.from(authTagHex, "hex");
+    const decipher = createDecipheriv("aes-256-gcm", getKey(), iv);
+    decipher.setAuthTag(authTag);
+    const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
+    return decrypted.toString("utf8");
+  }
+
   const [ivHex, dataHex] = payload.split(":");
   if (!ivHex || !dataHex) {
     throw new Error("Invalid encrypted payload");
