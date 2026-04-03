@@ -32,6 +32,7 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
   const [status, setStatus] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [viewportCenter, setViewportCenter] = useState({ x: 220, y: 180 });
+  const selectedRule = rules.find((rule) => rule.id === selectedRuleId) ?? null;
 
   const flowState = useFlowState(defaultFlowDefinition());
   const {
@@ -204,6 +205,7 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
             <FlowInspector
               selectedNode={selectedNode}
               trigger={trigger}
+              selectedRule={selectedRule}
               onTriggerChange={setTrigger}
               onUpdateNodeData={updateSelectedNodeData}
               onReplaceAction={replaceSelectedAction}

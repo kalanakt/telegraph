@@ -1,4 +1,4 @@
-import type { ActionPayload, ExecutionPolicy, NormalizedEvent } from "../types/workflow.js";
+import type { ActionPayload, ExecutionPolicy, FlowDefinition, JsonValue, NormalizedEvent } from "../types/workflow.js";
 
 export const QUEUES = {
   ACTIONS: "actions",
@@ -7,16 +7,19 @@ export const QUEUES = {
 
 export type ActionJob = {
   runId: string;
+  ruleId: string;
+  actionNodeId: string;
   actionRunId: string;
-  botToken: string;
+  botToken?: string | null;
   actionType: ActionPayload["type"];
   executionPolicy: ExecutionPolicy;
   idempotencyKey: string;
   action: ActionPayload;
   event: NormalizedEvent;
+  flowDefinition: FlowDefinition;
   context: {
     trigger: NormalizedEvent["trigger"];
-    variables: Record<string, string>;
+    variables: Record<string, JsonValue>;
     createdAt: string;
   };
 };

@@ -1,3 +1,3 @@
-export function buildIdempotencyKey(botId: string, updateId: number): string {
-  return `${botId}:${updateId}`;
+export function buildIdempotencyKey(botId: string, eventId: string | number): string {
+  return `${botId}:${eventId}`;
 }

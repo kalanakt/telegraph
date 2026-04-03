@@ -55,7 +55,7 @@ function serializePrismaJsonValue(value: unknown): Prisma.InputJsonValue | null 
   throw new TypeError("Value cannot be serialized to Prisma JSON");
 }
 
-function toPrismaJson(value: Record<string, unknown>): Prisma.InputJsonObject {
+function toPrismaJson(value: unknown): Prisma.InputJsonObject {
   const serialized = serializePrismaJsonValue(value);
   if (!serialized || Array.isArray(serialized) || typeof serialized !== "object") {
     throw new TypeError("Expected a JSON object");
@@ -122,23 +122,36 @@ export function createPrismaBotRepository(prismaClient = prisma): BotRepository 
 }
 
 export function createPrismaRuleRepository(prismaClient = prisma): RuleRepository {
+  function mapRule(rule: { id: string; botId: string; trigger: string; flowDefinition: unknown }): RuleRecord {
+    return {
+      ruleId: rule.id,
+      botId: rule.botId,
+      trigger: rule.trigger as RuleRecord["trigger"],
+      flowDefinition: flowDefinitionSchema.parse(rule.flowDefinition) as FlowDefinition
+    };
+  }
+
   return {
     async listActiveRules(botId, trigger) {
       const rules = await prismaClient.workflowRule.findMany({
         where: {
           botId,
           enabled: true,
-          trigger: trigger as never
+          trigger
         }
       });
 
-      return rules.map(
-        (rule): RuleRecord => ({
-          ruleId: rule.id,
-          trigger: rule.trigger,
-          flowDefinition: flowDefinitionSchema.parse(rule.flowDefinition) as FlowDefinition
-        })
-      );
+      return rules.map(mapRule);
+    },
+    async findActiveRuleById(ruleId) {
+      const rule = await prismaClient.workflowRule.findFirst({
+        where: {
+          id: ruleId,
+          enabled: true
+        }
+      });
+
+      return rule ? mapRule(rule) : null;
     }
   };
 }
@@ -185,7 +198,8 @@ export function createPrismaRunRepository(prismaClient = prisma): RunRepository 
             eventId: input.eventId,
             status: "queued",
             trigger: input.eventPayload.trigger,
-            eventPayload: toPrismaJson(input.eventPayload)
+            eventPayload: toPrismaJson(input.eventPayload),
+            contextVariables: toPrismaJson(input.variables ?? {})
           }
         });
 
@@ -226,6 +240,7 @@ export function createPrismaRunRepository(prismaClient = prisma): RunRepository 
           }
 
           return {
+            actionId: source.actionId,
             actionRunId: actionRun.id,
             action: source.payload as ActionPayload
           };

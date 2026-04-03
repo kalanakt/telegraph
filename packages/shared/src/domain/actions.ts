@@ -5,11 +5,31 @@ import {
   type TelegramTriggerType
 } from "../telegram/capabilities.js";
 import type { ActionType, ExecutionPolicy, TriggerType } from "../types/workflow.js";
+import { WORKFLOW_ACTION_MANIFEST } from "../workflow/capabilities.js";
+
+const ACTION_POLICIES = new Map<ActionType, ExecutionPolicy>(
+  WORKFLOW_ACTION_MANIFEST.map((item) => [item.actionType, item.executionPolicy])
+);
 
 export function isActionAllowedForTrigger(actionType: ActionType, trigger: TriggerType): boolean {
-  return isTelegramActionAllowedForTrigger(actionType as TelegramActionType, trigger as TelegramTriggerType);
+  if (actionType.startsWith("telegram.")) {
+    return isTelegramActionAllowedForTrigger(actionType as TelegramActionType, trigger as TelegramTriggerType);
+  }
+
+  return true;
 }
 
 export function getExecutionPolicy(actionType: ActionType): ExecutionPolicy {
-  return getTelegramExecutionPolicy(actionType as TelegramActionType);
+  if (actionType.startsWith("telegram.")) {
+    return getTelegramExecutionPolicy(actionType as TelegramActionType);
+  }
+
+  return (
+    ACTION_POLICIES.get(actionType) ?? {
+      retryClass: "transient",
+      timeoutMs: 15_000,
+      idempotencyKeyStrategy: "action_run",
+      rateLimitBucket: "workflow.default"
+    }
+  );
 }

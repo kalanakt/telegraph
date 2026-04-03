@@ -1,7 +1,7 @@
 import type { PlanKey } from "../config/limits.js";
 import type { ActionJob } from "../queue/contracts.js";
 import type { TelegramUpdate } from "../types/telegram.js";
-import type { ActionPayload, FlowDefinition, NormalizedEvent, TriggerType } from "../types/workflow.js";
+import type { ActionPayload, FlowDefinition, JsonValue, NormalizedEvent, TriggerType } from "../types/workflow.js";
 
 export type OrchestrationReason =
   | "inactive_bot"
@@ -12,6 +12,12 @@ export type OrchestrationReason =
 export type HandleIncomingUpdateInput = {
   botId: string;
   telegramUpdate: TelegramUpdate;
+  receivedAt: Date;
+};
+
+export type HandleIncomingWebhookInput = {
+  ruleId: string;
+  event: NormalizedEvent;
   receivedAt: Date;
 };
 
@@ -32,6 +38,7 @@ export type BotContext = {
 
 export type RuleRecord = {
   ruleId: string;
+  botId: string;
   trigger: TriggerType;
   flowDefinition: FlowDefinition;
 };
@@ -51,6 +58,7 @@ export interface BotRepository {
 
 export interface RuleRepository {
   listActiveRules(botId: string, trigger: TriggerType): Promise<RuleRecord[]>;
+  findActiveRuleById(ruleId: string): Promise<RuleRecord | null>;
 }
 
 export interface EventRepository {
@@ -74,9 +82,11 @@ export interface RunRepository {
     }>;
     eventId: string;
     eventPayload: NormalizedEvent;
+    variables: Record<string, JsonValue>;
   }): Promise<{
     runId: string;
     actionRuns: Array<{
+      actionId: string;
       actionRunId: string;
       action: ActionPayload;
     }>;
@@ -103,4 +113,5 @@ export type OrchestratorDeps = {
 
 export interface AutomationOrchestrator {
   handleIncomingUpdate(input: HandleIncomingUpdateInput): Promise<OrchestrationResult>;
+  handleIncomingWebhook(input: HandleIncomingWebhookInput): Promise<OrchestrationResult>;
 }

@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { createActionTemplate, getActionTypeOptions, migrateLegacyActionData } from "@/lib/flow-builder";
+import { createActionTemplate, getActionPresets, getActionTypeOptions, migrateLegacyActionData } from "@/lib/flow-builder";
 import {
   asString,
   getInlineKeyboard,
@@ -67,7 +67,8 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
   const params = action.params;
   const isCompatible = isActionAllowedForTrigger(action.type as ActionPayload["type"], trigger);
   const isCoreComposer = CORE_COMPOSER_METHODS.has(action.type);
-  const actionTypeOptions = useMemo(() => getActionTypeOptions(), []);
+  const actionTypeOptions = useMemo(() => getActionTypeOptions(trigger), [trigger]);
+  const presets = useMemo(() => getActionPresets(action.type as ActionPayload["type"]), [action.type]);
 
   const categoryMap = useMemo(() => {
     const map = new Map<string, typeof actionTypeOptions>();
@@ -83,6 +84,8 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
   const replyKeyboard = getReplyKeyboard(params);
   const replyMarkupKind = getReplyMarkupKind(params);
   const uploadConfig = getUploadConfig(action.type);
+  const authObject =
+    typeof params.auth === "object" && params.auth !== null ? (params.auth as Record<string, unknown> & { type?: string }) : null;
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [uploadState, setUploadState] = useState<UploadState>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -167,6 +170,25 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
           </SelectContent>
         </Select>
       </div>
+
+      {presets.length > 0 ? (
+        <div className="builder-section">
+          <p className="builder-kicker">Presets</p>
+          <div className="flex flex-wrap gap-2">
+            {presets.map((preset) => (
+              <Button
+                key={preset.id}
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => onReplace(normalizeActionNodeData(preset.action))}
+              >
+                {preset.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {isCoreComposer ? (
         <>
@@ -523,6 +545,245 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
                 }}
               />
             </label>
+          </div>
+        </>
+      ) : action.type === "webhook.send" || action.type === "http.request" ? (
+        <>
+          <div className="builder-section">
+            <p className="builder-kicker">Request</p>
+
+            {action.type === "http.request" ? (
+              <label className="builder-label">
+                <span>Method</span>
+                <Select
+                  value={asString(params.method) || "POST"}
+                  onValueChange={(value) => onUpdateParams({ method: value })}
+                >
+                  <SelectTrigger className="builder-field">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="GET">GET</SelectItem>
+                    <SelectItem value="POST">POST</SelectItem>
+                    <SelectItem value="PUT">PUT</SelectItem>
+                    <SelectItem value="PATCH">PATCH</SelectItem>
+                    <SelectItem value="DELETE">DELETE</SelectItem>
+                  </SelectContent>
+                </Select>
+              </label>
+            ) : null}
+
+            <label className="builder-label mt-2">
+              <span>URL</span>
+              <Input
+                value={asString(params.url)}
+                onChange={(e) => onUpdateParams({ url: e.target.value })}
+                placeholder="https://api.example.com/resource"
+              />
+            </label>
+
+            <label className="builder-label mt-2">
+              <span>Headers JSON</span>
+              <Textarea
+                rows={4}
+                value={JSON.stringify((params.headers as Record<string, string> | undefined) ?? {}, null, 2)}
+                onChange={(e) => {
+                  try {
+                    onUpdateParams({ headers: JSON.parse(e.target.value) as Record<string, string> });
+                  } catch {
+                    // ignore parse errors while typing
+                  }
+                }}
+              />
+            </label>
+
+            <label className="builder-label mt-2">
+              <span>Query params JSON</span>
+              <Textarea
+                rows={3}
+                value={JSON.stringify((params.query as Record<string, string> | undefined) ?? {}, null, 2)}
+                onChange={(e) => {
+                  try {
+                    onUpdateParams({ query: JSON.parse(e.target.value) as Record<string, string> });
+                  } catch {
+                    // ignore parse errors while typing
+                  }
+                }}
+              />
+            </label>
+
+            {action.type === "http.request" ? (
+              <label className="builder-label mt-2">
+                <span>Body mode</span>
+                <Select
+                  value={asString(params.body_mode) || "json"}
+                  onValueChange={(value) => onUpdateParams({ body_mode: value })}
+                >
+                  <SelectTrigger className="builder-field">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="json">json</SelectItem>
+                    <SelectItem value="text">text</SelectItem>
+                  </SelectContent>
+                </Select>
+              </label>
+            ) : null}
+
+            <label className="builder-label mt-2">
+              <span>Body</span>
+              <Textarea
+                rows={6}
+                value={
+                  typeof params.body === "string"
+                    ? params.body
+                    : JSON.stringify(params.body ?? (action.type === "webhook.send" ? {} : {}), null, 2)
+                }
+                onChange={(e) => {
+                  if (action.type === "http.request" && asString(params.body_mode) === "text") {
+                    onUpdateParams({ body: e.target.value });
+                    return;
+                  }
+
+                  try {
+                    onUpdateParams({ body: JSON.parse(e.target.value) as Record<string, unknown> });
+                  } catch {
+                    // ignore parse errors while typing
+                  }
+                }}
+              />
+            </label>
+
+            <label className="builder-label mt-2">
+              <span>Auth type</span>
+              <Select
+                value={typeof params.auth === "object" && params.auth && "type" in params.auth ? String(params.auth.type) : "none"}
+                onValueChange={(value) => {
+                  if (value === "none") {
+                    onUpdateParams({ auth: { type: "none" } });
+                    return;
+                  }
+                  if (value === "bearer") {
+                    onUpdateParams({ auth: { type: "bearer", token: "" } });
+                    return;
+                  }
+                  if (value === "basic") {
+                    onUpdateParams({ auth: { type: "basic", username: "", password: "" } });
+                    return;
+                  }
+                  if (value === "api_key_header") {
+                    onUpdateParams({ auth: { type: "api_key_header", header: "x-api-key", value: "" } });
+                    return;
+                  }
+                  onUpdateParams({ auth: { type: "api_key_query", key: "api_key", value: "" } });
+                }}
+              >
+                <SelectTrigger className="builder-field">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">none</SelectItem>
+                  <SelectItem value="bearer">bearer</SelectItem>
+                  <SelectItem value="basic">basic</SelectItem>
+                  <SelectItem value="api_key_header">api key header</SelectItem>
+                  <SelectItem value="api_key_query">api key query</SelectItem>
+                </SelectContent>
+              </Select>
+            </label>
+
+            {authObject?.type && authObject.type !== "none" ? (
+              <div className="mt-2 grid gap-2">
+                {authObject.type === "bearer" ? (
+                  <Input
+                    value={asString(authObject.token)}
+                    onChange={(e) => onUpdateParams({ auth: { ...authObject, token: e.target.value } })}
+                    placeholder="Bearer token"
+                  />
+                ) : null}
+                {authObject.type === "basic" ? (
+                  <>
+                    <Input
+                      value={asString(authObject.username)}
+                      onChange={(e) => onUpdateParams({ auth: { ...authObject, username: e.target.value } })}
+                      placeholder="Username"
+                    />
+                    <Input
+                      value={asString(authObject.password)}
+                      onChange={(e) => onUpdateParams({ auth: { ...authObject, password: e.target.value } })}
+                      placeholder="Password"
+                    />
+                  </>
+                ) : null}
+                {authObject.type === "api_key_header" ? (
+                  <>
+                    <Input
+                      value={asString(authObject.header)}
+                      onChange={(e) => onUpdateParams({ auth: { ...authObject, header: e.target.value } })}
+                      placeholder="Header name"
+                    />
+                    <Input
+                      value={asString(authObject.value)}
+                      onChange={(e) => onUpdateParams({ auth: { ...authObject, value: e.target.value } })}
+                      placeholder="Header value"
+                    />
+                  </>
+                ) : null}
+                {authObject.type === "api_key_query" ? (
+                  <>
+                    <Input
+                      value={asString(authObject.key)}
+                      onChange={(e) => onUpdateParams({ auth: { ...authObject, key: e.target.value } })}
+                      placeholder="Query key"
+                    />
+                    <Input
+                      value={asString(authObject.value)}
+                      onChange={(e) => onUpdateParams({ auth: { ...authObject, value: e.target.value } })}
+                      placeholder="Query value"
+                    />
+                  </>
+                ) : null}
+              </div>
+            ) : null}
+
+            <label className="builder-label mt-2">
+              <span>Response body format</span>
+              <Select
+                value={asString(params.response_body_format) || "auto"}
+                onValueChange={(value) => onUpdateParams({ response_body_format: value })}
+              >
+                <SelectTrigger className="builder-field">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">auto</SelectItem>
+                  <SelectItem value="json">json</SelectItem>
+                  <SelectItem value="text">text</SelectItem>
+                </SelectContent>
+              </Select>
+            </label>
+          </div>
+
+          <div className="builder-section">
+            <p className="builder-kicker">Runtime output</p>
+            <p className="text-xs text-foreground/70">
+              Downstream nodes can reference <code className="rounded-sm bg-secondary/70 px-0.5">{`{{vars.${action.type === "http.request" ? "action_id" : "action_id"}.body}}`}</code> after this action runs.
+            </p>
+          </div>
+
+          <div className="builder-section">
+            <p className="builder-kicker">Advanced params</p>
+            <Textarea
+              rows={10}
+              value={JSON.stringify(action.params, null, 2)}
+              onChange={(e) => {
+                try {
+                  const parsed = JSON.parse(e.target.value) as Record<string, unknown>;
+                  onReplace({ ...action, params: parsed });
+                } catch {
+                  // ignore parse errors while typing
+                }
+              }}
+            />
           </div>
         </>
       ) : (

@@ -1,31 +1,27 @@
 import { z } from "zod";
 import { isActionAllowedForTrigger } from "../domain/actions.js";
-import { TELEGRAM_CAPABILITIES, TELEGRAM_METHODS, TELEGRAM_TRIGGER_TYPES } from "../telegram/capabilities.js";
+import { isConditionAllowedForTrigger, WORKFLOW_TRIGGER_TYPES } from "../workflow/capabilities.js";
+import { TELEGRAM_CAPABILITIES, TELEGRAM_METHODS } from "../telegram/capabilities.js";
 import type { ActionPayload, ConditionPayload, FlowDefinition, TriggerType } from "../types/workflow.js";
 
 const TEMPLATE_FIELD_REGEX = /\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g;
-const ALLOWED_TEMPLATE_FIELDS = new Set([
-  "event.text",
-  "event.chatId",
-  "event.chatType",
-  "event.fromUserId",
-  "event.fromUsername",
-  "event.messageId",
-  "event.callbackData",
-  "event.callbackQueryId",
-  "event.command",
-  "event.commandArgs",
-  "event.inlineQuery",
-  "event.inlineQueryId",
-  "event.shippingQueryId",
-  "event.preCheckoutQueryId",
-  "event.targetUserId",
-  "event.oldStatus",
-  "event.newStatus",
-  "vars"
+const ALLOWED_TEMPLATE_PREFIXES = new Set(["event", "vars"]);
+
+const recordOfStringsSchema = z.record(z.string(), z.string());
+
+const httpAuthSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("none") }),
+  z.object({ type: z.literal("bearer"), token: z.string().min(1) }),
+  z.object({ type: z.literal("basic"), username: z.string().min(1), password: z.string() }),
+  z.object({ type: z.literal("api_key_header"), header: z.string().min(1), value: z.string().min(1) }),
+  z.object({ type: z.literal("api_key_query"), key: z.string().min(1), value: z.string().min(1) })
 ]);
 
-export const triggerSchema = z.enum(TELEGRAM_TRIGGER_TYPES);
+const jsonValueSchema: z.ZodTypeAny = z.lazy(() =>
+  z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(jsonValueSchema), z.record(z.string(), jsonValueSchema)])
+);
+
+export const triggerSchema = z.enum(WORKFLOW_TRIGGER_TYPES);
 
 export const conditionSchema: z.ZodType<ConditionPayload> = z.lazy(() =>
   z.discriminatedUnion("type", [
@@ -33,6 +29,7 @@ export const conditionSchema: z.ZodType<ConditionPayload> = z.lazy(() =>
     z.object({ type: z.literal("text_equals"), value: z.string().min(1) }),
     z.object({ type: z.literal("text_starts_with"), value: z.string().min(1) }),
     z.object({ type: z.literal("text_ends_with"), value: z.string().min(1) }),
+    z.object({ type: z.literal("text_matches_regex"), value: z.string().min(1) }),
     z.object({ type: z.literal("from_user_id"), value: z.number().int() }),
     z.object({ type: z.literal("from_username_equals"), value: z.string().min(1) }),
     z.object({ type: z.literal("chat_id_equals"), value: z.string().min(1) }),
@@ -54,10 +51,50 @@ export const conditionSchema: z.ZodType<ConditionPayload> = z.lazy(() =>
     z.object({ type: z.literal("message_has_sticker") }),
     z.object({ type: z.literal("message_has_location") }),
     z.object({ type: z.literal("message_has_contact") }),
+    z.object({ type: z.literal("webhook_method_equals"), value: z.string().min(1) }),
+    z.object({ type: z.literal("webhook_header_exists"), key: z.string().min(1) }),
+    z.object({ type: z.literal("webhook_header_equals"), key: z.string().min(1), value: z.string().min(1) }),
+    z.object({ type: z.literal("webhook_query_equals"), key: z.string().min(1), value: z.string().min(1) }),
+    z.object({ type: z.literal("webhook_query_contains"), key: z.string().min(1), value: z.string().min(1) }),
+    z.object({ type: z.literal("webhook_body_path_exists"), key: z.string().min(1) }),
+    z.object({ type: z.literal("webhook_body_path_equals"), key: z.string().min(1), value: z.string().min(1) }),
+    z.object({ type: z.literal("webhook_body_path_contains"), key: z.string().min(1), value: z.string().min(1) }),
     z.object({ type: z.literal("all"), conditions: z.array(conditionSchema).min(1) }),
     z.object({ type: z.literal("any"), conditions: z.array(conditionSchema).min(1) })
   ])
 );
+
+const webhookSendSchema = z.object({
+  type: z.literal("webhook.send"),
+  params: z
+    .object({
+      url: z.string().url(),
+      headers: recordOfStringsSchema.optional(),
+      query: recordOfStringsSchema.optional(),
+      auth: httpAuthSchema.optional(),
+      body: jsonValueSchema.optional(),
+      timeout_ms: z.number().int().positive().max(60_000).optional(),
+      response_body_format: z.enum(["auto", "json", "text"]).optional()
+    })
+    .strict()
+});
+
+const httpRequestSchema = z.object({
+  type: z.literal("http.request"),
+  params: z
+    .object({
+      method: z.enum(["GET", "POST", "PUT", "PATCH", "DELETE"]),
+      url: z.string().url(),
+      headers: recordOfStringsSchema.optional(),
+      query: recordOfStringsSchema.optional(),
+      auth: httpAuthSchema.optional(),
+      body_mode: z.enum(["json", "text"]).optional(),
+      body: z.union([jsonValueSchema, z.string()]).optional(),
+      timeout_ms: z.number().int().positive().max(60_000).optional(),
+      response_body_format: z.enum(["auto", "json", "text"]).optional()
+    })
+    .strict()
+});
 
 export const actionSchema: z.ZodType<ActionPayload> = z
   .object({
@@ -66,40 +103,56 @@ export const actionSchema: z.ZodType<ActionPayload> = z
   })
   .strict()
   .superRefine((input, ctx) => {
-    if (!input.type.startsWith("telegram.")) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["type"],
-        message: "Action type must start with telegram."
-      });
-      return;
-    }
-
-    const method = input.type.replace("telegram.", "");
-    if (!TELEGRAM_METHODS.includes(method as (typeof TELEGRAM_METHODS)[number])) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["type"],
-        message: `Unsupported telegram action type: ${input.type}`
-      });
-      return;
-    }
-
-    const paramsSchema = TELEGRAM_CAPABILITIES[method as (typeof TELEGRAM_METHODS)[number]].paramsSchema;
-    const parsed = paramsSchema.safeParse(input.params);
-    if (!parsed.success) {
-      for (const issue of parsed.error.issues) {
+    if (input.type.startsWith("telegram.")) {
+      const method = input.type.replace("telegram.", "");
+      if (!TELEGRAM_METHODS.includes(method as (typeof TELEGRAM_METHODS)[number])) {
         ctx.addIssue({
-          ...issue,
-          path: ["params", ...issue.path]
+          code: z.ZodIssueCode.custom,
+          path: ["type"],
+          message: `Unsupported telegram action type: ${input.type}`
         });
+        return;
       }
+
+      const paramsSchema = TELEGRAM_CAPABILITIES[method as (typeof TELEGRAM_METHODS)[number]].paramsSchema;
+      const parsed = paramsSchema.safeParse(input.params);
+      if (!parsed.success) {
+        for (const issue of parsed.error.issues) {
+          ctx.addIssue({
+            ...issue,
+            path: ["params", ...issue.path]
+          });
+        }
+      }
+      return;
     }
-  })
-  .transform((input) => ({
-    type: input.type,
-    params: input.params
-  })) as z.ZodType<ActionPayload>;
+
+    if (input.type === "webhook.send") {
+      const parsed = webhookSendSchema.safeParse(input);
+      if (!parsed.success) {
+        for (const issue of parsed.error.issues) {
+          ctx.addIssue(issue);
+        }
+      }
+      return;
+    }
+
+    if (input.type === "http.request") {
+      const parsed = httpRequestSchema.safeParse(input);
+      if (!parsed.success) {
+        for (const issue of parsed.error.issues) {
+          ctx.addIssue(issue);
+        }
+      }
+      return;
+    }
+
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["type"],
+      message: `Unsupported action type: ${input.type}`
+    });
+  }) as z.ZodType<ActionPayload>;
 
 const flowNodeBaseSchema = z.object({
   id: z.string().min(1),
@@ -162,8 +215,8 @@ function validateTemplates(action: ActionPayload, ctx: z.RefinementCtx, nodeId: 
   for (const value of values) {
     for (const match of value.matchAll(TEMPLATE_FIELD_REGEX)) {
       const token = match[1] ?? "";
-      const isVariableRef = token.startsWith("vars.");
-      const isAllowed = isVariableRef || ALLOWED_TEMPLATE_FIELDS.has(token);
+      const [prefix] = token.split(".");
+      const isAllowed = prefix ? ALLOWED_TEMPLATE_PREFIXES.has(prefix) : false;
       if (!isAllowed) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -180,6 +233,13 @@ export function validateFlowForTrigger(
   ctx: z.RefinementCtx
 ) {
   for (const node of flowDefinition.nodes) {
+    if (node.type === "condition" && !isConditionAllowedForTrigger(node.data.type, trigger)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Condition ${node.data.type} is not allowed for trigger ${trigger}.`
+      });
+    }
+
     if (node.type !== "action") {
       continue;
     }

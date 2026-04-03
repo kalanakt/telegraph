@@ -111,6 +111,8 @@ describe("orchestrator adapters", () => {
       botId: "bot_1",
       eventId: "evt_1",
       eventPayload: {
+        source: "telegram",
+        eventId: "1",
         trigger: "message_received",
         updateId: 1,
         chatId: "1",
@@ -121,20 +123,22 @@ describe("orchestrator adapters", () => {
       },
       rule: {
         ruleId: "rule_1",
+        botId: "bot_1",
         trigger: "message_received",
         flowDefinition: {
           nodes: [{ id: "start_1", type: "start", position: { x: 0, y: 0 }, data: {} }],
           edges: []
         }
       },
-      actions: [{ actionId: "a1", payload: { type: "telegram.sendMessage", params: { chat_id: "1", text: "reply" } } }]
+      actions: [{ actionId: "a1", payload: { type: "telegram.sendMessage", params: { chat_id: "1", text: "reply" } } }],
+      variables: {}
     });
 
     expect(workflowRunCreateCalls).toHaveLength(1);
     expect(actionRunCreateCalls).toHaveLength(1);
     expect(result).toEqual({
       runId: "run_123",
-      actionRuns: [{ actionRunId: "action_run_1", action: { type: "telegram.sendMessage", params: { chat_id: "1", text: "reply" } } }]
+      actionRuns: [{ actionId: "a1", actionRunId: "action_run_1", action: { type: "telegram.sendMessage", params: { chat_id: "1", text: "reply" } } }]
     });
   });
 });

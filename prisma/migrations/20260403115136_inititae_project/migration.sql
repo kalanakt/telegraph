@@ -1,14 +1,8 @@
--- CreateSchema
-CREATE SCHEMA IF NOT EXISTS "public";
-
 -- CreateEnum
 CREATE TYPE "SubscriptionPlan" AS ENUM ('FREE', 'PRO');
 
 -- CreateEnum
 CREATE TYPE "BotStatus" AS ENUM ('active', 'invalid_token', 'webhook_error', 'paused');
-
--- CreateEnum
-CREATE TYPE "WorkflowTrigger" AS ENUM ('message_received', 'message_edited', 'channel_post_received', 'channel_post_edited', 'command_received', 'callback_query_received', 'inline_query_received', 'chosen_inline_result_received', 'shipping_query_received', 'pre_checkout_query_received', 'poll_received', 'poll_answer_received', 'chat_member_updated', 'my_chat_member_updated', 'chat_join_request_received', 'message_reaction_updated', 'message_reaction_count_updated', 'update_received');
 
 -- CreateEnum
 CREATE TYPE "ActionStatus" AS ENUM ('pending', 'succeeded', 'failed');
@@ -67,13 +61,27 @@ CREATE TABLE "WorkflowRule" (
     "userId" TEXT NOT NULL,
     "botId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "trigger" "WorkflowTrigger" NOT NULL,
+    "trigger" TEXT NOT NULL,
     "flowDefinition" JSONB NOT NULL,
     "enabled" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "WorkflowRule_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "FlowWebhookEndpoint" (
+    "id" TEXT NOT NULL,
+    "ruleId" TEXT NOT NULL,
+    "endpointId" TEXT NOT NULL,
+    "encryptedSecret" TEXT,
+    "signatureHeaderName" TEXT,
+    "enabled" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "FlowWebhookEndpoint_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -122,6 +130,7 @@ CREATE TABLE "WorkflowRun" (
     "status" TEXT NOT NULL DEFAULT 'pending',
     "trigger" TEXT NOT NULL,
     "eventPayload" JSONB NOT NULL,
+    "contextVariables" JSONB NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -164,7 +173,7 @@ CREATE TABLE "WorkflowTemplateDraftFlow" (
     "id" TEXT NOT NULL,
     "templateId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "trigger" "WorkflowTrigger" NOT NULL,
+    "trigger" TEXT NOT NULL,
     "flowDefinition" JSONB NOT NULL,
     "sortOrder" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -190,7 +199,7 @@ CREATE TABLE "WorkflowTemplateVersionFlow" (
     "id" TEXT NOT NULL,
     "templateVersionId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "trigger" "WorkflowTrigger" NOT NULL,
+    "trigger" TEXT NOT NULL,
     "flowDefinition" JSONB NOT NULL,
     "sortOrder" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -217,6 +226,12 @@ CREATE UNIQUE INDEX "Bot_userId_telegramBotId_key" ON "Bot"("userId", "telegramB
 CREATE INDEX "WorkflowRule_botId_trigger_enabled_idx" ON "WorkflowRule"("botId", "trigger", "enabled");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "FlowWebhookEndpoint_ruleId_key" ON "FlowWebhookEndpoint"("ruleId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "FlowWebhookEndpoint_endpointId_key" ON "FlowWebhookEndpoint"("endpointId");
+
+-- CreateIndex
 CREATE INDEX "RuleCondition_ruleId_order_idx" ON "RuleCondition"("ruleId", "order");
 
 -- CreateIndex
@@ -236,6 +251,9 @@ CREATE INDEX "WorkflowRun_userId_createdAt_idx" ON "WorkflowRun"("userId", "crea
 
 -- CreateIndex
 CREATE INDEX "ActionRun_workflowRunId_createdAt_idx" ON "ActionRun"("workflowRunId", "createdAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ActionRun_workflowRunId_actionId_key" ON "ActionRun"("workflowRunId", "actionId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "WorkflowTemplate_slug_key" ON "WorkflowTemplate"("slug");
@@ -269,6 +287,9 @@ ALTER TABLE "WorkflowRule" ADD CONSTRAINT "WorkflowRule_userId_fkey" FOREIGN KEY
 
 -- AddForeignKey
 ALTER TABLE "WorkflowRule" ADD CONSTRAINT "WorkflowRule_botId_fkey" FOREIGN KEY ("botId") REFERENCES "Bot"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "FlowWebhookEndpoint" ADD CONSTRAINT "FlowWebhookEndpoint_ruleId_fkey" FOREIGN KEY ("ruleId") REFERENCES "WorkflowRule"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "RuleCondition" ADD CONSTRAINT "RuleCondition_ruleId_fkey" FOREIGN KEY ("ruleId") REFERENCES "WorkflowRule"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -305,4 +326,3 @@ ALTER TABLE "WorkflowTemplateVersion" ADD CONSTRAINT "WorkflowTemplateVersion_te
 
 -- AddForeignKey
 ALTER TABLE "WorkflowTemplateVersionFlow" ADD CONSTRAINT "WorkflowTemplateVersionFlow_templateVersionId_fkey" FOREIGN KEY ("templateVersionId") REFERENCES "WorkflowTemplateVersion"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-

@@ -14,12 +14,15 @@ describe("normalizeTelegramUpdate", () => {
     });
 
     expect(normalized).toEqual({
+      source: "telegram",
       trigger: "message_received",
+      eventId: "999",
       updateId: 999,
       messageId: 101,
       chatId: "777",
       chatType: "private",
       fromUserId: 222,
+      fromUsername: undefined,
       messageSource: "user",
       text: "ping",
       variables: {}

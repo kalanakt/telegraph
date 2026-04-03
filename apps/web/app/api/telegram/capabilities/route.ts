@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
-import { TELEGRAM_CAPABILITIES_MANIFEST, TELEGRAM_TRIGGER_TYPES } from "@telegram-builder/shared";
+import {
+  WORKFLOW_ACTION_MANIFEST,
+  WORKFLOW_CONDITION_MANIFEST,
+  WORKFLOW_TRIGGER_MANIFEST,
+  WORKFLOW_TRIGGER_TYPES
+} from "@telegram-builder/shared";
 
 export async function GET() {
   return NextResponse.json({
-    triggers: TELEGRAM_TRIGGER_TYPES,
-    methods: TELEGRAM_CAPABILITIES_MANIFEST
+    triggers: WORKFLOW_TRIGGER_TYPES,
+    triggerManifest: WORKFLOW_TRIGGER_MANIFEST,
+    conditions: WORKFLOW_CONDITION_MANIFEST,
+    actions: WORKFLOW_ACTION_MANIFEST
   });
 }

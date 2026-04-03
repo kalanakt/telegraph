@@ -61,7 +61,9 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
     const command = extractCommand(text);
     if (command) {
       return {
+        source: "telegram",
         trigger: "command_received",
+        eventId: String(update.update_id),
         updateId: update.update_id,
         messageId: messageSource.message_id,
         chatId: String(messageSource.chat.id),
@@ -78,7 +80,9 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
     }
 
     return {
+      source: "telegram",
       trigger: "message_received",
+      eventId: String(update.update_id),
       updateId: update.update_id,
       messageId: messageSource.message_id,
       chatId: String(messageSource.chat.id),
@@ -95,7 +99,9 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
   const editedMessage = update.edited_message;
   if (editedMessage) {
     return {
+      source: "telegram",
       trigger: "message_edited",
+      eventId: String(update.update_id),
       updateId: update.update_id,
       messageId: editedMessage.message_id,
       chatId: String(editedMessage.chat.id),
@@ -111,7 +117,9 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
 
   if (update.channel_post) {
     return {
+      source: "telegram",
       trigger: "channel_post_received",
+      eventId: String(update.update_id),
       updateId: update.update_id,
       messageId: update.channel_post.message_id,
       chatId: String(update.channel_post.chat.id),
@@ -125,7 +133,9 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
 
   if (update.edited_channel_post) {
     return {
+      source: "telegram",
       trigger: "channel_post_edited",
+      eventId: String(update.update_id),
       updateId: update.update_id,
       messageId: update.edited_channel_post.message_id,
       chatId: String(update.edited_channel_post.chat.id),
@@ -140,7 +150,9 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
   if (update.callback_query) {
     const cb = update.callback_query;
     return {
+      source: "telegram",
       trigger: "callback_query_received",
+      eventId: String(update.update_id),
       updateId: update.update_id,
       callbackQueryId: cb.id,
       chatId: cb.message?.chat ? String(cb.message.chat.id) : undefined,
@@ -158,7 +170,9 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
 
   if (update.inline_query) {
     return {
+      source: "telegram",
       trigger: "inline_query_received",
+      eventId: String(update.update_id),
       updateId: update.update_id,
       inlineQueryId: update.inline_query.id,
       inlineQuery: update.inline_query.query,
@@ -172,7 +186,9 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
 
   if (update.chosen_inline_result) {
     return {
+      source: "telegram",
       trigger: "chosen_inline_result_received",
+      eventId: String(update.update_id),
       updateId: update.update_id,
       fromUserId: update.chosen_inline_result.from.id,
       fromUsername: update.chosen_inline_result.from.username,
@@ -184,7 +200,9 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
 
   if (update.shipping_query) {
     return {
+      source: "telegram",
       trigger: "shipping_query_received",
+      eventId: String(update.update_id),
       updateId: update.update_id,
       shippingQueryId: update.shipping_query.id,
       fromUserId: update.shipping_query.from.id,
@@ -197,7 +215,9 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
 
   if (update.pre_checkout_query) {
     return {
+      source: "telegram",
       trigger: "pre_checkout_query_received",
+      eventId: String(update.update_id),
       updateId: update.update_id,
       preCheckoutQueryId: update.pre_checkout_query.id,
       fromUserId: update.pre_checkout_query.from.id,
@@ -210,7 +230,9 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
 
   if (update.poll) {
     return {
+      source: "telegram",
       trigger: "poll_received",
+      eventId: String(update.update_id),
       updateId: update.update_id,
       text: update.poll.question,
       variables: {}
@@ -219,7 +241,9 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
 
   if (update.poll_answer) {
     return {
+      source: "telegram",
       trigger: "poll_answer_received",
+      eventId: String(update.update_id),
       updateId: update.update_id,
       fromUserId: update.poll_answer.user.id,
       fromUsername: update.poll_answer.user.username,
@@ -231,7 +255,9 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
 
   if (update.chat_member) {
     return {
+      source: "telegram",
       trigger: "chat_member_updated",
+      eventId: String(update.update_id),
       updateId: update.update_id,
       chatId: String(update.chat_member.chat.id),
       chatType: update.chat_member.chat.type,
@@ -248,7 +274,9 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
 
   if (update.my_chat_member) {
     return {
+      source: "telegram",
       trigger: "my_chat_member_updated",
+      eventId: String(update.update_id),
       updateId: update.update_id,
       chatId: String(update.my_chat_member.chat.id),
       chatType: update.my_chat_member.chat.type,
@@ -265,7 +293,9 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
 
   if (update.chat_join_request) {
     return {
+      source: "telegram",
       trigger: "chat_join_request_received",
+      eventId: String(update.update_id),
       updateId: update.update_id,
       chatId: String(update.chat_join_request.chat.id),
       chatType: update.chat_join_request.chat.type,
@@ -279,7 +309,9 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
 
   if (update.message_reaction) {
     return {
+      source: "telegram",
       trigger: "message_reaction_updated",
+      eventId: String(update.update_id),
       updateId: update.update_id,
       chatId: String(update.message_reaction.chat.id),
       chatType: update.message_reaction.chat.type,
@@ -294,7 +326,9 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
 
   if (update.message_reaction_count) {
     return {
+      source: "telegram",
       trigger: "message_reaction_count_updated",
+      eventId: String(update.update_id),
       updateId: update.update_id,
       chatId: String(update.message_reaction_count.chat.id),
       chatType: update.message_reaction_count.chat.type,
@@ -306,7 +340,9 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
   }
 
   return {
+    source: "telegram",
     trigger: "update_received",
+    eventId: String(update.update_id),
     updateId: update.update_id,
     text: "",
     rawUpdate: update,

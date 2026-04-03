@@ -675,6 +675,7 @@ export function TemplateBuilderStudio({ template, bots }: Props) {
               <FlowInspector
                 selectedNode={selectedNode}
                 trigger={trigger}
+                selectedRule={null}
                 onTriggerChange={setTrigger}
                 onUpdateNodeData={updateSelectedNodeData}
                 onReplaceAction={replaceSelectedAction}

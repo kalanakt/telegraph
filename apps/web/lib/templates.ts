@@ -94,14 +94,14 @@ function parseFlowDefinition(value: unknown) {
 function mapDraftFlow(flow: {
   id: string;
   name: string;
-  trigger: TriggerType;
+  trigger: string;
   flowDefinition: unknown;
   sortOrder: number;
 }) {
   return {
     id: flow.id,
     name: flow.name,
-    trigger: flow.trigger,
+    trigger: flow.trigger as TriggerType,
     flowDefinition: parseFlowDefinition(flow.flowDefinition),
     sortOrder: flow.sortOrder
   };
@@ -236,7 +236,7 @@ export async function getTemplateForUser(userId: string, templateId: string) {
       flows: version.flows.map((flow) => ({
         id: flow.id,
         name: flow.name,
-        trigger: flow.trigger,
+        trigger: flow.trigger as TriggerType,
         flowDefinition: parseFlowDefinition(flow.flowDefinition),
         sortOrder: flow.sortOrder
       }))
@@ -251,7 +251,7 @@ export async function getTemplateForUser(userId: string, templateId: string) {
           flows: publishedVersion.flows.map((flow) => ({
             id: flow.id,
             name: flow.name,
-            trigger: flow.trigger,
+            trigger: flow.trigger as TriggerType,
             flowDefinition: parseFlowDefinition(flow.flowDefinition),
             sortOrder: flow.sortOrder
           }))
@@ -392,7 +392,7 @@ export async function publishTemplate(userId: string, templateId: string) {
       data: template.draftFlows.map((flow) => ({
         templateVersionId: version.id,
         name: flow.name,
-        trigger: flow.trigger,
+          trigger: flow.trigger as TriggerType,
         flowDefinition: toPrismaJson(parseFlowDefinition(flow.flowDefinition)),
         sortOrder: flow.sortOrder
       }))
@@ -548,7 +548,7 @@ export async function getPublicTemplateBySlug(slug: string) {
     flows: version.flows.map((flow) => ({
       id: flow.id,
       name: flow.name,
-      trigger: flow.trigger,
+      trigger: flow.trigger as TriggerType,
       flowDefinition: parseFlowDefinition(flow.flowDefinition),
       sortOrder: flow.sortOrder
     }))
@@ -577,7 +577,7 @@ export async function installTemplateForUser(user: Pick<User, "id" | "clerkUserI
   let sourceFlows:
     | Array<{
         name: string;
-        trigger: TriggerType;
+        trigger: string;
         flowDefinition: unknown;
         sortOrder: number;
       }>

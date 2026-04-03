@@ -2,7 +2,7 @@ import { captureWorkerException, flushSentry } from "./sentry.js";
 import { Queue, Worker } from "bullmq";
 import IORedis from "ioredis";
 import { PrismaClient } from "@prisma/client";
-import { QUEUES, logError, logInfo, logWarn, type ActionJob } from "@telegram-builder/shared";
+import { QUEUES, getExecutionPolicy, logError, logInfo, logWarn, type ActionJob } from "@telegram-builder/shared";
 import { handleActionJobFailure, processActionJob, type WorkerProcessorDeps, workerTelegramDeps } from "./processor.js";
 import { getWorkerRuntimeEnv, type WorkerRuntimeEnv } from "./env.js";
 import { startRetentionSweeper } from "./retention.js";
@@ -28,6 +28,7 @@ if (!redisUrl) {
 
 const redis = new IORedis(redisUrl, { maxRetriesPerRequest: null });
 const prisma = new PrismaClient();
+const actionQueue = new Queue(QUEUES.ACTIONS, { connection: redis });
 const deadLetterQueue = new Queue(QUEUES.DEAD_LETTER, { connection: redis });
 const stopRetentionSweeper = startRetentionSweeper(prisma, deadLetterQueue, {
   deadLetterRetentionDays: workerEnv.deadLetterRetentionDays,
@@ -59,6 +60,57 @@ const deps: WorkerProcessorDeps = {
     await prisma.workflowRun.update({
       where: { id: runId },
       data: { status }
+    });
+  },
+  async getWorkflowRunContext(runId) {
+    const run = await prisma.workflowRun.findUnique({
+      where: { id: runId },
+      select: { contextVariables: true }
+    });
+
+    return ((run?.contextVariables as Record<string, unknown> | null) ?? {}) as Record<string, string | number | boolean | null>;
+  },
+  async updateWorkflowRunContext(runId, variables) {
+    await prisma.workflowRun.update({
+      where: { id: runId },
+      data: { contextVariables: variables as never }
+    });
+  },
+  async getOrCreateActionRun(input) {
+    try {
+      const created = await prisma.actionRun.create({
+        data: {
+          workflowRunId: input.runId,
+          actionId: input.actionId,
+          type: input.action.type,
+          payload: {
+            ...input.action,
+            executionPolicy: getExecutionPolicy(input.action.type)
+          } as never,
+          status: "pending"
+        }
+      });
+
+      return { actionRunId: created.id, created: true };
+    } catch (error) {
+      const existing = await prisma.actionRun.findFirstOrThrow({
+        where: {
+          workflowRunId: input.runId,
+          actionId: input.actionId
+        },
+        select: { id: true }
+      });
+
+      return { actionRunId: existing.id, created: false };
+    }
+  },
+  async enqueueAction(job) {
+    await actionQueue.add(`action:${job.actionType}`, job, {
+      jobId: job.idempotencyKey,
+      attempts: 5,
+      backoff: { type: "exponential", delay: 2000 },
+      removeOnComplete: 100,
+      removeOnFail: false
     });
   },
   async enqueueDeadLetter(input) {
@@ -158,6 +210,7 @@ async function shutdown(signal: string) {
 
   stopRetentionSweeper();
   await worker.close();
+  await actionQueue.close();
   await deadLetterQueue.close();
   await prisma.$disconnect();
   await redis.quit();

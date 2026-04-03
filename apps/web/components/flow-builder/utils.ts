@@ -11,6 +11,7 @@ import {
 } from "@telegram-builder/shared";
 import {
   createActionTemplate,
+  getConditionOptions,
   migrateLegacyActionData,
 } from "@/lib/flow-builder";
 import type {
@@ -20,7 +21,6 @@ import type {
   InlineKeyboardButton,
   ReplyKeyboardButton,
 } from "./types";
-import { CONDITION_OPTIONS } from "./types";
 
 export const EDGE_STYLE = { stroke: "rgba(14, 165, 233, 0.46)", strokeWidth: 1.5 };
 
@@ -98,6 +98,11 @@ export function toCanvasEdges(flow: FlowDefinition): Edge[] {
 
 export function normalizeConditionNodeData(data: Record<string, unknown>) {
   const type = String(data.type ?? "text_contains");
+  const availableTypes = new Set(getConditionOptions("message_received").map((item) => item.type));
+  const webhookTypes = getConditionOptions("webhook.received").map((item) => item.type);
+  for (const item of webhookTypes) {
+    availableTypes.add(item);
+  }
 
   if (type === "all" || type === "any") {
     let parsedConditions: unknown = [];
@@ -145,9 +150,7 @@ export function normalizeConditionNodeData(data: Record<string, unknown>) {
   }
 
   return {
-    type: CONDITION_OPTIONS.includes(type as (typeof CONDITION_OPTIONS)[number])
-      ? type
-      : "text_contains",
+    type: availableTypes.has(type as never) ? type : "text_contains",
     value: String(data.value ?? ""),
   };
 }

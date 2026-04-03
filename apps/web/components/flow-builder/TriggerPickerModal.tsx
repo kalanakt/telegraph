@@ -16,6 +16,7 @@ import {
   Zap,
   Radio,
   X,
+  Webhook,
 } from "lucide-react";
 import type { TriggerType } from "@telegram-builder/shared";
 import { getTriggerGroups } from "@/lib/flow-builder";
@@ -40,6 +41,7 @@ const TRIGGER_ICONS: Record<string, React.ElementType> = {
   poll_received: BarChart2,
   poll_answer_received: CheckSquare,
   update_received: Zap,
+  "webhook.received": Webhook,
 };
 
 export function getTriggerIcon(trigger: string): React.ElementType {
@@ -48,6 +50,7 @@ export function getTriggerIcon(trigger: string): React.ElementType {
 
 export function formatTriggerLabel(trigger: string): string {
   return trigger
+    .replaceAll(".", "_")
     .split("_")
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");

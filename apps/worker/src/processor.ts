@@ -1,8 +1,16 @@
 import { createHash } from "node:crypto";
 import {
+  asJsonValue,
   getCapabilityByActionType,
+  getExecutionPolicy,
+  getFrontierActions,
+  getPathValue,
   telegramInvokeMethod,
+  toTemplateString,
+  type ActionExecutionResult,
   type ActionJob,
+  type ActionPayload,
+  type JsonValue,
   type TelegramMethod,
   type TelegramRequestResult
 } from "@telegram-builder/shared";
@@ -29,6 +37,11 @@ type DeadLetterInput = {
   };
 };
 
+type ActionRunLookup = {
+  actionRunId: string;
+  created: boolean;
+};
+
 export type WorkerProcessorDeps = {
   updateActionRun(input: {
     actionRunId: string;
@@ -38,8 +51,19 @@ export type WorkerProcessorDeps = {
   }): Promise<void>;
   countActionRunsByStatus(runId: string, status: "pending" | "failed"): Promise<number>;
   updateWorkflowRunStatus(runId: string, status: "succeeded" | "partially_failed" | "failed"): Promise<void>;
+  getWorkflowRunContext(runId: string): Promise<Record<string, JsonValue>>;
+  updateWorkflowRunContext(runId: string, variables: Record<string, JsonValue>): Promise<void>;
+  getOrCreateActionRun(input: { runId: string; actionId: string; action: ActionPayload }): Promise<ActionRunLookup>;
+  enqueueAction(job: ActionJob): Promise<void>;
   enqueueDeadLetter(input: DeadLetterInput): Promise<void>;
   invokeTelegramMethod(token: string, method: TelegramMethod, params: Record<string, unknown>): Promise<TelegramRequestResult>;
+  invokeHttpRequest?(input: {
+    method: string;
+    url: string;
+    headers?: Record<string, string>;
+    body?: string;
+    timeoutMs: number;
+  }): Promise<Response>;
 };
 
 function payloadHash(input: unknown): string {
@@ -61,6 +85,15 @@ function classifyTelegramResult(result: TelegramRequestResult): ActionExecutionE
   };
 }
 
+function classifyHttpStatus(status: number, fallback: string): ActionExecutionError {
+  const permanent = status >= 400 && status < 500 && status !== 408 && status !== 429;
+  return {
+    message: fallback,
+    errorCode: status,
+    classification: permanent ? "permanent" : "transient"
+  };
+}
+
 function classifyThrown(error: unknown): ActionExecutionError {
   if (error instanceof Error && error.message.includes("timeout")) {
     return { message: error.message, classification: "transient" };
@@ -73,66 +106,32 @@ function classifyThrown(error: unknown): ActionExecutionError {
   return { message: "Unknown worker error", classification: "transient" };
 }
 
-function renderTemplate(value: string, job: ActionJob): string {
+function renderTemplate(value: string, job: ActionJob, variables: Record<string, JsonValue>): string {
   return value.replace(/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g, (_full, path) => {
     if (path.startsWith("vars.")) {
-      const key = path.replace("vars.", "");
-      return job.context.variables[key] ?? "";
+      return toTemplateString(getPathValue(variables, path.replace(/^vars\./, "")));
     }
 
-    switch (path) {
-      case "event.text":
-        return job.event.text ?? "";
-      case "event.chatId":
-        return job.event.chatId ?? "";
-      case "event.chatType":
-        return job.event.chatType ?? "";
-      case "event.fromUserId":
-        return String(job.event.fromUserId ?? "");
-      case "event.fromUsername":
-        return String(job.event.fromUsername ?? "");
-      case "event.messageId":
-        return String(job.event.messageId ?? "");
-      case "event.callbackData":
-        return String(job.event.callbackData ?? "");
-      case "event.callbackQueryId":
-        return String(job.event.callbackQueryId ?? "");
-      case "event.command":
-        return String(job.event.command ?? "");
-      case "event.commandArgs":
-        return String(job.event.commandArgs ?? "");
-      case "event.inlineQueryId":
-        return String(job.event.inlineQueryId ?? "");
-      case "event.inlineQuery":
-        return String(job.event.inlineQuery ?? "");
-      case "event.shippingQueryId":
-        return String(job.event.shippingQueryId ?? "");
-      case "event.preCheckoutQueryId":
-        return String(job.event.preCheckoutQueryId ?? "");
-      case "event.targetUserId":
-        return String(job.event.targetUserId ?? "");
-      case "event.oldStatus":
-        return String(job.event.oldStatus ?? "");
-      case "event.newStatus":
-        return String(job.event.newStatus ?? "");
-      default:
-        return "";
+    if (path.startsWith("event.")) {
+      return toTemplateString(getPathValue(job.event, path.replace(/^event\./, "")));
     }
+
+    return "";
   });
 }
 
-function renderTemplatesDeep(value: unknown, job: ActionJob): unknown {
+function renderTemplatesDeep(value: unknown, job: ActionJob, variables: Record<string, JsonValue>): unknown {
   if (typeof value === "string") {
-    return renderTemplate(value, job);
+    return renderTemplate(value, job, variables);
   }
 
   if (Array.isArray(value)) {
-    return value.map((item) => renderTemplatesDeep(item, job));
+    return value.map((item) => renderTemplatesDeep(item, job, variables));
   }
 
   if (typeof value === "object" && value !== null) {
     return Object.fromEntries(
-      Object.entries(value as Record<string, unknown>).map(([key, nested]) => [key, renderTemplatesDeep(nested, job)])
+      Object.entries(value as Record<string, unknown>).map(([key, nested]) => [key, renderTemplatesDeep(nested, job, variables)])
     );
   }
 
@@ -154,9 +153,162 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T
   }
 }
 
-async function runTelegramAction(deps: WorkerProcessorDeps, job: ActionJob): Promise<void> {
-  const capability = getCapabilityByActionType(job.action.type);
-  const renderedParams = renderTemplatesDeep(job.action.params, job) as Record<string, unknown>;
+async function readResponseBody(response: Response, mode: "auto" | "json" | "text"): Promise<JsonValue | string | null> {
+  const text = await response.text();
+  if (!text) {
+    return null;
+  }
+
+  if (mode === "text") {
+    return text;
+  }
+
+  const contentType = response.headers.get("content-type") ?? "";
+  const shouldParseJson = mode === "json" || contentType.includes("application/json");
+  if (!shouldParseJson) {
+    return text;
+  }
+
+  try {
+    return asJsonValue(JSON.parse(text));
+  } catch {
+    return text;
+  }
+}
+
+function responseHeadersToObject(headers: Headers): Record<string, string> {
+  return Object.fromEntries(headers.entries());
+}
+
+async function invokeHttp(
+  deps: WorkerProcessorDeps,
+  input: {
+    method: string;
+    url: string;
+    headers?: Record<string, string>;
+    body?: string;
+    timeoutMs: number;
+  }
+) {
+  if (deps.invokeHttpRequest) {
+    return deps.invokeHttpRequest(input);
+  }
+
+  return fetch(input.url, {
+    method: input.method,
+    headers: input.headers,
+    body: input.body
+  });
+}
+
+function applyAuth(
+  headers: Record<string, string>,
+  query: URLSearchParams,
+  auth: NonNullable<Extract<ActionPayload, { type: "http.request" | "webhook.send" }>["params"]["auth"]> | undefined
+) {
+  if (!auth || auth.type === "none") {
+    return;
+  }
+
+  switch (auth.type) {
+    case "bearer":
+      headers.authorization = `Bearer ${auth.token}`;
+      break;
+    case "basic":
+      headers.authorization = `Basic ${Buffer.from(`${auth.username}:${auth.password}`).toString("base64")}`;
+      break;
+    case "api_key_header":
+      headers[auth.header] = auth.value;
+      break;
+    case "api_key_query":
+      query.set(auth.key, auth.value);
+      break;
+  }
+}
+
+async function runHttpAction(
+  deps: WorkerProcessorDeps,
+  job: ActionJob,
+  variables: Record<string, JsonValue>
+): Promise<ActionExecutionResult> {
+  const action = job.action as Extract<ActionPayload, { type: "http.request" | "webhook.send" }>;
+  const isWebhook = action.type === "webhook.send";
+  const params =
+    action.type === "http.request"
+      ? action.params
+      : {
+          method: "POST" as const,
+          url: action.params.url,
+          headers: action.params.headers,
+          query: action.params.query,
+          auth: action.params.auth,
+          body_mode: "json" as const,
+          body: action.params.body,
+          timeout_ms: action.params.timeout_ms,
+          response_body_format: action.params.response_body_format
+        };
+
+  const renderedHeaders = (renderTemplatesDeep(params.headers ?? {}, job, variables) as Record<string, string>) ?? {};
+  const renderedQuery = (renderTemplatesDeep(params.query ?? {}, job, variables) as Record<string, string>) ?? {};
+  const renderedBody = renderTemplatesDeep(params.body, job, variables);
+  const url = new URL(renderTemplate(params.url, job, variables));
+
+  for (const [key, value] of Object.entries(renderedQuery)) {
+    url.searchParams.set(key, String(value));
+  }
+
+  const headers: Record<string, string> = { ...renderedHeaders };
+  applyAuth(headers, url.searchParams, params.auth);
+
+  let body: string | undefined;
+  if (typeof renderedBody !== "undefined") {
+    if ((params.body_mode ?? "json") === "text" && typeof renderedBody === "string") {
+      body = renderedBody;
+      headers["content-type"] = headers["content-type"] ?? "text/plain";
+    } else {
+      body = JSON.stringify(renderedBody);
+      headers["content-type"] = headers["content-type"] ?? "application/json";
+    }
+  }
+
+  const response = await invokeHttp(deps, {
+    method: params.method,
+    url: url.toString(),
+    headers,
+    body,
+    timeoutMs: params.timeout_ms ?? job.executionPolicy.timeoutMs
+  });
+
+  const result: ActionExecutionResult = {
+    status: response.status,
+    ok: response.ok,
+    headers: responseHeadersToObject(response.headers),
+    body: await readResponseBody(response, params.response_body_format ?? "auto")
+  };
+
+  if (!response.ok) {
+    const bodyPreview = typeof result.body === "string" ? result.body : JSON.stringify(result.body);
+    throw classifyHttpStatus(response.status, bodyPreview || `${isWebhook ? "Webhook" : "HTTP"} request failed`);
+  }
+
+  return result;
+}
+
+async function runTelegramAction(
+  deps: WorkerProcessorDeps,
+  job: ActionJob,
+  variables: Record<string, JsonValue>
+): Promise<ActionExecutionResult> {
+  if (!job.botToken) {
+    throw {
+      message: "Missing bot token for Telegram action",
+      classification: "permanent"
+    } satisfies ActionExecutionError;
+  }
+
+  const telegramAction = job.action as Extract<ActionPayload, { type: `telegram.${string}` }>;
+  const capability = getCapabilityByActionType(telegramAction.type);
+  const renderedParams = renderTemplatesDeep(telegramAction.params, job, variables) as Record<string, unknown>;
 
   let parsedParams: Record<string, unknown>;
   try {
@@ -177,6 +329,25 @@ async function runTelegramAction(deps: WorkerProcessorDeps, job: ActionJob): Pro
   if (!result.ok) {
     throw classifyTelegramResult(result);
   }
+
+  return {
+    status: result.ok ? 200 : result.errorCode ?? 500,
+    ok: result.ok,
+    headers: {},
+    body: asJsonValue(result.result ?? null)
+  };
+}
+
+async function executeAction(
+  deps: WorkerProcessorDeps,
+  job: ActionJob,
+  variables: Record<string, JsonValue>
+): Promise<ActionExecutionResult> {
+  if (job.action.type.startsWith("telegram.")) {
+    return runTelegramAction(deps, job, variables);
+  }
+
+  return runHttpAction(deps, job, variables);
 }
 
 function isExecutionError(input: unknown): input is ActionExecutionError {
@@ -198,8 +369,12 @@ export async function processActionJob(
     attempt: attemptsStarted
   });
 
+  const existingVariables = await deps.getWorkflowRunContext(job.runId);
+  const variables = { ...job.context.variables, ...existingVariables };
+
+  let result: ActionExecutionResult;
   try {
-    await withTimeout(runTelegramAction(deps, job), job.executionPolicy.timeoutMs);
+    result = await withTimeout(executeAction(deps, job, variables), job.executionPolicy.timeoutMs);
   } catch (error) {
     const normalized = isExecutionError(error) ? error : classifyThrown(error);
     const wrapped = new Error(normalized.message);
@@ -208,12 +383,51 @@ export async function processActionJob(
     throw wrapped;
   }
 
+  const mergedVariables: Record<string, JsonValue> = {
+    ...variables,
+    [job.actionNodeId]: {
+      status: result.status,
+      ok: result.ok,
+      headers: result.headers,
+      body: result.body
+    }
+  };
+
+  await deps.updateWorkflowRunContext(job.runId, mergedVariables);
   await deps.updateActionRun({
     actionRunId: job.actionRunId,
     status: "succeeded",
     attempt: attemptsStarted,
     lastError: null
   });
+
+  const nextActions = getFrontierActions(job.flowDefinition, job.actionNodeId, job.event, { variables: mergedVariables });
+  for (const nextAction of nextActions) {
+    const nextRun = await deps.getOrCreateActionRun({
+      runId: job.runId,
+      actionId: nextAction.actionId,
+      action: nextAction.payload
+    });
+
+    if (!nextRun.created) {
+      continue;
+    }
+
+    await deps.enqueueAction({
+      ...job,
+      actionNodeId: nextAction.actionId,
+      actionRunId: nextRun.actionRunId,
+      actionType: nextAction.payload.type,
+      action: nextAction.payload,
+      executionPolicy: getExecutionPolicy(nextAction.payload.type),
+      botToken: nextAction.payload.type.startsWith("telegram.") ? job.botToken : null,
+      idempotencyKey: `${job.event.eventId}:${nextRun.actionRunId}:${nextAction.payload.type}`,
+      context: {
+        ...job.context,
+        variables: mergedVariables
+      }
+    });
+  }
 
   const pendingCount = await deps.countActionRunsByStatus(job.runId, "pending");
   if (pendingCount > 0) {
@@ -254,7 +468,9 @@ export async function handleActionJobFailure(
     job,
     metadata: {
       actionType: job.action.type,
-      method: getCapabilityByActionType(job.action.type).method,
+      method: job.action.type.startsWith("telegram.")
+        ? getCapabilityByActionType(job.action.type as Extract<ActionPayload, { type: `telegram.${string}` }>["type"]).method
+        : job.action.type,
       payloadHash: payloadHash(job.action.params),
       trigger: job.event.trigger,
       updateId: job.event.updateId

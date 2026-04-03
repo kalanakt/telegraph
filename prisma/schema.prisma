@@ -19,27 +19,6 @@ enum BotStatus {
   paused
 }
 
-enum WorkflowTrigger {
-  message_received
-  message_edited
-  channel_post_received
-  channel_post_edited
-  command_received
-  callback_query_received
-  inline_query_received
-  chosen_inline_result_received
-  shipping_query_received
-  pre_checkout_query_received
-  poll_received
-  poll_answer_received
-  chat_member_updated
-  my_chat_member_updated
-  chat_join_request_received
-  message_reaction_updated
-  message_reaction_count_updated
-  update_received
-}
-
 enum ActionStatus {
   pending
   succeeded
@@ -104,18 +83,31 @@ model WorkflowRule {
   userId       String
   botId        String
   name         String
-  trigger      WorkflowTrigger
+  trigger      String
   flowDefinition Json
   enabled      Boolean           @default(true)
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
   user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   bot          Bot               @relation(fields: [botId], references: [id], onDelete: Cascade)
+  webhookEndpoint FlowWebhookEndpoint?
   conditions   RuleCondition[]
   actions      RuleAction[]
   workflowRuns WorkflowRun[]
 
   @@index([botId, trigger, enabled])
+}
+
+model FlowWebhookEndpoint {
+  id                  String       @id @default(cuid())
+  ruleId               String       @unique
+  endpointId           String       @unique
+  encryptedSecret      String?
+  signatureHeaderName  String?
+  enabled              Boolean      @default(true)
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  rule                 WorkflowRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
 }
 
 model RuleCondition {
@@ -164,6 +156,7 @@ model WorkflowRun {
   status       String       @default("pending")
   trigger      String
   eventPayload Json
+  contextVariables Json
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -190,6 +183,7 @@ model ActionRun {
   workflowRun  WorkflowRun  @relation(fields: [workflowRunId], references: [id], onDelete: Cascade)
 
   @@index([workflowRunId, createdAt])
+  @@unique([workflowRunId, actionId])
 }
 
 model WorkflowTemplate {
@@ -214,7 +208,7 @@ model WorkflowTemplateDraftFlow {
   id             String           @id @default(cuid())
   templateId     String
   name           String
-  trigger        WorkflowTrigger
+  trigger        String
   flowDefinition Json
   sortOrder      Int
   createdAt      DateTime         @default(now())
@@ -242,7 +236,7 @@ model WorkflowTemplateVersionFlow {
   id                String                  @id @default(cuid())
   templateVersionId String
   name              String
-  trigger           WorkflowTrigger
+  trigger           String
   flowDefinition    Json
   sortOrder         Int
   createdAt         DateTime                @default(now())

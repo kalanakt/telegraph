@@ -16,39 +16,53 @@ function toOutgoingEdgeMap(flow: FlowDefinition) {
   return map;
 }
 
-export function deriveActionsFromFlow(flow: FlowDefinition, event: NormalizedEvent): DerivedFlowAction[] {
-  const startNode = flow.nodes.find((node) => node.type === "start");
-  if (!startNode) {
-    return [];
-  }
+function getNodeMap(flow: FlowDefinition) {
+  return new Map(flow.nodes.map((node) => [node.id, node]));
+}
 
-  const nodeMap = new Map(flow.nodes.map((node) => [node.id, node]));
+export function listFlowActions(flow: FlowDefinition): DerivedFlowAction[] {
+  return flow.nodes
+    .filter((node) => node.type === "action")
+    .map((node) => ({
+      actionId: node.id,
+      payload: node.data as ActionPayload
+    }));
+}
+
+export function getFrontierActions(
+  flow: FlowDefinition,
+  originNodeId: string,
+  event: NormalizedEvent,
+  context: WorkflowContext
+): DerivedFlowAction[] {
+  const nodeMap = getNodeMap(flow);
   const outgoing = toOutgoingEdgeMap(flow);
-  const stack = [startNode.id];
-  const seenActionNodeIds = new Set<string>();
-  const orderedActions: DerivedFlowAction[] = [];
-  const context: WorkflowContext = {
-    variables: { ...(event.variables ?? {}) }
-  };
+  const stack = [...(outgoing.get(originNodeId) ?? []).map((edge) => edge.target).reverse()];
+  const visited = new Set<string>();
+  const actions: DerivedFlowAction[] = [];
+  const seenActionIds = new Set<string>();
 
   while (stack.length > 0) {
     const nodeId = stack.pop();
-    if (!nodeId) {
+    if (!nodeId || visited.has(nodeId)) {
       continue;
     }
+    visited.add(nodeId);
 
     const node = nodeMap.get(nodeId);
     if (!node) {
       continue;
     }
 
-    if (node.type === "action" && !seenActionNodeIds.has(node.id)) {
-      seenActionNodeIds.add(node.id);
-      const payload = node.data as ActionPayload;
-      orderedActions.push({
-        actionId: node.id,
-        payload
-      });
+    if (node.type === "action") {
+      if (!seenActionIds.has(node.id)) {
+        seenActionIds.add(node.id);
+        actions.push({
+          actionId: node.id,
+          payload: node.data as ActionPayload
+        });
+      }
+      continue;
     }
 
     const out = outgoing.get(node.id) ?? [];
@@ -61,7 +75,6 @@ export function deriveActionsFromFlow(flow: FlowDefinition, event: NormalizedEve
       continue;
     }
 
-    // Reverse-push to keep traversal deterministic with original edge order.
     for (let i = out.length - 1; i >= 0; i -= 1) {
       const edge = out[i];
       if (edge) {
@@ -70,5 +83,16 @@ export function deriveActionsFromFlow(flow: FlowDefinition, event: NormalizedEve
     }
   }
 
-  return orderedActions;
+  return actions;
+}
+
+export function deriveActionsFromFlow(flow: FlowDefinition, event: NormalizedEvent): DerivedFlowAction[] {
+  const startNode = flow.nodes.find((node) => node.type === "start");
+  if (!startNode) {
+    return [];
+  }
+
+  return getFrontierActions(flow, startNode.id, event, {
+    variables: { ...(event.variables ?? {}) }
+  });
 }

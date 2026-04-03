@@ -8,11 +8,12 @@ import { normalizeActionNodeData } from "./utils";
 import { StartInspector } from "./inspector/StartInspector";
 import { ConditionInspector } from "./inspector/ConditionInspector";
 import { ActionInspector } from "./inspector/ActionInspector";
-import type { ActionEditorData, ConditionEditorData } from "./types";
+import type { ActionEditorData, ConditionEditorData, RuleOption } from "./types";
 
 type Props = {
   selectedNode: Node | null;
   trigger: TriggerType;
+  selectedRule: RuleOption | null;
   onTriggerChange: (trigger: TriggerType) => void;
   onUpdateNodeData: (partial: Record<string, unknown>) => void;
   onReplaceAction: (next: ActionEditorData) => void;
@@ -23,6 +24,7 @@ type Props = {
 export function FlowInspector({
   selectedNode,
   trigger,
+  selectedRule,
   onTriggerChange,
   onUpdateNodeData,
   onReplaceAction,
@@ -57,7 +59,7 @@ export function FlowInspector({
       ) : null}
 
       {selectedNode?.type === "start" ? (
-        <StartInspector trigger={trigger} onTriggerChange={onTriggerChange} />
+        <StartInspector trigger={trigger} selectedRule={selectedRule} onTriggerChange={onTriggerChange} />
       ) : null}
 
       {selectedNode?.type === "condition" ? (

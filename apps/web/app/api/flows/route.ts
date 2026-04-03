@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createFlowSchema } from "@telegram-builder/shared";
 import { z } from "zod";
 import { assertRuleLimit, getUserPlan } from "@/lib/billing";
+import { createWebhookEndpointId, createWebhookSecret, serializeWebhookSecret } from "@/lib/flow-webhooks";
 import { prisma } from "@/lib/prisma";
 import { requireAppUser } from "@/lib/user";
 
@@ -34,6 +35,9 @@ export async function GET(req: Request) {
         userId: user.id,
         ...(botId ? { botId } : {}),
       },
+      include: {
+        webhookEndpoint: true,
+      },
       orderBy: { createdAt: "desc" },
     });
 
@@ -57,12 +61,35 @@ export async function POST(req: Request) {
         userId: user.id,
         botId: data.botId,
         name: data.name,
-        trigger: data.trigger as never,
+        trigger: data.trigger,
         flowDefinition: toPrismaJson(data.flowDefinition),
+      },
+      include: {
+        webhookEndpoint: true,
       },
     });
 
-    return NextResponse.json({ rule }, { status: 201 });
+    const hydratedRule =
+      data.trigger === "webhook.received"
+        ? await prisma.workflowRule.update({
+            where: { id: rule.id },
+            data: {
+              webhookEndpoint: {
+                create: {
+                  endpointId: createWebhookEndpointId(),
+                  encryptedSecret: serializeWebhookSecret(createWebhookSecret()),
+                  signatureHeaderName: "x-telegraph-flow-secret",
+                  enabled: true,
+                },
+              },
+            },
+            include: {
+              webhookEndpoint: true,
+            },
+          })
+        : rule;
+
+    return NextResponse.json({ rule: hydratedRule }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -105,12 +132,49 @@ export async function PUT(req: Request) {
       data: {
         botId: data.botId,
         name: data.name,
-        trigger: data.trigger as never,
+        trigger: data.trigger,
         flowDefinition: toPrismaJson(data.flowDefinition),
+      },
+      include: {
+        webhookEndpoint: true,
       },
     });
 
-    return NextResponse.json({ rule });
+    const hydratedRule =
+      data.trigger === "webhook.received"
+        ? await prisma.workflowRule.update({
+            where: { id: data.ruleId },
+            data: {
+              webhookEndpoint: rule.webhookEndpoint
+                ? undefined
+                : {
+                    create: {
+                      endpointId: createWebhookEndpointId(),
+                      encryptedSecret: serializeWebhookSecret(createWebhookSecret()),
+                      signatureHeaderName: "x-telegraph-flow-secret",
+                      enabled: true,
+                    },
+                  },
+            },
+            include: {
+              webhookEndpoint: true,
+            },
+          })
+        : rule.webhookEndpoint
+        ? await prisma.workflowRule.update({
+            where: { id: data.ruleId },
+            data: {
+              webhookEndpoint: {
+                delete: true,
+              },
+            },
+            include: {
+              webhookEndpoint: true,
+            },
+          })
+        : rule;
+
+    return NextResponse.json({ rule: hydratedRule });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

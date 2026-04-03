@@ -1,7 +1,11 @@
 import {
-  TELEGRAM_CAPABILITIES_MANIFEST,
-  TELEGRAM_TRIGGER_TYPES,
+  WORKFLOW_ACTION_MANIFEST,
+  WORKFLOW_CONDITION_MANIFEST,
+  WORKFLOW_TRIGGER_MANIFEST,
+  WORKFLOW_TRIGGER_TYPES,
   flowDefinitionSchema,
+  isActionAllowedForTrigger,
+  isConditionAllowedForTrigger,
   type ActionPayload,
   type ConditionPayload,
   type FlowDefinition,
@@ -11,42 +15,11 @@ import {
 type LegacyNodeData = Record<string, unknown>;
 export type ActionTemplate = { type: ActionPayload["type"]; params: Record<string, unknown> };
 
-type TriggerGroupId = "message" | "query" | "membership" | "commerce" | "poll" | "fallback";
-
 export type TriggerGroup = {
-  id: TriggerGroupId;
+  id: string;
   label: string;
   triggers: TriggerType[];
 };
-
-const triggerGroupConfig: Record<TriggerGroupId, { label: string; triggers: TriggerType[] }> = {
-  message: {
-    label: "Message events",
-    triggers: ["message_received", "message_edited", "channel_post_received", "channel_post_edited"]
-  },
-  query: {
-    label: "Queries",
-    triggers: ["command_received", "callback_query_received", "inline_query_received", "chosen_inline_result_received"]
-  },
-  membership: {
-    label: "Membership",
-    triggers: ["chat_member_updated", "my_chat_member_updated", "chat_join_request_received", "message_reaction_updated", "message_reaction_count_updated"]
-  },
-  commerce: {
-    label: "Commerce",
-    triggers: ["shipping_query_received", "pre_checkout_query_received"]
-  },
-  poll: {
-    label: "Poll",
-    triggers: ["poll_received", "poll_answer_received"]
-  },
-  fallback: {
-    label: "Fallback",
-    triggers: ["update_received"]
-  }
-};
-
-const triggerGroupOrder: TriggerGroupId[] = ["message", "query", "membership", "commerce", "poll", "fallback"];
 
 function asString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim().length > 0 ? value : undefined;
@@ -70,13 +43,124 @@ function defaultChatId(data: LegacyNodeData): string {
 }
 
 export function getTriggerGroups(): TriggerGroup[] {
-  const available = new Set<TriggerType>(TELEGRAM_TRIGGER_TYPES);
+  const available = new Set<TriggerType>(WORKFLOW_TRIGGER_TYPES);
+  const grouped = new Map<string, TriggerType[]>();
 
-  return triggerGroupOrder.map((id) => ({
-    id,
-    label: triggerGroupConfig[id].label,
-    triggers: triggerGroupConfig[id].triggers.filter((trigger) => available.has(trigger))
+  for (const item of WORKFLOW_TRIGGER_MANIFEST) {
+    if (!available.has(item.trigger)) {
+      continue;
+    }
+    const list = grouped.get(item.group) ?? [];
+    list.push(item.trigger);
+    grouped.set(item.group, list);
+  }
+
+  return Array.from(grouped.entries()).map(([label, triggers]) => ({
+    id: label.toLowerCase().replace(/\s+/g, "-"),
+    label,
+    triggers
   }));
+}
+
+export function getConditionOptions(trigger: TriggerType) {
+  return WORKFLOW_CONDITION_MANIFEST.filter((item) => isConditionAllowedForTrigger(item.type, trigger));
+}
+
+export function getActionTypeOptions(trigger?: TriggerType) {
+  return WORKFLOW_ACTION_MANIFEST.filter((item) => (trigger ? isActionAllowedForTrigger(item.actionType, trigger) : true)).map(
+    (item) => ({
+      actionType: item.actionType,
+      label: item.label,
+      category: item.category,
+      description: item.description,
+      source: item.source
+    })
+  );
+}
+
+export function getActionPresets(actionType: ActionPayload["type"]) {
+  if (actionType === "http.request") {
+    return [
+      {
+        id: "openai-chat",
+        label: "OpenAI-compatible prompt",
+        action: {
+          type: "http.request" as const,
+          params: {
+            method: "POST" as const,
+            url: "https://api.openai.com/v1/chat/completions",
+            auth: { type: "bearer" as const, token: "{{vars.secrets.openai_api_key}}" },
+            headers: {
+              "content-type": "application/json"
+            },
+            body: {
+              model: "gpt-4o-mini",
+              messages: [{ role: "user", content: "{{event.text}}" }]
+            },
+            body_mode: "json" as const,
+            response_body_format: "json" as const
+          }
+        }
+      },
+      {
+        id: "airtable-row",
+        label: "Airtable create row",
+        action: {
+          type: "http.request" as const,
+          params: {
+            method: "POST" as const,
+            url: "https://api.airtable.com/v0/{{vars.secrets.airtable_base_id}}/{{vars.secrets.airtable_table}}",
+            auth: { type: "bearer" as const, token: "{{vars.secrets.airtable_api_key}}" },
+            headers: {
+              "content-type": "application/json"
+            },
+            body: {
+              fields: {
+                text: "{{event.text}}"
+              }
+            },
+            body_mode: "json" as const,
+            response_body_format: "json" as const
+          }
+        }
+      }
+    ];
+  }
+
+  if (actionType === "webhook.send") {
+    return [
+      {
+        id: "slack-webhook",
+        label: "Slack incoming webhook",
+        action: {
+          type: "webhook.send" as const,
+          params: {
+            url: "{{vars.secrets.slack_webhook_url}}",
+            body: {
+              text: "{{event.text}}"
+            },
+            response_body_format: "text" as const
+          }
+        }
+      },
+      {
+        id: "discord-webhook",
+        label: "Discord webhook",
+        action: {
+          type: "webhook.send" as const,
+          params: {
+            url: "{{vars.secrets.discord_webhook_url}}",
+            body: {
+              content: "{{event.text}}"
+            },
+            response_body_format: "text" as const
+          }
+        }
+      }
+    ];
+  }
+
+  return [];
 }
 
 export function createActionTemplate(actionType: ActionPayload["type"]): ActionTemplate {
@@ -184,29 +268,8 @@ export function createActionTemplate(actionType: ActionPayload["type"]): ActionT
         }
       };
     case "telegram.approveChatJoinRequest":
-      return {
-        type: actionType,
-        params: {
-          chat_id: "{{event.chatId}}",
-          user_id: "{{event.fromUserId}}"
-        }
-      };
     case "telegram.declineChatJoinRequest":
-      return {
-        type: actionType,
-        params: {
-          chat_id: "{{event.chatId}}",
-          user_id: "{{event.fromUserId}}"
-        }
-      };
     case "telegram.banChatMember":
-      return {
-        type: actionType,
-        params: {
-          chat_id: "{{event.chatId}}",
-          user_id: "{{event.fromUserId}}"
-        }
-      };
     case "telegram.unbanChatMember":
       return {
         type: actionType,
@@ -226,6 +289,33 @@ export function createActionTemplate(actionType: ActionPayload["type"]): ActionT
           }
         }
       };
+    case "webhook.send":
+      return {
+        type: actionType,
+        params: {
+          url: "https://example.com/webhook",
+          body: {
+            event: "{{event.text}}"
+          },
+          response_body_format: "json"
+        }
+      };
+    case "http.request":
+      return {
+        type: actionType,
+        params: {
+          method: "POST",
+          url: "https://api.example.com/resource",
+          headers: {
+            "content-type": "application/json"
+          },
+          body_mode: "json",
+          body: {
+            text: "{{event.text}}"
+          },
+          response_body_format: "json"
+        }
+      };
     default:
       return {
         type: actionType,
@@ -240,7 +330,7 @@ function isActionPayload(value: unknown): value is ActionPayload {
   }
 
   const candidate = value as { type?: unknown; params?: unknown };
-  return typeof candidate.type === "string" && candidate.type.startsWith("telegram.") && typeof candidate.params === "object";
+  return typeof candidate.type === "string" && typeof candidate.params === "object";
 }
 
 export function migrateLegacyActionData(data: unknown): ActionPayload {
@@ -338,13 +428,7 @@ export function migrateLegacyActionData(data: unknown): ActionPayload {
         }
       };
     default:
-      return {
-        type: "telegram.sendMessage",
-        params: {
-          chat_id: "{{event.chatId}}",
-          text: "Reply text"
-        }
-      };
+      return createActionTemplate("telegram.sendMessage") as ActionPayload;
   }
 }
 
@@ -363,7 +447,7 @@ function normalizeConditionData(data: unknown): ConditionPayload {
         } as ConditionPayload;
       }
     } catch {
-      // Keep fallback condition below.
+      // fall through
     }
 
     return {
@@ -380,24 +464,34 @@ function normalizeConditionData(data: unknown): ConditionPayload {
     } as ConditionPayload;
   }
 
-  if (type === "variable_exists") {
+  if (type === "variable_exists" || type === "webhook_header_exists" || type === "webhook_body_path_exists") {
     return {
       type,
-      key: asString(input.key) ?? "flag"
+      key: asString(input.key ?? input.value) ?? "flag"
     } as ConditionPayload;
   }
 
-  if (type === "from_user_id") {
+  if (
+    type === "from_user_id" ||
+    type === "target_user_id_equals"
+  ) {
     return {
       type,
       value: asNumber(input.value) ?? 0
     } as ConditionPayload;
   }
 
-  if (type === "target_user_id_equals") {
+  if (
+    type === "webhook_header_equals" ||
+    type === "webhook_query_equals" ||
+    type === "webhook_query_contains" ||
+    type === "webhook_body_path_equals" ||
+    type === "webhook_body_path_contains"
+  ) {
     return {
       type,
-      value: asNumber(input.value) ?? 0
+      key: asString(input.key) ?? "key",
+      value: String(input.value ?? "")
     } as ConditionPayload;
   }
 
@@ -452,7 +546,8 @@ export function coerceFlowDefinition(input: unknown): FlowDefinition | null {
     }
 
     if (type === "start") {
-      nodes.push({ id, type: "start", position: { x, y }, data: {} });
+      const data = (n.data ?? {}) as Record<string, unknown>;
+      nodes.push({ id, type: "start", position: { x, y }, data });
       continue;
     }
 
@@ -503,7 +598,7 @@ export function coerceFlowDefinition(input: unknown): FlowDefinition | null {
 }
 
 export function getCapabilityLabel(actionType: string): string {
-  const match = TELEGRAM_CAPABILITIES_MANIFEST.find((item) => item.actionType === actionType);
+  const match = WORKFLOW_ACTION_MANIFEST.find((item) => item.actionType === actionType);
   return match?.label ?? actionType;
 }
 
@@ -539,14 +634,13 @@ export function summarizeAction(payload: ActionPayload): string {
     return "Send document";
   }
 
-  return `${getCapabilityLabel(payload.type)}`;
-}
+  if (payload.type === "webhook.send") {
+    return asString(params.url) ?? "Send webhook";
+  }
 
-export function getActionTypeOptions() {
-  return TELEGRAM_CAPABILITIES_MANIFEST.map((item) => ({
-    actionType: item.actionType,
-    label: item.label,
-    category: item.category,
-    description: item.description
-  }));
+  if (payload.type === "http.request") {
+    return `${asString(params.method) ?? "HTTP"} ${asString(params.url) ?? ""}`.trim();
+  }
+
+  return `${getCapabilityLabel(payload.type)}`;
 }

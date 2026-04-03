@@ -24,6 +24,7 @@ import { getAuthUserId } from "@/lib/clerk-auth";
 import { coerceFlowDefinition } from "@/lib/flow-builder";
 import { prisma } from "@/lib/prisma";
 import { requireAppUser } from "@/lib/user";
+import type { TriggerType } from "@telegram-builder/shared";
 
 export default async function FlowsPage({
   searchParams,
@@ -45,7 +46,7 @@ export default async function FlowsPage({
     }),
     prisma.workflowRule.findMany({
       where: { userId: user.id },
-      include: { bot: true },
+      include: { bot: true, webhookEndpoint: true },
       orderBy: { createdAt: "desc" },
     }),
   ]);
@@ -68,9 +69,10 @@ export default async function FlowsPage({
         id: rule.id,
         botId: rule.botId,
         name: rule.name,
-        trigger: rule.trigger,
+        trigger: rule.trigger as TriggerType,
         enabled: rule.enabled,
         flowDefinition,
+        webhookEndpoint: rule.webhookEndpoint,
         actionCount,
         conditionCount,
         botLabel: rule.bot.username
@@ -102,8 +104,15 @@ export default async function FlowsPage({
           id: rule.id,
           botId: rule.botId,
           name: rule.name,
-          trigger: rule.trigger,
+          trigger: rule.trigger as TriggerType,
           flowDefinition: rule.flowDefinition,
+          webhookEndpoint: rule.webhookEndpoint
+            ? {
+                endpointId: rule.webhookEndpoint.endpointId,
+                signatureHeaderName: rule.webhookEndpoint.signatureHeaderName,
+                enabled: rule.webhookEndpoint.enabled,
+              }
+            : null,
         }))}
         initialRuleId={params.edit}
       />

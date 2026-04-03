@@ -5,6 +5,8 @@ import type { ActionJob } from "@telegram-builder/shared";
 function makeJob(): ActionJob {
   return {
     runId: "run_1",
+    ruleId: "rule_1",
+    actionNodeId: "action_1",
     actionRunId: "action_run_1",
     botToken: "token",
     actionType: "telegram.sendMessage",
@@ -17,13 +19,27 @@ function makeJob(): ActionJob {
     idempotencyKey: "1:action_run_1:telegram.sendMessage",
     action: { type: "telegram.sendMessage", params: { chat_id: "42", text: "hello" } },
     event: {
+      source: "telegram",
       trigger: "message_received",
+      eventId: "1",
       updateId: 1,
       chatId: "42",
       chatType: "private",
       messageSource: "user",
       text: "incoming",
       variables: {}
+    },
+    flowDefinition: {
+      nodes: [
+        { id: "start_1", type: "start", position: { x: 0, y: 0 }, data: {} },
+        {
+          id: "action_1",
+          type: "action",
+          position: { x: 200, y: 0 },
+          data: { type: "telegram.sendMessage", params: { chat_id: "42", text: "hello" } }
+        }
+      ],
+      edges: [{ id: "e1", source: "start_1", target: "action_1" }]
     },
     context: {
       trigger: "message_received",
@@ -40,6 +56,14 @@ function createDeps(overrides: Partial<WorkerProcessorDeps> = {}): WorkerProcess
       return 0;
     },
     async updateWorkflowRunStatus() {},
+    async getWorkflowRunContext() {
+      return {};
+    },
+    async updateWorkflowRunContext() {},
+    async getOrCreateActionRun() {
+      return { actionRunId: "next_action_run", created: true };
+    },
+    async enqueueAction() {},
     async enqueueDeadLetter() {},
     async invokeTelegramMethod() {
       return { ok: true };

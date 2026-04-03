@@ -1,4 +1,9 @@
+import { getPathValue, normalizeHeaderLookup, toTemplateString } from "./object-path.js";
 import type { ConditionPayload, NormalizedEvent, WorkflowContext } from "../types/workflow.js";
+
+function valueToComparable(input: unknown): string {
+  return toTemplateString(input).toLowerCase();
+}
 
 export function evaluateCondition(
   event: NormalizedEvent,
@@ -14,6 +19,13 @@ export function evaluateCondition(
       return (event.text ?? "").toLowerCase().startsWith(condition.value.toLowerCase());
     case "text_ends_with":
       return (event.text ?? "").toLowerCase().endsWith(condition.value.toLowerCase());
+    case "text_matches_regex": {
+      try {
+        return new RegExp(condition.value, "i").test(event.text ?? "");
+      } catch {
+        return false;
+      }
+    }
     case "from_user_id":
       return event.fromUserId === condition.value;
     case "from_username_equals":
@@ -25,9 +37,9 @@ export function evaluateCondition(
     case "message_source_equals":
       return (event.messageSource ?? "user") === condition.value;
     case "variable_equals":
-      return context.variables[condition.key] === condition.value;
+      return valueToComparable(getPathValue(context.variables, condition.key)) === condition.value.toLowerCase();
     case "variable_exists":
-      return typeof context.variables[condition.key] !== "undefined";
+      return typeof getPathValue(context.variables, condition.key) !== "undefined";
     case "callback_data_equals":
       return (event.callbackData ?? "") === condition.value;
     case "callback_data_contains":
@@ -56,6 +68,25 @@ export function evaluateCondition(
       return Boolean(event.hasLocation);
     case "message_has_contact":
       return Boolean(event.hasContact);
+    case "webhook_method_equals":
+      return event.source === "webhook" && event.method.toLowerCase() === condition.value.toLowerCase();
+    case "webhook_header_exists":
+      return event.source === "webhook" && typeof normalizeHeaderLookup(event.headers)[condition.key.toLowerCase()] !== "undefined";
+    case "webhook_header_equals":
+      return (
+        event.source === "webhook" &&
+        valueToComparable(normalizeHeaderLookup(event.headers)[condition.key.toLowerCase()]) === condition.value.toLowerCase()
+      );
+    case "webhook_query_equals":
+      return event.source === "webhook" && valueToComparable(event.query[condition.key]) === condition.value.toLowerCase();
+    case "webhook_query_contains":
+      return event.source === "webhook" && valueToComparable(event.query[condition.key]).includes(condition.value.toLowerCase());
+    case "webhook_body_path_exists":
+      return event.source === "webhook" && typeof getPathValue(event.body, condition.key) !== "undefined";
+    case "webhook_body_path_equals":
+      return event.source === "webhook" && valueToComparable(getPathValue(event.body, condition.key)) === condition.value.toLowerCase();
+    case "webhook_body_path_contains":
+      return event.source === "webhook" && valueToComparable(getPathValue(event.body, condition.key)).includes(condition.value.toLowerCase());
     case "all":
       return condition.conditions.every((item) => evaluateCondition(event, item, context));
     case "any":
