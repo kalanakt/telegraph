@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "packageManager": "pnpm@10.2.0",
   "scripts": {
-    "dev:web": "pnpm --filter web dev",
-    "dev:worker": "pnpm --filter worker dev",
+    "dev:web": "pnpm build:shared && pnpm --filter web dev",
+    "dev:worker": "pnpm build:shared && pnpm --filter worker dev",
     "build": "pnpm -r build",
     "build:shared": "pnpm --filter @telegram-builder/shared build",
     "typecheck": "pnpm exec tsc -p packages/shared/tsconfig.json --noEmit && pnpm exec tsc -p apps/worker/tsconfig.json --noEmit && node -e \"require('fs').rmSync('apps/web/.next/types',{recursive:true,force:true})\" && pnpm exec tsc -p apps/web/tsconfig.json --noEmit",
