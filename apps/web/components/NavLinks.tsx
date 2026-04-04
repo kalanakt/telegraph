@@ -50,7 +50,7 @@ export function NavLinks({
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "focus-ring inline-flex items-center gap-2 rounded-sm px-3.5 py-2.5 text-sm font-medium",
+                  "focus-ring inline-flex shrink-0 items-center gap-2 rounded-sm px-3 py-2.5 text-xs font-medium sm:px-3.5 sm:text-sm",
                   isActive
                     ? "border border-border/80 bg-background text-foreground"
                     : "text-muted-foreground"
@@ -70,7 +70,7 @@ export function NavLinks({
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "focus-ring inline-flex items-center gap-2 rounded-sm px-3.5 py-2.5 text-sm font-medium",
+                  "focus-ring inline-flex shrink-0 items-center gap-2 rounded-sm px-3 py-2.5 text-xs font-medium sm:px-3.5 sm:text-sm",
                   isActive
                     ? "border border-border/80 bg-background text-foreground"
                     : "text-muted-foreground"

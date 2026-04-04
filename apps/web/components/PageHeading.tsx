@@ -18,7 +18,11 @@ export function PageHeading({
         <h1 className="page-title font-[var(--font-display)]">{title}</h1>
         <p className="page-subtitle">{subtitle}</p>
       </div>
-      {action ? <div className="flex items-center pt-1 md:pt-0">{action}</div> : null}
+      {action ? (
+        <div className="flex w-full items-center pt-1 md:w-auto md:justify-end md:pt-0">
+          {action}
+        </div>
+      ) : null}
     </div>
   );
 }

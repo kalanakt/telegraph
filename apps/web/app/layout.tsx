@@ -77,12 +77,12 @@ export default async function RootLayout({
       <div className="app-shell">
         <Nav />
         <main id="main-content">{children}</main>
-        <footer className="mt-12 border-t border-border/70 pt-5 text-sm text-muted-foreground">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p>
+        <footer className="mt-10 border-t border-border/70 pt-5 text-sm text-muted-foreground md:mt-12">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <p className="max-w-[42ch]">
               Telegraph, the Telegram bot builder with a visual flow editor.
             </p>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               <Link className="focus-ring" href="/blog">
                 Blog
               </Link>

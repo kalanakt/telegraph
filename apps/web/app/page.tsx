@@ -226,50 +226,60 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <div className="flex flex-col gap-16 pb-16 pt-4 md:gap-20">
+      <div className="flex flex-col gap-12 pb-16 pt-2 md:gap-20 md:pt-4">
         <section className="surface-panel overflow-hidden p-0">
-          <div className="landing-grid-surface relative isolate min-h-[620px] border border-border/0">
-            <LandingFlowPreviewClient />
+          <div className="landing-grid-surface relative isolate flex border border-border/0 md:min-h-[620px]">
+            <div className="absolute inset-0 hidden md:block">
+              <LandingFlowPreviewClient />
+            </div>
 
-            <div className="relative z-10 flex min-h-[620px] items-end px-6 py-6 md:px-10 md:py-10">
-              <div className="flex max-w-6xl flex-col gap-5 md:p-8">
-                <Badge variant="secondary" className="w-fit">
+            <div className="relative z-10 flex min-h-[420px] w-full flex-1 items-center px-4 py-8 sm:px-6 sm:py-10 md:min-h-[620px] md:items-end md:px-10 md:py-10">
+              <div className="landing-hero-copy flex w-full max-w-md flex-col gap-4 border-0 bg-transparent p-0 backdrop-blur-0 sm:max-w-2xl md:max-w-6xl md:flex-1 md:gap-5 md:border md:border-border/70 md:bg-background/20 md:p-8 md:backdrop-blur-sm">
+                <Badge
+                  variant="secondary"
+                  className="w-fit text-wrap hidden sm:flex"
+                >
                   Telegram bot builder for support, lead routing, and ops
                 </Badge>
 
                 <h1
-                  className="text-5xl font-semibold text-foreground md:text-7xl"
+                  className="max-w-3xl text-2xl font-semibold text-foreground sm:max-w-xl sm:text-5xl md:max-w-none md:text-7xl"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
                   Build Telegram Bot Automations Without Rewriting Backend Glue.
                 </h1>
 
-                <p className="max-w-[58ch] text-base leading-7 text-muted-foreground md:text-lg md:leading-8">
+                <p className="max-w-3xl text-sm leading-6 text-muted-foreground sm:max-w-[48ch] sm:text-base sm:leading-7 md:max-w-[58ch] md:text-lg md:leading-8">
                   Telegraph gives your team a visual flow editor, Telegram
                   webhook intake, queue-backed execution, and run history in one
                   workspace so you can launch faster and debug with confidence.
                 </p>
 
-                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground sm:text-xs">
                   <span className="section-chip">lead capture</span>
                   <span className="section-chip">support triage</span>
                   <span className="section-chip">community ops</span>
                   <span className="section-chip">ops alerts</span>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
-                  <Button asChild size="lg">
+                <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                  <Button asChild size="lg" className="w-full sm:w-auto">
                     <Link href="/sign-up">
                       Create my first Telegram flow
                       <ArrowRight data-icon="inline-end" />
                     </Link>
                   </Button>
-                  <Button asChild size="lg" variant="outline">
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="outline"
+                    className="w-full sm:w-auto"
+                  >
                     <Link href="/pricing">See plans</Link>
                   </Button>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex flex-col items-start gap-2 text-sm text-muted-foreground sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
                   <span className="flex items-center gap-2">
                     <CheckCircle2 className="size-4 text-secondary" />
                     Visual builder your team can review
@@ -289,7 +299,7 @@ export default async function HomePage() {
         </section>
 
         <section className="grid gap-4 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
-          <div className="surface-panel flex flex-col gap-6 px-6 py-6 md:px-8 md:py-8">
+          <div className="surface-panel flex flex-col gap-6 px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8">
             <div className="flex flex-col gap-4">
               <Badge variant="outline" className="w-fit">
                 Why teams switch
@@ -336,7 +346,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section className="surface-panel flex flex-col gap-6 px-6 py-6 md:px-8 md:py-8">
+        <section className="surface-panel flex flex-col gap-6 px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8">
           <div className="flex flex-col gap-4">
             <Badge variant="outline" className="w-fit">
               How it works
@@ -406,7 +416,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section className="surface-panel flex flex-col gap-6 px-6 py-6 md:px-8 md:py-8">
+        <section className="surface-panel flex flex-col gap-6 px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8">
           <div className="flex flex-col gap-4">
             <Badge variant="outline" className="w-fit">
               FAQ
@@ -439,7 +449,7 @@ export default async function HomePage() {
         </section>
 
         <section className="surface-panel overflow-hidden p-0">
-          <div className="landing-grid-surface grid gap-8 px-6 py-8 md:px-10 md:py-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <div className="landing-grid-surface grid gap-6 px-4 py-6 sm:px-6 sm:py-8 md:px-10 md:py-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
             <div className="flex flex-col gap-4">
               <Badge variant="secondary" className="w-fit">
                 Start with one bot
@@ -458,14 +468,19 @@ export default async function HomePage() {
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 lg:justify-end">
-              <Button asChild size="lg">
+            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center lg:justify-end">
+              <Button asChild size="lg" className="w-full sm:w-auto">
                 <Link href="/sign-up">
                   Create my first Telegram flow
                   <ArrowRight data-icon="inline-end" />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline">
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="w-full sm:w-auto"
+              >
                 <Link href="/pricing">See plans</Link>
               </Button>
             </div>

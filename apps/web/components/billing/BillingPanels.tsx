@@ -133,12 +133,13 @@ export function PricingPanels({
       <div className="flex justify-center">
         <div
           data-slot="button-group"
-          className="inline-flex border border-border bg-background/90 p-1"
+          className="grid w-full max-w-sm grid-cols-2 border border-border bg-background/90 p-1"
         >
           <Button
             type="button"
             size="sm"
             variant={billingInterval === "monthly" ? "default" : "ghost"}
+            className="w-full"
             onClick={() => setBillingInterval("monthly")}
           >
             Monthly
@@ -147,6 +148,7 @@ export function PricingPanels({
             type="button"
             size="sm"
             variant={billingInterval === "yearly" ? "default" : "ghost"}
+            className="w-full"
             onClick={() => setBillingInterval("yearly")}
           >
             Yearly
@@ -154,7 +156,7 @@ export function PricingPanels({
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
       <PlanCard
         eyebrow={currentPlan === "FREE" ? "Current plan" : "Included"}
         title="Free"
@@ -168,13 +170,13 @@ export function PricingPanels({
         ]}
         cta={
           isSignedIn ? (
-            <Button type="button" variant="secondary" disabled>
+            <Button type="button" variant="secondary" disabled className="w-full sm:w-auto">
               {currentPlan === "FREE"
                 ? "Current plan"
                 : "Downgrade by canceling"}
             </Button>
           ) : (
-            <Button asChild type="button" variant="secondary">
+            <Button asChild type="button" variant="secondary" className="w-full sm:w-auto">
               <a href="/sign-up">Start free</a>
             </Button>
           )
@@ -196,16 +198,16 @@ export function PricingPanels({
         cta={
           isSignedIn ? (
             currentPlan === "PRO" ? (
-              <Button asChild type="button" variant="outline">
+              <Button asChild type="button" variant="outline" className="w-full sm:w-auto">
                 <a href="/portal">Manage billing</a>
               </Button>
             ) : (
-              <Button asChild type="button">
+              <Button asChild type="button" className="w-full sm:w-auto">
                 <a href={`/api/checkout?interval=${billingInterval}`}>Upgrade to Pro</a>
               </Button>
             )
           ) : (
-            <Button asChild type="button">
+            <Button asChild type="button" className="w-full sm:w-auto">
               <a href={`/sign-in?redirect_url=/pricing`}>Sign in to upgrade</a>
             </Button>
           )

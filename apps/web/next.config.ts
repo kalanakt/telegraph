@@ -23,6 +23,7 @@ function buildCsp() {
     "img-src 'self' data: blob: https:",
     "font-src 'self' data: https:",
     `script-src ${scriptSources.join(" ")}`,
+    "worker-src 'self' blob:",
     "style-src 'self' 'unsafe-inline' https:",
     "connect-src 'self' https: wss:",
     "frame-src 'self' https:",
