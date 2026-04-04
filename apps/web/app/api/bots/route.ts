@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { addBotSchema, encrypt, telegramGetMe, telegramSetWebhook } from "@telegram-builder/shared";
+import { addBotSchema, encrypt, requestTelegram, telegramGetMe } from "@telegram-builder/shared";
 import { getWebRuntimeEnv } from "@/lib/env";
 import { logInfo } from "@/lib/logger";
 import { requireAppUser } from "@/lib/user";
@@ -76,14 +76,43 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "TELEGRAM_WEBHOOK_BASE_URL is required" }, { status: 500 });
     }
 
+    const webhookUrl = `${webhookBase}/${bot.id}`;
     const secretToken = process.env.TELEGRAM_WEBHOOK_SECRET_TOKEN;
-    const webhookOk = await telegramSetWebhook(data.token, `${webhookBase}/${bot.id}`, {
-      secretToken
+    const webhookResult = await requestTelegram(data.token, "setWebhook", {
+      url: webhookUrl,
+      ...(secretToken ? { secret_token: secretToken } : {}),
+      allowed_updates: [
+        "message",
+        "edited_message",
+        "channel_post",
+        "edited_channel_post",
+        "callback_query",
+        "inline_query",
+        "chosen_inline_result",
+        "shipping_query",
+        "pre_checkout_query",
+        "poll",
+        "poll_answer",
+        "chat_member",
+        "my_chat_member",
+        "chat_join_request",
+        "message_reaction",
+        "message_reaction_count"
+      ]
     });
 
-    if (!webhookOk) {
+    if (!webhookResult.ok) {
       await prisma.bot.update({ where: { id: bot.id }, data: { status: "webhook_error" } });
-      return NextResponse.json({ error: "Webhook setup failed" }, { status: 502 });
+      return NextResponse.json(
+        {
+          error: webhookResult.description ?? "Webhook setup failed",
+          details: {
+            code: webhookResult.errorCode,
+            webhookUrl
+          }
+        },
+        { status: 502 }
+      );
     }
 
     logInfo("bot_connected", {

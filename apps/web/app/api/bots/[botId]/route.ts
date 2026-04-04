@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 import { NextResponse } from "next/server";
-import { decrypt, telegramDeleteWebhook, telegramSetWebhook } from "@telegram-builder/shared";
+import { decrypt, requestTelegram, telegramDeleteWebhook, telegramGetMe } from "@telegram-builder/shared";
 import { getWebRuntimeEnv } from "@/lib/env";
 import { logInfo, logWarn } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
@@ -28,12 +28,43 @@ export async function PATCH(_: Request, context: { params: Promise<{ botId: stri
       return NextResponse.json({ error: "TELEGRAM_WEBHOOK_BASE_URL is required" }, { status: 500 });
     }
 
+    const token = decrypt(bot.encryptedToken);
+    const me = await telegramGetMe(token);
+    if (!me.ok || !me.result) {
+      await prisma.bot.update({
+        where: { id: bot.id },
+        data: { status: "invalid_token" }
+      });
+
+      return NextResponse.json({ error: "Stored bot token is no longer valid" }, { status: 400 });
+    }
+
+    const webhookUrl = `${webhookBase}/${bot.id}`;
     const secretToken = process.env.TELEGRAM_WEBHOOK_SECRET_TOKEN;
-    const webhookOk = await telegramSetWebhook(decrypt(bot.encryptedToken), `${webhookBase}/${bot.id}`, {
-      secretToken
+    const webhookResult = await requestTelegram(token, "setWebhook", {
+      url: webhookUrl,
+      ...(secretToken ? { secret_token: secretToken } : {}),
+      allowed_updates: [
+        "message",
+        "edited_message",
+        "channel_post",
+        "edited_channel_post",
+        "callback_query",
+        "inline_query",
+        "chosen_inline_result",
+        "shipping_query",
+        "pre_checkout_query",
+        "poll",
+        "poll_answer",
+        "chat_member",
+        "my_chat_member",
+        "chat_join_request",
+        "message_reaction",
+        "message_reaction_count"
+      ]
     });
 
-    if (!webhookOk) {
+    if (!webhookResult.ok) {
       await prisma.bot.update({
         where: { id: bot.id },
         data: { status: "webhook_error" }
@@ -41,10 +72,22 @@ export async function PATCH(_: Request, context: { params: Promise<{ botId: stri
 
       logWarn("bot_reconnect_failed", {
         botId: bot.id,
-        route: "patch-bot"
+        route: "patch-bot",
+        webhookUrl,
+        code: webhookResult.errorCode,
+        description: webhookResult.description
       });
 
-      return NextResponse.json({ error: "Webhook reconnect failed" }, { status: 502 });
+      return NextResponse.json(
+        {
+          error: webhookResult.description ?? "Webhook reconnect failed",
+          details: {
+            code: webhookResult.errorCode,
+            webhookUrl
+          }
+        },
+        { status: 502 }
+      );
     }
 
     await prisma.bot.update({
