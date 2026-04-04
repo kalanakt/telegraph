@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { AddBotForm } from "@/components/AddBotForm";
 import { DeleteBotButton } from "@/components/DeleteBotButton";
+import { ReconnectBotButton } from "@/components/ReconnectBotButton";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -66,7 +67,10 @@ export default async function BotsPage() {
                     {new Date(bot.createdAt).toLocaleString()}
                   </TableCell>
                   <TableCell>
-                    <DeleteBotButton botId={bot.id} />
+                    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                      <ReconnectBotButton botId={bot.id} />
+                      <DeleteBotButton botId={bot.id} />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
