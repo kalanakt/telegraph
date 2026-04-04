@@ -234,7 +234,7 @@ export default async function HomePage() {
             </div>
 
             <div className="relative z-10 flex min-h-[420px] w-full flex-1 items-center px-4 py-8 sm:px-6 sm:py-10 md:min-h-[620px] md:items-end md:px-10 md:py-10">
-              <div className="landing-hero-copy flex w-full max-w-md flex-col gap-4 border-0 bg-transparent p-0 backdrop-blur-0 sm:max-w-2xl md:max-w-6xl md:flex-1 md:gap-5 md:border md:border-border/70 md:bg-background/20 md:p-8 md:backdrop-blur-sm">
+              <div className="flex w-full max-w-md flex-col gap-4 sm:max-w-2xl md:max-w-6xl md:flex-1 md:gap-5">
                 <Badge
                   variant="secondary"
                   className="w-fit text-wrap hidden sm:flex"
@@ -243,7 +243,7 @@ export default async function HomePage() {
                 </Badge>
 
                 <h1
-                  className="max-w-3xl text-2xl font-semibold text-foreground sm:max-w-xl sm:text-5xl md:max-w-none md:text-7xl"
+                  className="max-w-3xl text-2xl font-semibold text-foreground sm:max-w-xl sm:text-4xl md:max-w-4xl md:text-6xl"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
                   Build Telegram Bot Automations Without Rewriting Backend Glue.
