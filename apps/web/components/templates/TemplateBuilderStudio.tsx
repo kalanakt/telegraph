@@ -9,7 +9,7 @@ import { FlowEditorLayout } from "@/components/flow-builder/FlowEditorLayout";
 import { FlowInspector } from "@/components/flow-builder/FlowInspector";
 import { useFlowCallbacks } from "@/components/flow-builder/hooks/useFlowCallbacks";
 import { useFlowState } from "@/components/flow-builder/hooks/useFlowState";
-import { canCreateConnection, toFlowDefinition } from "@/components/flow-builder/utils";
+import { canCreateConnection, getNodeMeta, toFlowDefinition } from "@/components/flow-builder/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -154,8 +154,23 @@ export function TemplateBuilderStudio({ template, bots }: Props) {
     [edges, nodes]
   );
 
+  const availableTokens = useMemo(() => {
+    const base = ["{{event.text}}", "{{event.chatId}}", "{{vars}}"];
+    const nodeTokens = nodes.flatMap((node) => {
+      const meta = getNodeMeta(node.data, { label: node.id, key: node.id });
+      const key = meta.key?.trim();
+      if (!key) {
+        return [];
+      }
+
+      return [`{{vars.${key}.body}}`, `{{vars.${key}.status}}`, `{{vars.${key}.ok}}`];
+    });
+
+    return [...base, ...nodeTokens];
+  }, [nodes]);
+
   const onSelectionChange = useCallback(
-    ({ nodes: selected }: { nodes: Node[] }) => {
+    ({ nodes: selected }: { nodes: Node[]; edges: import("@xyflow/react").Edge[] }) => {
       setSelectedNodeId(selected[0]?.id ?? null);
     },
     [setSelectedNodeId]
@@ -681,6 +696,7 @@ export function TemplateBuilderStudio({ template, bots }: Props) {
                 onReplaceAction={replaceSelectedAction}
                 onUpdateActionParams={updateSelectedActionParams}
                 onDeleteNode={deleteSelectedNode}
+                availableTokens={availableTokens}
               />
             }
           />

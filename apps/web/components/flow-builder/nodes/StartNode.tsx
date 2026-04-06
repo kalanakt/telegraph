@@ -2,15 +2,18 @@
 
 import { Handle, Position } from "@xyflow/react";
 import type { TriggerType } from "@telegram-builder/shared";
+import type { BuilderNodeMeta } from "../types";
 import { getTriggerIcon, formatTriggerLabel } from "../TriggerPickerModal";
 
 type StartNodeData = {
   trigger?: TriggerType;
+  __meta?: BuilderNodeMeta;
 };
 
 export function StartNode({ data }: { data: StartNodeData }) {
   const trigger = data.trigger ?? "message_received";
   const Icon = getTriggerIcon(trigger);
+  const label = data.__meta?.label?.trim() || "Trigger";
 
   return (
     <div
@@ -22,7 +25,8 @@ export function StartNode({ data }: { data: StartNodeData }) {
         </span>
         <div className="min-w-0 flex-1">
           <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Trigger</div>
-          <div className="font-semibold leading-tight text-foreground">{formatTriggerLabel(trigger)}</div>
+          <div className="font-semibold leading-tight text-foreground">{label}</div>
+          <div className="mt-0.5 text-[10px] text-foreground/80">{formatTriggerLabel(trigger)}</div>
           <div className="mt-0.5 font-mono text-[9px] text-muted-foreground">{trigger}</div>
           <div className="mt-2 text-[10px] text-muted-foreground">Change in inspector →</div>
         </div>

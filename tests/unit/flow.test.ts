@@ -94,6 +94,46 @@ describe("flowDefinitionSchema", () => {
 
     expect(result.success).toBe(true);
   });
+
+  it("accepts switch, set_variable, and delay nodes in a connected graph", () => {
+    const result = flowDefinitionSchema.safeParse({
+      nodes: [
+        { id: "start", type: "start", position: { x: 0, y: 0 }, data: {}, meta: { key: "start_node", label: "Start" } },
+        {
+          id: "switch_1",
+          type: "switch",
+          position: { x: 200, y: 0 },
+          meta: { key: "route_kind", label: "Route kind" },
+          data: {
+            path: "event.text",
+            cases: [{ id: "hello", value: "hello from user", label: "Hello" }]
+          }
+        },
+        {
+          id: "set_1",
+          type: "set_variable",
+          position: { x: 400, y: 0 },
+          meta: { key: "set_customer", label: "Set customer" },
+          data: { path: "customer.name", value: "{{event.text}}" }
+        },
+        {
+          id: "delay_1",
+          type: "delay",
+          position: { x: 600, y: 0 },
+          meta: { key: "delay_reply", label: "Delay reply" },
+          data: { delay_ms: 1500 }
+        }
+      ],
+      edges: [
+        { id: "e1", source: "start", target: "switch_1" },
+        { id: "e2", source: "switch_1", target: "set_1", sourceHandle: "hello" },
+        { id: "e3", source: "switch_1", target: "delay_1", sourceHandle: "default" },
+        { id: "e4", source: "set_1", target: "delay_1" }
+      ]
+    });
+
+    expect(result.success).toBe(true);
+  });
 });
 
 describe("deriveActionsFromFlow", () => {
@@ -159,6 +199,88 @@ describe("deriveActionsFromFlow", () => {
     const actions = deriveActionsFromFlow(flow, baseEvent);
     expect(actions).toEqual([
       { actionId: "a_false", payload: { type: "telegram.sendMessage", params: { chat_id: "123", text: "fallback" } } }
+    ]);
+  });
+
+  it("routes switch branches from event values", () => {
+    const flow = {
+      nodes: [
+        { id: "start", type: "start", position: { x: 0, y: 0 }, data: {}, meta: { key: "start_node", label: "Start" } },
+        {
+          id: "switch_1",
+          type: "switch",
+          position: { x: 0, y: 0 },
+          meta: { key: "route_message", label: "Route message" },
+          data: {
+            path: "event.text",
+            cases: [{ id: "hello", value: "hello from user", label: "Hello" }]
+          }
+        },
+        {
+          id: "a_true",
+          type: "action",
+          position: { x: 0, y: 0 },
+          data: { type: "telegram.sendMessage", params: { chat_id: "123", text: "matched switch" } },
+          meta: { key: "send_match", label: "Send match" }
+        },
+        {
+          id: "a_default",
+          type: "action",
+          position: { x: 0, y: 0 },
+          data: { type: "telegram.sendMessage", params: { chat_id: "123", text: "default switch" } },
+          meta: { key: "send_default", label: "Send default" }
+        }
+      ],
+      edges: [
+        { id: "e1", source: "start", target: "switch_1" },
+        { id: "e2", source: "switch_1", target: "a_true", sourceHandle: "hello" },
+        { id: "e3", source: "switch_1", target: "a_default", sourceHandle: "default" }
+      ]
+    };
+
+    const actions = deriveActionsFromFlow(flow, baseEvent);
+    expect(actions).toEqual([
+      { actionId: "a_true", payload: { type: "telegram.sendMessage", params: { chat_id: "123", text: "matched switch" } } }
+    ]);
+  });
+
+  it("returns internal executable nodes for set_variable and delay", () => {
+    const flow = {
+      nodes: [
+        { id: "start", type: "start", position: { x: 0, y: 0 }, data: {}, meta: { key: "start_node", label: "Start" } },
+        {
+          id: "set_1",
+          type: "set_variable",
+          position: { x: 200, y: 0 },
+          meta: { key: "set_customer", label: "Set customer" },
+          data: { path: "customer.name", value: "{{event.text}}" }
+        },
+        {
+          id: "delay_1",
+          type: "delay",
+          position: { x: 400, y: 0 },
+          meta: { key: "delay_reply", label: "Delay reply" },
+          data: { delay_ms: 60000 }
+        }
+      ],
+      edges: [
+        { id: "e1", source: "start", target: "set_1" },
+        { id: "e2", source: "set_1", target: "delay_1" }
+      ]
+    };
+
+    const initial = deriveActionsFromFlow(flow, baseEvent);
+    expect(initial).toEqual([
+      {
+        actionId: "set_1",
+        payload: {
+          type: "workflow.setVariable",
+          params: {
+            path: "customer.name",
+            value: "{{event.text}}"
+          }
+        }
+      }
     ]);
   });
 });

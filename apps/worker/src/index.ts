@@ -109,6 +109,7 @@ const deps: WorkerProcessorDeps = {
       jobId: job.idempotencyKey,
       attempts: 5,
       backoff: { type: "exponential", delay: 2000 },
+      delay: job.queueDelayMs ?? 0,
       removeOnComplete: 100,
       removeOnFail: false
     });

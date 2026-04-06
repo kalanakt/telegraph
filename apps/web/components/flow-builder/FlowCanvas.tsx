@@ -23,6 +23,9 @@ import type { TriggerType } from "@telegram-builder/shared";
 import { StartNode } from "./nodes/StartNode";
 import { ConditionNode } from "./nodes/ConditionNode";
 import { ActionNode } from "./nodes/ActionNode";
+import { SwitchNode } from "./nodes/SwitchNode";
+import { SetVariableNode } from "./nodes/SetVariableNode";
+import { DelayNode } from "./nodes/DelayNode";
 import { defaultEdgeOptions } from "./utils";
 import { formatTriggerLabel, getTriggerIcon } from "./TriggerPickerModal";
 
@@ -30,6 +33,9 @@ const nodeTypes = {
   start: StartNode,
   condition: ConditionNode,
   action: ActionNode,
+  switch: SwitchNode,
+  set_variable: SetVariableNode,
+  delay: DelayNode,
 };
 
 type Props = {
@@ -39,7 +45,7 @@ type Props = {
   onNodesChange: OnNodesChange;
   onEdgesChange: OnEdgesChange;
   onConnect: (connection: Connection) => void;
-  onSelectionChange: (params: { nodes: Node[] }) => void;
+  onSelectionChange: (params: { nodes: Node[]; edges: Edge[] }) => void;
   isValidConnection: IsValidConnection;
   onViewportCenterChange: (center: { x: number; y: number }) => void;
 };
@@ -99,8 +105,8 @@ export function FlowCanvas({
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onSelectionChange={onSelectionChange}
-        onNodeClick={(_, node) => onSelectionChange({ nodes: [node] })}
-        onPaneClick={() => onSelectionChange({ nodes: [] })}
+        onNodeClick={(_, node) => onSelectionChange({ nodes: [node], edges: [] })}
+        onPaneClick={() => onSelectionChange({ nodes: [], edges: [] })}
         connectionRadius={26}
         snapToGrid
         snapGrid={[20, 20]}

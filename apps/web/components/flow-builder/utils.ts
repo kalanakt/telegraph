@@ -6,7 +6,11 @@ import {
 } from "@xyflow/react";
 import {
   conditionSchema,
+  type FlowDelayNodeData,
   type FlowDefinition,
+  type FlowNodeMeta,
+  type FlowSetVariableNodeData,
+  type FlowSwitchNodeData,
   type TriggerType,
 } from "@telegram-builder/shared";
 import {
@@ -16,10 +20,14 @@ import {
 } from "@/lib/flow-builder";
 import type {
   ActionEditorData,
+  BuilderNodeMeta,
   ConditionEditorData,
+  DelayEditorData,
   FlowNodeKind,
   InlineKeyboardButton,
   ReplyKeyboardButton,
+  SetVariableEditorData,
+  SwitchEditorData,
 } from "./types";
 
 export const EDGE_STYLE = { stroke: "rgba(14, 165, 233, 0.46)", strokeWidth: 1.5 };
@@ -50,8 +58,71 @@ export function defaultFlowDefinition(): FlowDefinition {
   };
 }
 
+function slugifyNodeKey(value: string): string {
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  const base = normalized || "node";
+  return /^[a-z]/.test(base) ? base : `node_${base}`;
+}
+
+function buildDefaultNodeMeta(kind: FlowNodeKind, id: string): BuilderNodeMeta {
+  const readable =
+    kind === "start"
+      ? "Trigger"
+      : kind === "condition"
+      ? "Condition"
+      : kind === "action"
+      ? "Action"
+      : kind === "switch"
+      ? "Switch"
+      : kind === "set_variable"
+      ? "Set Variable"
+      : "Delay";
+
+  return {
+    label: readable,
+    key: slugifyNodeKey(`${kind}_${id.replace(/[^a-zA-Z0-9]+/g, "_")}`),
+  };
+}
+
+export function sanitizeNodeMeta(meta: unknown, fallback: BuilderNodeMeta): FlowNodeMeta {
+  const raw = typeof meta === "object" && meta !== null ? (meta as BuilderNodeMeta) : {};
+  const label = typeof raw.label === "string" && raw.label.trim() ? raw.label.trim() : fallback.label;
+  const keySource = typeof raw.key === "string" && raw.key.trim() ? raw.key.trim() : fallback.key ?? fallback.label ?? "node";
+  return {
+    label,
+    key: slugifyNodeKey(keySource),
+  };
+}
+
+export function getNodeMeta(data: unknown, fallback: BuilderNodeMeta): FlowNodeMeta {
+  if (!data || typeof data !== "object") {
+    return sanitizeNodeMeta(undefined, fallback);
+  }
+
+  return sanitizeNodeMeta((data as { __meta?: BuilderNodeMeta }).__meta, fallback);
+}
+
+function withNodeMeta<T extends Record<string, unknown>>(data: T, meta: FlowNodeMeta): T & { __meta: FlowNodeMeta } {
+  return {
+    ...data,
+    __meta: meta,
+  };
+}
+
+function stripNodeMeta<T extends Record<string, unknown>>(data: T): T {
+  const { __meta: _ignored, ...rest } = data as T & { __meta?: FlowNodeMeta };
+  return rest as T;
+}
+
 export function toCanvasNodes(flow: FlowDefinition, legacyTrigger?: TriggerType): Node[] {
   return flow.nodes.map((node) => {
+    const meta = sanitizeNodeMeta(node.meta, buildDefaultNodeMeta(node.type, node.id));
+
     if (node.type === "start") {
       // Inject legacy trigger into start node data during migration
       const trigger = (node.data as Record<string, unknown>).trigger ?? legacyTrigger;
@@ -59,16 +130,16 @@ export function toCanvasNodes(flow: FlowDefinition, legacyTrigger?: TriggerType)
         id: node.id,
         type: node.type,
         position: node.position,
-        data: trigger ? { ...node.data, trigger } : { ...node.data },
+        data: withNodeMeta(trigger ? { ...node.data, trigger } : { ...node.data }, meta),
       };
     }
 
-    if (node.type !== "action") {
+    if (node.type === "condition" || node.type === "switch" || node.type === "set_variable" || node.type === "delay") {
       return {
         id: node.id,
         type: node.type,
         position: node.position,
-        data: node.data,
+        data: withNodeMeta(node.data as Record<string, unknown>, meta),
       };
     }
 
@@ -76,7 +147,7 @@ export function toCanvasNodes(flow: FlowDefinition, legacyTrigger?: TriggerType)
       id: node.id,
       type: node.type,
       position: node.position,
-      data: migrateLegacyActionData(node.data),
+      data: withNodeMeta(migrateLegacyActionData(node.data) as Record<string, unknown>, meta),
     };
   });
 }
@@ -88,10 +159,7 @@ export function toCanvasEdges(flow: FlowDefinition): Edge[] {
     target: edge.target,
     sourceHandle: edge.sourceHandle,
     targetHandle: edge.targetHandle,
-    label: edge.label ??
-      (edge.sourceHandle === "true" || edge.sourceHandle === "false"
-        ? edge.sourceHandle
-        : undefined),
+    label: edge.label ?? (edge.sourceHandle && edge.sourceHandle !== "default" ? edge.sourceHandle : undefined),
     ...defaultEdgeOptions,
   }));
 }
@@ -156,20 +224,61 @@ export function normalizeConditionNodeData(data: Record<string, unknown>) {
 }
 
 export function normalizeActionNodeData(data: unknown): ActionEditorData {
-  const normalized = migrateLegacyActionData(data);
+  const meta = getNodeMeta(data, buildDefaultNodeMeta("action", "action"));
+  const normalized = migrateLegacyActionData(stripNodeMeta((data ?? {}) as Record<string, unknown>));
   return {
     type: normalized.type,
     params: normalized.params as Record<string, unknown>,
+    __meta: meta,
+  };
+}
+
+export function normalizeSwitchNodeData(data: unknown): SwitchEditorData {
+  const record = typeof data === "object" && data !== null ? (data as Record<string, unknown>) : {};
+  return {
+    path: asString(record.path) || "event.text",
+    cases: Array.isArray(record.cases) && record.cases.length > 0
+      ? record.cases.map((item, index) => {
+          const value = typeof item === "object" && item !== null ? (item as Record<string, unknown>) : {};
+          const caseId = asString(value.id) || `case_${index + 1}`;
+          return {
+            id: slugifyNodeKey(caseId),
+            value: asString(value.value),
+            label: asString(value.label) || `Case ${index + 1}`,
+          };
+        })
+      : [{ id: "match", value: "match", label: "Match" }],
+    __meta: getNodeMeta(data, buildDefaultNodeMeta("switch", "switch")),
+  };
+}
+
+export function normalizeSetVariableNodeData(data: unknown): SetVariableEditorData {
+  const record = typeof data === "object" && data !== null ? (data as Record<string, unknown>) : {};
+  return {
+    path: asString(record.path) || "result.value",
+    value: (record.value ?? "") as import("@telegram-builder/shared").JsonValue,
+    __meta: getNodeMeta(data, buildDefaultNodeMeta("set_variable", "set_variable")),
+  };
+}
+
+export function normalizeDelayNodeData(data: unknown): DelayEditorData {
+  const record = typeof data === "object" && data !== null ? (data as Record<string, unknown>) : {};
+  return {
+    delay_ms: asNumber(record.delay_ms) || 60000,
+    __meta: getNodeMeta(data, buildDefaultNodeMeta("delay", "delay")),
   };
 }
 
 export function toFlowDefinition(nodes: Node[], edges: Edge[]): FlowDefinition {
   const flowNodes = nodes.map((node) => {
+    const meta = getNodeMeta(node.data, buildDefaultNodeMeta(node.type as FlowNodeKind, node.id));
+
     if (node.type === "start") {
       return {
         id: node.id,
         type: "start" as const,
         position: node.position,
+        meta,
         data: {},
       };
     }
@@ -179,7 +288,53 @@ export function toFlowDefinition(nodes: Node[], edges: Edge[]): FlowDefinition {
         id: node.id,
         type: "condition" as const,
         position: node.position,
-        data: normalizeConditionNodeData(node.data as Record<string, unknown>),
+        meta,
+        data: normalizeConditionNodeData(stripNodeMeta(node.data as Record<string, unknown>)),
+      };
+    }
+
+    if (node.type === "switch") {
+      const normalized = normalizeSwitchNodeData(node.data);
+      return {
+        id: node.id,
+        type: "switch" as const,
+        position: node.position,
+        meta,
+        data: {
+          path: normalized.path,
+          cases: normalized.cases.map((item) => ({
+            id: slugifyNodeKey(item.id),
+            value: item.value,
+            label: item.label,
+          })),
+        },
+      };
+    }
+
+    if (node.type === "set_variable") {
+      const normalized = normalizeSetVariableNodeData(node.data);
+      return {
+        id: node.id,
+        type: "set_variable" as const,
+        position: node.position,
+        meta,
+        data: {
+          path: normalized.path,
+          value: normalized.value,
+        },
+      };
+    }
+
+    if (node.type === "delay") {
+      const normalized = normalizeDelayNodeData(node.data);
+      return {
+        id: node.id,
+        type: "delay" as const,
+        position: node.position,
+        meta,
+        data: {
+          delay_ms: normalized.delay_ms,
+        },
       };
     }
 
@@ -187,7 +342,14 @@ export function toFlowDefinition(nodes: Node[], edges: Edge[]): FlowDefinition {
       id: node.id,
       type: "action" as const,
       position: node.position,
-      data: normalizeActionNodeData(node.data) as import("@telegram-builder/shared").ActionPayload,
+      meta,
+      data: (() => {
+        const normalized = normalizeActionNodeData(node.data);
+        return {
+          type: normalized.type,
+          params: normalized.params,
+        } as import("@telegram-builder/shared").ActionPayload;
+      })(),
     };
   });
 
@@ -210,9 +372,12 @@ export function extractTriggerFromNodes(nodes: Node[]): TriggerType {
 }
 
 export function getDefaultNodeData(kind: FlowNodeKind) {
-  if (kind === "start") return {};
-  if (kind === "condition") return defaultConditionData();
-  return createActionTemplate("telegram.sendMessage");
+  if (kind === "start") return withNodeMeta({}, buildDefaultNodeMeta(kind, kind));
+  if (kind === "condition") return withNodeMeta(defaultConditionData(), buildDefaultNodeMeta(kind, kind));
+  if (kind === "switch") return withNodeMeta(defaultSwitchData(), buildDefaultNodeMeta(kind, kind));
+  if (kind === "set_variable") return withNodeMeta(defaultSetVariableData(), buildDefaultNodeMeta(kind, kind));
+  if (kind === "delay") return withNodeMeta(defaultDelayData(), buildDefaultNodeMeta(kind, kind));
+  return withNodeMeta(createActionTemplate("telegram.sendMessage"), buildDefaultNodeMeta(kind, kind));
 }
 
 export function getNextNodePosition(
@@ -225,7 +390,17 @@ export function getNextNodePosition(
   const typeIndex = sameTypeNodes.length;
   const totalIndex = nodes.length;
   const laneOffset =
-    kind === "start" ? -120 : kind === "condition" ? 0 : 120;
+    kind === "start"
+      ? -160
+      : kind === "condition"
+      ? 0
+      : kind === "switch"
+      ? 80
+      : kind === "set_variable"
+      ? 160
+      : kind === "delay"
+      ? 240
+      : 120;
 
   return {
     x: Math.round((base.x + totalIndex * 40 + typeIndex * 16) / 20) * 20,
@@ -239,11 +414,13 @@ export function createFlowNode(
   viewportCenter?: { x: number; y: number },
 ): Node {
   const id = `${kind}_${Date.now()}`;
+  const data = getDefaultNodeData(kind) as Record<string, unknown>;
+  data.__meta = sanitizeNodeMeta((data as { __meta?: BuilderNodeMeta }).__meta, buildDefaultNodeMeta(kind, id));
   return {
     id,
     type: kind,
     position: getNextNodePosition(nodes, kind, viewportCenter),
-    data: getDefaultNodeData(kind),
+    data,
   };
 }
 
@@ -253,6 +430,26 @@ export function makeEdgeId(connection: Connection) {
 
 export function defaultConditionData(): ConditionEditorData {
   return { type: "text_contains", value: "keyword" };
+}
+
+export function defaultSwitchData(): SwitchEditorData {
+  return {
+    path: "event.text",
+    cases: [{ id: "match", value: "match", label: "Match" }],
+  };
+}
+
+export function defaultSetVariableData(): SetVariableEditorData {
+  return {
+    path: "result.value",
+    value: "{{event.text}}",
+  };
+}
+
+export function defaultDelayData(): DelayEditorData {
+  return {
+    delay_ms: 60_000,
+  };
 }
 
 export function canCreateConnection(
@@ -283,6 +480,14 @@ export function canCreateConnection(
       (edge) =>
         edge.source === connection.source &&
         edge.sourceHandle === connection.sourceHandle,
+    );
+    if (existingBranch) return false;
+  }
+
+  if (sourceNode?.type === "switch") {
+    const handle = connection.sourceHandle ?? "default";
+    const existingBranch = edges.some(
+      (edge) => edge.source === connection.source && (edge.sourceHandle ?? "default") === handle,
     );
     if (existingBranch) return false;
   }

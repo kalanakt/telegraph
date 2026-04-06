@@ -1,9 +1,10 @@
-import type { ActionPayload, FlowDefinition, NormalizedEvent, WorkflowContext } from "../types/workflow.js";
+import type { ExecutablePayload, FlowDefinition, JsonValue, NormalizedEvent, WorkflowContext } from "../types/workflow.js";
 import { evaluateCondition } from "./evaluator.js";
+import { getPathValue, toTemplateString } from "./object-path.js";
 
 export type DerivedFlowAction = {
   actionId: string;
-  payload: ActionPayload;
+  payload: ExecutablePayload;
 };
 
 function toOutgoingEdgeMap(flow: FlowDefinition) {
@@ -22,11 +23,54 @@ function getNodeMap(flow: FlowDefinition) {
 
 export function listFlowActions(flow: FlowDefinition): DerivedFlowAction[] {
   return flow.nodes
-    .filter((node) => node.type === "action")
+    .filter((node) => node.type === "action" || node.type === "set_variable" || node.type === "delay")
     .map((node) => ({
       actionId: node.id,
-      payload: node.data as ActionPayload
+      payload: toExecutablePayload(node)
     }));
+}
+
+function toExecutablePayload(node: FlowDefinition["nodes"][number]): ExecutablePayload {
+  if (node.type === "action") {
+    return node.data;
+  }
+
+  if (node.type === "set_variable") {
+    return {
+      type: "workflow.setVariable",
+      params: {
+        path: node.data.path,
+        value: node.data.value
+      }
+    };
+  }
+
+  return {
+    type: "workflow.delay",
+    params: {
+      delay_ms: node.type === "delay" ? node.data.delay_ms : 0
+    }
+  };
+}
+
+function resolveSwitchValue(event: NormalizedEvent, context: WorkflowContext, path: string): JsonValue | undefined {
+  if (path === "event") {
+    return event as unknown as JsonValue;
+  }
+
+  if (path === "vars") {
+    return context.variables;
+  }
+
+  if (path.startsWith("event.")) {
+    return getPathValue(event, path.replace(/^event\./, "")) as JsonValue | undefined;
+  }
+
+  if (path.startsWith("vars.")) {
+    return getPathValue(context.variables, path.replace(/^vars\./, "")) as JsonValue | undefined;
+  }
+
+  return undefined;
 }
 
 export function getFrontierActions(
@@ -54,12 +98,12 @@ export function getFrontierActions(
       continue;
     }
 
-    if (node.type === "action") {
+    if (node.type === "action" || node.type === "set_variable" || node.type === "delay") {
       if (!seenActionIds.has(node.id)) {
         seenActionIds.add(node.id);
         actions.push({
           actionId: node.id,
-          payload: node.data as ActionPayload
+          payload: toExecutablePayload(node)
         });
       }
       continue;
@@ -69,6 +113,17 @@ export function getFrontierActions(
     if (node.type === "condition") {
       const passed = evaluateCondition(event, node.data, context);
       const nextEdge = out.find((edge) => edge.sourceHandle === (passed ? "true" : "false"));
+      if (nextEdge) {
+        stack.push(nextEdge.target);
+      }
+      continue;
+    }
+
+    if (node.type === "switch") {
+      const resolved = resolveSwitchValue(event, context, node.data.path);
+      const match = node.data.cases.find((item) => toTemplateString(resolved) === item.value);
+      const handle = match?.id ?? "default";
+      const nextEdge = out.find((edge) => (edge.sourceHandle ?? "default") === handle);
       if (nextEdge) {
         stack.push(nextEdge.target);
       }

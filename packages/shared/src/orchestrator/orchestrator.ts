@@ -106,16 +106,17 @@ async function processRules(
         botToken = deps.decryptToken(bot.encryptedToken);
       }
 
-        await deps.actionQueue.enqueueAction({
-          runId: run.runId,
-          ruleId: rule.ruleId,
-          actionNodeId: actionRun.actionId,
-          actionRunId: actionRun.actionRunId,
-          botToken: needsBotToken ? botToken : null,
+      await deps.actionQueue.enqueueAction({
+        runId: run.runId,
+        ruleId: rule.ruleId,
+        actionNodeId: actionRun.actionId,
+        actionRunId: actionRun.actionRunId,
+        botToken: needsBotToken ? botToken : null,
         actionType: actionRun.action.type,
         executionPolicy: getExecutionPolicy(actionRun.action.type),
         idempotencyKey: `${event.eventId}:${actionRun.actionRunId}:${actionRun.action.type}`,
         action: actionRun.action,
+        queueDelayMs: actionRun.action.type === "workflow.delay" ? actionRun.action.params.delay_ms : undefined,
         event,
         flowDefinition: rule.flowDefinition,
         context: {

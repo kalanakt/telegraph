@@ -12,7 +12,7 @@ import {
   GitBranch,
   MousePointerClick,
 } from "lucide-react";
-import type { ConditionEditorData } from "../types";
+import type { BuilderNodeMeta, ConditionEditorData } from "../types";
 
 const CONDITION_ICONS: Record<string, React.ElementType> = {
   text_contains: MessageSquare,
@@ -70,10 +70,11 @@ function formatConditionLabel(type: string): string {
     .join(" ");
 }
 
-export function ConditionNode({ data }: { data: ConditionEditorData }) {
+export function ConditionNode({ data }: { data: ConditionEditorData & { __meta?: BuilderNodeMeta } }) {
   const type = data.type ?? "text_contains";
   const Icon = CONDITION_ICONS[type] ?? Filter;
   const summary = formatConditionSummary(data);
+  const label = data.__meta?.label?.trim() || formatConditionLabel(type);
 
   return (
     <div className="builder-node builder-node-condition relative min-w-[250px] rounded-sm px-3 py-3 text-xs">
@@ -89,7 +90,8 @@ export function ConditionNode({ data }: { data: ConditionEditorData }) {
         </span>
         <div className="min-w-0 flex-1">
           <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Condition</div>
-          <div className="font-semibold leading-tight text-foreground">{formatConditionLabel(type)}</div>
+          <div className="font-semibold leading-tight text-foreground">{label}</div>
+          <div className="mt-0.5 text-[10px] text-foreground/80">{formatConditionLabel(type)}</div>
           <div className="mt-1 truncate rounded-sm border border-border/80 bg-secondary/55 px-1.5 py-1 font-mono text-[9px] text-muted-foreground">
             {summary}
           </div>

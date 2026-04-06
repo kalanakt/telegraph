@@ -40,6 +40,8 @@ type UploadState = {
 } | null;
 
 const NO_PARSE_MODE = "__none__";
+const MESSAGE_CLONE_METHODS = new Set(["telegram.copyMessage", "telegram.forwardMessage"]);
+const CHAT_MEMBER_METHODS = new Set(["telegram.banChatMember", "telegram.getChatMember"]);
 
 function normalizeActionNodeData(data: unknown): ActionEditorData {
   const normalized = migrateLegacyActionData(data);
@@ -786,6 +788,144 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
             />
           </div>
         </>
+      ) : MESSAGE_CLONE_METHODS.has(action.type) ? (
+        <div className="builder-section">
+          <p className="builder-kicker">Message source</p>
+          <label className="builder-label">
+            <span>Target chat ID</span>
+            <Input value={asString(params.chat_id)} onChange={(e) => onUpdateParams({ chat_id: e.target.value })} />
+          </label>
+          <label className="builder-label mt-2">
+            <span>From chat ID</span>
+            <Input value={asString(params.from_chat_id)} onChange={(e) => onUpdateParams({ from_chat_id: e.target.value })} />
+          </label>
+          <label className="builder-label mt-2">
+            <span>Message ID</span>
+            <Input value={asString(params.message_id)} onChange={(e) => onUpdateParams({ message_id: Number(e.target.value || 0) })} />
+          </label>
+          <label className="builder-label mt-2">
+            <span>Optional caption</span>
+            <Textarea rows={3} value={asString(params.caption)} onChange={(e) => onUpdateParams({ caption: e.target.value })} />
+          </label>
+        </div>
+      ) : action.type === "telegram.sendChatAction" ? (
+        <div className="builder-section">
+          <p className="builder-kicker">Chat action</p>
+          <label className="builder-label">
+            <span>Chat ID</span>
+            <Input value={asString(params.chat_id)} onChange={(e) => onUpdateParams({ chat_id: e.target.value })} />
+          </label>
+          <label className="builder-label mt-2">
+            <span>Action</span>
+            <Select value={asString(params.action) || "typing"} onValueChange={(value) => onUpdateParams({ action: value })}>
+              <SelectTrigger className="builder-field">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {["typing","upload_photo","record_video","upload_video","record_voice","upload_voice","upload_document","choose_sticker","find_location"].map((item) => (
+                  <SelectItem key={item} value={item}>{item}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
+        </div>
+      ) : CHAT_MEMBER_METHODS.has(action.type) ? (
+        <div className="builder-section">
+          <p className="builder-kicker">Chat member</p>
+          <label className="builder-label">
+            <span>Chat ID</span>
+            <Input value={asString(params.chat_id)} onChange={(e) => onUpdateParams({ chat_id: e.target.value })} />
+          </label>
+          <label className="builder-label mt-2">
+            <span>User ID</span>
+            <Input value={asString(params.user_id)} onChange={(e) => onUpdateParams({ user_id: e.target.value })} />
+          </label>
+        </div>
+      ) : action.type === "telegram.restrictChatMember" ? (
+        <div className="builder-section">
+          <p className="builder-kicker">Restrict member</p>
+          <label className="builder-label">
+            <span>Chat ID</span>
+            <Input value={asString(params.chat_id)} onChange={(e) => onUpdateParams({ chat_id: e.target.value })} />
+          </label>
+          <label className="builder-label mt-2">
+            <span>User ID</span>
+            <Input value={asString(params.user_id)} onChange={(e) => onUpdateParams({ user_id: e.target.value })} />
+          </label>
+          <label className="builder-label mt-2">
+            <span>Permissions JSON</span>
+            <Textarea
+              rows={5}
+              value={JSON.stringify(params.permissions ?? {}, null, 2)}
+              onChange={(e) => {
+                try {
+                  onUpdateParams({ permissions: JSON.parse(e.target.value) });
+                } catch {
+                  // noop
+                }
+              }}
+            />
+          </label>
+        </div>
+      ) : action.type === "telegram.setMyCommands" ? (
+        <div className="builder-section">
+          <p className="builder-kicker">Commands</p>
+          <Textarea
+            rows={8}
+            value={JSON.stringify(params.commands ?? [{ command: "start", description: "Start the bot" }], null, 2)}
+            onChange={(e) => {
+              try {
+                onUpdateParams({ commands: JSON.parse(e.target.value) });
+              } catch {
+                // noop
+              }
+            }}
+          />
+        </div>
+      ) : action.type === "telegram.sendMediaGroup" ? (
+        <div className="builder-section">
+          <p className="builder-kicker">Media group</p>
+          <label className="builder-label">
+            <span>Chat ID</span>
+            <Input value={asString(params.chat_id)} onChange={(e) => onUpdateParams({ chat_id: e.target.value })} />
+          </label>
+          <label className="builder-label mt-2">
+            <span>Media JSON</span>
+            <Textarea
+              rows={8}
+              value={JSON.stringify(params.media ?? [], null, 2)}
+              onChange={(e) => {
+                try {
+                  onUpdateParams({ media: JSON.parse(e.target.value) });
+                } catch {
+                  // noop
+                }
+              }}
+            />
+          </label>
+        </div>
+      ) : action.type === "telegram.createChatInviteLink" || action.type === "telegram.editChatInviteLink" ? (
+        <div className="builder-section">
+          <p className="builder-kicker">Invite link</p>
+          <label className="builder-label">
+            <span>Chat ID</span>
+            <Input value={asString(params.chat_id)} onChange={(e) => onUpdateParams({ chat_id: e.target.value })} />
+          </label>
+          {action.type === "telegram.editChatInviteLink" ? (
+            <label className="builder-label mt-2">
+              <span>Invite link</span>
+              <Input value={asString(params.invite_link)} onChange={(e) => onUpdateParams({ invite_link: e.target.value })} />
+            </label>
+          ) : null}
+          <label className="builder-label mt-2">
+            <span>Name</span>
+            <Input value={asString(params.name)} onChange={(e) => onUpdateParams({ name: e.target.value })} />
+          </label>
+          <label className="builder-label mt-2">
+            <span>Member limit</span>
+            <Input value={asString(params.member_limit)} onChange={(e) => onUpdateParams({ member_limit: Number(e.target.value || 0) })} />
+          </label>
+        </div>
       ) : (
         <div className="builder-section">
           <p className="builder-kicker">Advanced params</p>

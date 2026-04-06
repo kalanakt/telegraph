@@ -6,8 +6,18 @@ import type { ActionPayload, ConditionPayload, FlowDefinition, TriggerType } fro
 
 const TEMPLATE_FIELD_REGEX = /\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g;
 const ALLOWED_TEMPLATE_PREFIXES = new Set(["event", "vars"]);
+const NODE_KEY_REGEX = /^[a-z][a-z0-9_]*$/;
+const VAR_PATH_REGEX = /^[a-z][a-z0-9_]*(?:\.[a-zA-Z0-9_]+)*$/;
+const VALUE_PATH_REGEX = /^(event|vars)(?:\.[a-zA-Z0-9_]+)*$/;
 
 const recordOfStringsSchema = z.record(z.string(), z.string());
+const nodeMetaSchema = z
+  .object({
+    label: z.string().trim().min(1).max(120).optional(),
+    key: z.string().regex(NODE_KEY_REGEX, "Node key must be snake_case.").optional()
+  })
+  .strict()
+  .optional();
 
 const httpAuthSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("none") }),
@@ -159,7 +169,8 @@ const flowNodeBaseSchema = z.object({
   position: z.object({
     x: z.number(),
     y: z.number()
-  })
+  }),
+  meta: nodeMetaSchema
 });
 
 const startNodeSchema = flowNodeBaseSchema.extend({
@@ -177,7 +188,51 @@ const actionNodeSchema = flowNodeBaseSchema.extend({
   data: actionSchema
 });
 
-export const flowNodeSchema = z.discriminatedUnion("type", [startNodeSchema, conditionNodeSchema, actionNodeSchema]);
+const switchCaseSchema = z
+  .object({
+    id: z.string().min(1),
+    value: z.string(),
+    label: z.string().trim().min(1).max(120).optional()
+  })
+  .strict();
+
+const switchNodeSchema = flowNodeBaseSchema.extend({
+  type: z.literal("switch"),
+  data: z
+    .object({
+      path: z.string().regex(VALUE_PATH_REGEX, "Switch path must start with event. or vars."),
+      cases: z.array(switchCaseSchema).min(1)
+    })
+    .strict()
+});
+
+const setVariableNodeSchema = flowNodeBaseSchema.extend({
+  type: z.literal("set_variable"),
+  data: z
+    .object({
+      path: z.string().regex(VAR_PATH_REGEX, "Variable path must be dot.notation under vars."),
+      value: jsonValueSchema
+    })
+    .strict()
+});
+
+const delayNodeSchema = flowNodeBaseSchema.extend({
+  type: z.literal("delay"),
+  data: z
+    .object({
+      delay_ms: z.number().int().positive().max(7 * 24 * 60 * 60 * 1000)
+    })
+    .strict()
+});
+
+export const flowNodeSchema = z.discriminatedUnion("type", [
+  startNodeSchema,
+  conditionNodeSchema,
+  actionNodeSchema,
+  switchNodeSchema,
+  setVariableNodeSchema,
+  delayNodeSchema
+]);
 
 export const flowEdgeSchema = z.object({
   id: z.string().min(1),
@@ -227,6 +282,25 @@ function validateTemplates(action: ActionPayload, ctx: z.RefinementCtx, nodeId: 
   }
 }
 
+function validateTemplateValues(value: unknown, ctx: z.RefinementCtx, nodeId: string) {
+  const values: string[] = [];
+  collectTemplateStrings(value, values);
+
+  for (const item of values) {
+    for (const match of item.matchAll(TEMPLATE_FIELD_REGEX)) {
+      const token = match[1] ?? "";
+      const [prefix] = token.split(".");
+      const isAllowed = prefix ? ALLOWED_TEMPLATE_PREFIXES.has(prefix) : false;
+      if (!isAllowed) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Node ${nodeId} references unknown template field: ${token}`
+        });
+      }
+    }
+  }
+}
+
 export function validateFlowForTrigger(
   flowDefinition: FlowDefinition,
   trigger: TriggerType,
@@ -240,23 +314,26 @@ export function validateFlowForTrigger(
       });
     }
 
-    if (node.type !== "action") {
+    if (node.type === "action") {
+      const action = node.data as ActionPayload;
+      if (!isActionAllowedForTrigger(action.type, trigger)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Action ${action.type} is not allowed for trigger ${trigger}.`
+        });
+      }
+
+      validateTemplates(action, ctx, node.id);
       continue;
     }
 
-    const action = node.data as ActionPayload;
-    if (!isActionAllowedForTrigger(action.type, trigger)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: `Action ${action.type} is not allowed for trigger ${trigger}.`
-      });
+    if (node.type === "set_variable") {
+      validateTemplateValues(node.data.value, ctx, node.id);
     }
-
-    validateTemplates(action, ctx, node.id);
   }
 }
 
-export const flowDefinitionSchema = z
+export const flowDefinitionSchema: z.ZodType<FlowDefinition> = z
   .object({
     nodes: z.array(flowNodeSchema).min(1),
     edges: z.array(flowEdgeSchema)
@@ -273,6 +350,7 @@ export const flowDefinitionSchema = z
     }
 
     const seenNodeIds = new Set<string>();
+    const seenNodeKeys = new Set<string>();
     for (const node of flow.nodes) {
       if (seenNodeIds.has(node.id)) {
         ctx.addIssue({
@@ -281,6 +359,17 @@ export const flowDefinitionSchema = z
         });
       }
       seenNodeIds.add(node.id);
+
+      const nodeKey = node.meta?.key?.trim();
+      if (nodeKey) {
+        if (seenNodeKeys.has(nodeKey)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Duplicate node key: ${nodeKey}`
+          });
+        }
+        seenNodeKeys.add(nodeKey);
+      }
     }
 
     const seenEdgeIds = new Set<string>();
@@ -302,17 +391,68 @@ export const flowDefinitionSchema = z
     }
 
     for (const node of flow.nodes) {
-      if (node.type !== "condition") {
-        continue;
-      }
       const outgoing = flow.edges.filter((edge) => edge.source === node.id);
-      const trueEdgeCount = outgoing.filter((edge) => edge.sourceHandle === "true").length;
-      const falseEdgeCount = outgoing.filter((edge) => edge.sourceHandle === "false").length;
-      if (trueEdgeCount !== 1 || falseEdgeCount > 1) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `Condition node ${node.id} must have exactly one 'true' edge and at most one 'false' edge.`
-        });
+
+      if (node.type === "condition") {
+        const trueEdgeCount = outgoing.filter((edge) => edge.sourceHandle === "true").length;
+        const falseEdgeCount = outgoing.filter((edge) => edge.sourceHandle === "false").length;
+        if (trueEdgeCount !== 1 || falseEdgeCount > 1) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Condition node ${node.id} must have exactly one 'true' edge and at most one 'false' edge.`
+          });
+        }
+      }
+
+      if (node.type === "switch") {
+        const seenCaseIds = new Set<string>();
+        for (const flowCase of node.data.cases) {
+          if (flowCase.id === "default") {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: `Switch node ${node.id} cannot use reserved branch id 'default'.`
+            });
+          }
+
+          if (seenCaseIds.has(flowCase.id)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: `Switch node ${node.id} has duplicate branch id '${flowCase.id}'.`
+            });
+          }
+          seenCaseIds.add(flowCase.id);
+        }
+
+        const allowedHandles = new Set(node.data.cases.map((item) => item.id));
+        allowedHandles.add("default");
+
+        const seenHandles = new Set<string>();
+        for (const edge of outgoing) {
+          const handle = edge.sourceHandle ?? "default";
+          if (!allowedHandles.has(handle)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: `Switch node ${node.id} has an edge for unknown branch '${handle}'.`
+            });
+          }
+
+          if (seenHandles.has(handle)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: `Switch node ${node.id} cannot have multiple edges for branch '${handle}'.`
+            });
+          }
+          seenHandles.add(handle);
+        }
+
+        for (const flowCase of node.data.cases) {
+          if (!seenHandles.has(flowCase.id)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: `Switch node ${node.id} must connect branch '${flowCase.id}'.`
+            });
+          }
+        }
       }
     }
 
@@ -382,7 +522,7 @@ export const flowDefinitionSchema = z
         }
       }
     }
-  });
+  }) as z.ZodType<FlowDefinition>;
 
 export const createFlowSchema = z
   .object({

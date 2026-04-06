@@ -7,10 +7,10 @@ import {
   getExecutionPolicy,
   isLegacyEncryptedPayload,
   type ActionJob,
-  type ActionPayload,
   type ActionQueue,
   type BotRepository,
   type BotUserRepository,
+  type ExecutablePayload,
   type EntitlementPolicy,
   type EventRepository,
   type FlowDefinition,
@@ -280,7 +280,7 @@ export function createPrismaRunRepository(prismaClient = prisma): RunRepository 
           return {
             actionId: source.actionId,
             actionRunId: actionRun.id,
-            action: source.payload as ActionPayload
+            action: source.payload as ExecutablePayload
           };
         })
       };
@@ -303,6 +303,7 @@ export function createBullMqActionQueueAdapter(queue?: QueueWriter | null): Acti
         await queueWriter.add(jobName, job, {
           jobId: job.idempotencyKey,
           attempts: 5,
+          delay: job.queueDelayMs ?? 0,
           backoff: {
             type: "exponential",
             delay: 2000

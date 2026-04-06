@@ -11,6 +11,11 @@ import type { TelegramUpdate } from "./telegram.js";
 export type JsonPrimitive = string | number | boolean | null;
 export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
 
+export type FlowNodeMeta = {
+  label?: string;
+  key?: string;
+};
+
 export const WEBHOOK_TRIGGER_TYPES = ["webhook.received"] as const;
 export type WebhookTriggerType = (typeof WEBHOOK_TRIGGER_TYPES)[number];
 
@@ -57,7 +62,12 @@ export type ConditionType =
   | "all"
   | "any";
 
-export type ActionType = TelegramActionType | "webhook.send" | "http.request";
+export type ActionType =
+  | TelegramActionType
+  | "webhook.send"
+  | "http.request"
+  | "workflow.setVariable"
+  | "workflow.delay";
 
 export type RetryClass = "transient" | "permanent";
 
@@ -155,7 +165,27 @@ export type HttpRequestActionPayload = {
 
 export type ActionPayload = TelegramActionUnion | WebhookSendActionPayload | HttpRequestActionPayload;
 
-export type FlowNodeType = "start" | "condition" | "action";
+export type WorkflowSetVariableActionPayload = {
+  type: "workflow.setVariable";
+  params: {
+    path: string;
+    value: JsonValue;
+  };
+};
+
+export type WorkflowDelayActionPayload = {
+  type: "workflow.delay";
+  params: {
+    delay_ms: number;
+  };
+};
+
+export type ExecutablePayload =
+  | ActionPayload
+  | WorkflowSetVariableActionPayload
+  | WorkflowDelayActionPayload;
+
+export type FlowNodeType = "start" | "condition" | "action" | "switch" | "set_variable" | "delay";
 
 export type FlowNodePosition = {
   x: number;
@@ -166,24 +196,68 @@ export type FlowConditionNodeData = ConditionPayload;
 
 export type FlowActionNodeData = ActionPayload;
 
+export type FlowSwitchCase = {
+  id: string;
+  value: string;
+  label?: string;
+};
+
+export type FlowSwitchNodeData = {
+  path: string;
+  cases: FlowSwitchCase[];
+};
+
+export type FlowSetVariableNodeData = {
+  path: string;
+  value: JsonValue;
+};
+
+export type FlowDelayNodeData = {
+  delay_ms: number;
+};
+
 export type FlowNode =
   | {
       id: string;
       type: "start";
       position: FlowNodePosition;
+      meta?: FlowNodeMeta;
       data: { trigger?: TriggerType } & Record<string, unknown>;
     }
   | {
       id: string;
       type: "condition";
       position: FlowNodePosition;
+      meta?: FlowNodeMeta;
       data: FlowConditionNodeData;
     }
   | {
       id: string;
       type: "action";
       position: FlowNodePosition;
+      meta?: FlowNodeMeta;
       data: FlowActionNodeData;
+    }
+  | {
+      id: string;
+      type: "switch";
+      position: FlowNodePosition;
+      meta?: FlowNodeMeta;
+      data: FlowSwitchNodeData;
+    }
+  | {
+      id: string;
+      type: "set_variable";
+      position: FlowNodePosition;
+      meta?: FlowNodeMeta;
+      data: FlowSetVariableNodeData;
+    }
+  | {
+      id: string;
+      type: "delay";
+      position: FlowNodePosition;
+      meta?: FlowNodeMeta;
+      data: FlowDelayNodeData;
     };
 
 export type FlowEdge = {

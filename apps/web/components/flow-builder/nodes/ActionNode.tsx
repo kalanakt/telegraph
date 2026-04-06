@@ -4,7 +4,7 @@ import { Handle, Position } from "@xyflow/react";
 import { Image, FileText, Video, Send, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { getCapabilityLabel, migrateLegacyActionData, summarizeAction } from "@/lib/flow-builder";
-import type { ActionEditorData } from "../types";
+import type { ActionEditorData, BuilderNodeMeta } from "../types";
 
 const ACTION_ICONS: Record<string, React.ElementType> = {
   "telegram.sendMessage": Send,
@@ -35,7 +35,7 @@ function getUploadedPhotoUrl(payload: { type: string; params: Record<string, unk
   return null;
 }
 
-export function ActionNode({ data }: { data: ActionEditorData }) {
+export function ActionNode({ data }: { data: ActionEditorData & { __meta?: BuilderNodeMeta } }) {
   const payload = migrateLegacyActionData(data);
   const Icon = ACTION_ICONS[payload.type] ?? Zap;
   const label = getCapabilityLabel(payload.type);
@@ -45,6 +45,7 @@ export function ActionNode({ data }: { data: ActionEditorData }) {
     payload.type === "telegram.sendPhoto" ||
     payload.type === "telegram.sendVideo" ||
     payload.type === "telegram.sendDocument";
+  const nodeLabel = data.__meta?.label?.trim() || label;
 
   return (
     <div className="builder-node builder-node-action relative min-w-[280px] rounded-sm text-xs">
@@ -69,7 +70,8 @@ export function ActionNode({ data }: { data: ActionEditorData }) {
                 {payload.type.replace("telegram.", "")}
               </Badge>
             </div>
-            <div className="font-semibold leading-tight text-foreground">{label}</div>
+            <div className="font-semibold leading-tight text-foreground">{nodeLabel}</div>
+            <div className="mt-0.5 text-[10px] text-foreground/80">{label}</div>
           </div>
         </div>
 

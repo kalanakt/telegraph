@@ -1,4 +1,11 @@
-import type { ActionPayload, TriggerType } from "@telegram-builder/shared";
+import type {
+  ActionPayload,
+  FlowDelayNodeData,
+  FlowNodeMeta,
+  FlowSetVariableNodeData,
+  FlowSwitchNodeData,
+  TriggerType,
+} from "@telegram-builder/shared";
 
 export type BotOption = {
   id: string;
@@ -24,13 +31,18 @@ export type FlowBuilderProps = {
   initialRuleId?: string;
 };
 
-export type FlowNodeKind = "start" | "condition" | "action";
+export type FlowNodeKind = "start" | "condition" | "action" | "switch" | "set_variable" | "delay";
+
+export type BuilderNodeMeta = FlowNodeMeta & {
+  __meta?: never;
+};
 
 export type ConditionEditorData = {
   type?: string;
   value?: string | number;
   key?: string;
   conditionsJson?: string;
+  __meta?: BuilderNodeMeta;
 };
 
 export type InlineKeyboardButton = {
@@ -44,6 +56,25 @@ export type ReplyKeyboardButton = { text: string };
 export type ActionEditorData = {
   type: ActionPayload["type"];
   params: Record<string, unknown>;
+  __meta?: BuilderNodeMeta;
+};
+
+export type SwitchEditorCase = {
+  id: string;
+  value: string;
+  label?: string;
+};
+
+export type SwitchEditorData = FlowSwitchNodeData & {
+  __meta?: BuilderNodeMeta;
+};
+
+export type SetVariableEditorData = FlowSetVariableNodeData & {
+  __meta?: BuilderNodeMeta;
+};
+
+export type DelayEditorData = FlowDelayNodeData & {
+  __meta?: BuilderNodeMeta;
 };
 
 export const CORE_COMPOSER_METHODS = new Set([

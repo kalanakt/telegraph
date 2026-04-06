@@ -66,10 +66,7 @@ export function useFlowCallbacks(state: FlowState, setStatus: (msg: string) => v
         target: connection.target ?? "",
         sourceHandle: connection.sourceHandle ?? undefined,
         targetHandle: connection.targetHandle ?? undefined,
-        label:
-          connection.sourceHandle === "true" || connection.sourceHandle === "false"
-            ? connection.sourceHandle
-            : undefined,
+        label: connection.sourceHandle && connection.sourceHandle !== "default" ? connection.sourceHandle : undefined,
         ...defaultEdgeOptions,
       };
 

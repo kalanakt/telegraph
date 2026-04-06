@@ -11,6 +11,21 @@ const ACTION_POLICIES = new Map<ActionType, ExecutionPolicy>(
   WORKFLOW_ACTION_MANIFEST.map((item) => [item.actionType, item.executionPolicy])
 );
 
+const INTERNAL_ACTION_POLICIES: Partial<Record<ActionType, ExecutionPolicy>> = {
+  "workflow.setVariable": {
+    retryClass: "permanent",
+    timeoutMs: 2_000,
+    idempotencyKeyStrategy: "action_run",
+    rateLimitBucket: "workflow.internal"
+  },
+  "workflow.delay": {
+    retryClass: "permanent",
+    timeoutMs: 2_000,
+    idempotencyKeyStrategy: "action_run",
+    rateLimitBucket: "workflow.internal"
+  }
+};
+
 export function isActionAllowedForTrigger(actionType: ActionType, trigger: TriggerType): boolean {
   if (actionType.startsWith("telegram.")) {
     return isTelegramActionAllowedForTrigger(actionType as TelegramActionType, trigger as TelegramTriggerType);
@@ -25,6 +40,7 @@ export function getExecutionPolicy(actionType: ActionType): ExecutionPolicy {
   }
 
   return (
+    INTERNAL_ACTION_POLICIES[actionType] ??
     ACTION_POLICIES.get(actionType) ?? {
       retryClass: "transient",
       timeoutMs: 15_000,

@@ -4,6 +4,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function cloneJsonObject(input: Record<string, JsonValue>): Record<string, JsonValue> {
+  return JSON.parse(JSON.stringify(input)) as Record<string, JsonValue>;
+}
+
 export function getPathValue(input: unknown, path: string): unknown {
   if (!path.trim()) {
     return input;
@@ -71,4 +75,45 @@ export function asJsonValue(value: unknown): JsonValue {
 
 export function normalizeHeaderLookup(headers: Record<string, string>): Record<string, string> {
   return Object.fromEntries(Object.entries(headers).map(([key, value]) => [key.toLowerCase(), value]));
+}
+
+export function setPathValue(
+  input: Record<string, JsonValue>,
+  path: string,
+  value: JsonValue
+): Record<string, JsonValue> {
+  const next = cloneJsonObject(input);
+  const parts = path
+    .split(".")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (parts.length === 0) {
+    return next;
+  }
+
+  let cursor: Record<string, JsonValue> = next;
+
+  for (let index = 0; index < parts.length; index += 1) {
+    const part = parts[index];
+    if (!part) {
+      continue;
+    }
+
+    if (index === parts.length - 1) {
+      cursor[part] = value;
+      break;
+    }
+
+    const current = cursor[part];
+    if (typeof current === "object" && current !== null && !Array.isArray(current)) {
+      cursor = current as Record<string, JsonValue>;
+      continue;
+    }
+
+    cursor[part] = {};
+    cursor = cursor[part] as Record<string, JsonValue>;
+  }
+
+  return next;
 }

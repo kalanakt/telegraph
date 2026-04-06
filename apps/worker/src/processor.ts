@@ -5,11 +5,13 @@ import {
   getExecutionPolicy,
   getFrontierActions,
   getPathValue,
+  setPathValue,
   telegramInvokeMethod,
   toTemplateString,
   type ActionExecutionResult,
   type ActionJob,
   type ActionPayload,
+  type ExecutablePayload,
   type JsonValue,
   type TelegramMethod,
   type TelegramRequestResult
@@ -53,7 +55,7 @@ export type WorkerProcessorDeps = {
   updateWorkflowRunStatus(runId: string, status: "succeeded" | "partially_failed" | "failed"): Promise<void>;
   getWorkflowRunContext(runId: string): Promise<Record<string, JsonValue>>;
   updateWorkflowRunContext(runId: string, variables: Record<string, JsonValue>): Promise<void>;
-  getOrCreateActionRun(input: { runId: string; actionId: string; action: ActionPayload }): Promise<ActionRunLookup>;
+  getOrCreateActionRun(input: { runId: string; actionId: string; action: ExecutablePayload }): Promise<ActionRunLookup>;
   enqueueAction(job: ActionJob): Promise<void>;
   enqueueDeadLetter(input: DeadLetterInput): Promise<void>;
   invokeTelegramMethod(token: string, method: TelegramMethod, params: Record<string, unknown>): Promise<TelegramRequestResult>;
@@ -68,6 +70,20 @@ export type WorkerProcessorDeps = {
 
 function payloadHash(input: unknown): string {
   return createHash("sha256").update(JSON.stringify(input)).digest("hex");
+}
+
+function getNodeKey(job: ActionJob): string | undefined {
+  const node = job.flowDefinition.nodes.find((item) => item.id === job.actionNodeId);
+  return node?.meta?.key?.trim() || undefined;
+}
+
+function buildResultRecord(result: ActionExecutionResult): JsonValue {
+  return {
+    status: result.status,
+    ok: result.ok,
+    headers: result.headers,
+    body: result.body
+  };
 }
 
 function classifyTelegramResult(result: TelegramRequestResult): ActionExecutionError {
@@ -338,6 +354,35 @@ async function runTelegramAction(
   };
 }
 
+async function runWorkflowInternalAction(
+  job: ActionJob,
+  variables: Record<string, JsonValue>
+): Promise<ActionExecutionResult> {
+  if (job.action.type === "workflow.delay") {
+    return {
+      status: 200,
+      ok: true,
+      headers: {},
+      body: {
+        delay_ms: job.action.params.delay_ms,
+        resumed: true
+      }
+    };
+  }
+
+  const action = job.action as Extract<ExecutablePayload, { type: "workflow.setVariable" }>;
+  const renderedValue = renderTemplatesDeep(action.params.value, job, variables);
+  return {
+    status: 200,
+    ok: true,
+    headers: {},
+    body: {
+      path: action.params.path,
+      value: asJsonValue(renderedValue)
+    }
+  };
+}
+
 async function executeAction(
   deps: WorkerProcessorDeps,
   job: ActionJob,
@@ -345,6 +390,10 @@ async function executeAction(
 ): Promise<ActionExecutionResult> {
   if (job.action.type.startsWith("telegram.")) {
     return runTelegramAction(deps, job, variables);
+  }
+
+  if (job.action.type === "workflow.delay" || job.action.type === "workflow.setVariable") {
+    return runWorkflowInternalAction(job, variables);
   }
 
   return runHttpAction(deps, job, variables);
@@ -383,15 +432,22 @@ export async function processActionJob(
     throw wrapped;
   }
 
-  const mergedVariables: Record<string, JsonValue> = {
-    ...variables,
-    [job.actionNodeId]: {
-      status: result.status,
-      ok: result.ok,
-      headers: result.headers,
-      body: result.body
-    }
-  };
+  let mergedVariables: Record<string, JsonValue> = { ...variables };
+
+  if (job.action.type === "workflow.setVariable") {
+    const resultBody =
+      typeof result.body === "object" && result.body !== null && "value" in result.body
+        ? (result.body as { value: JsonValue }).value
+        : null;
+    mergedVariables = setPathValue(mergedVariables, job.action.params.path, asJsonValue(resultBody));
+  }
+
+  const resultRecord = buildResultRecord(result);
+  mergedVariables[job.actionNodeId] = resultRecord;
+  const nodeKey = getNodeKey(job);
+  if (nodeKey) {
+    mergedVariables[nodeKey] = resultRecord;
+  }
 
   await deps.updateWorkflowRunContext(job.runId, mergedVariables);
   await deps.updateActionRun({
@@ -422,6 +478,7 @@ export async function processActionJob(
       executionPolicy: getExecutionPolicy(nextAction.payload.type),
       botToken: nextAction.payload.type.startsWith("telegram.") ? job.botToken : null,
       idempotencyKey: `${job.event.eventId}:${nextRun.actionRunId}:${nextAction.payload.type}`,
+      queueDelayMs: nextAction.payload.type === "workflow.delay" ? nextAction.payload.params.delay_ms : undefined,
       context: {
         ...job.context,
         variables: mergedVariables
