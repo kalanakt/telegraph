@@ -1,8 +1,9 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AddBotForm } from "@/components/AddBotForm";
-import { DeleteBotButton } from "@/components/DeleteBotButton";
-import { ReconnectBotButton } from "@/components/ReconnectBotButton";
-import { Badge } from "@/components/ui/badge";
+import { BotActionsMenu } from "@/components/BotActionsMenu";
+import { BotStatusBadge } from "@/components/BotStatusBadge";
+import { PageHeading } from "@/components/PageHeading";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -16,13 +17,6 @@ import { getAuthUserId } from "@/lib/clerk-auth";
 import { requireAppUser } from "@/lib/user";
 import { prisma } from "@/lib/prisma";
 
-function statusBadge(status: string) {
-  if (status === "active") {
-    return <Badge>active</Badge>;
-  }
-  return <Badge variant="secondary">{status}</Badge>;
-}
-
 export default async function BotsPage() {
   const userId = await getAuthUserId();
   if (!userId) {
@@ -33,11 +27,22 @@ export default async function BotsPage() {
 
   const bots = await prisma.bot.findMany({
     where: { userId: user.id },
+    include: {
+      _count: {
+        select: {
+          botUsers: true,
+        },
+      },
+    },
     orderBy: { createdAt: "desc" },
   });
 
   return (
     <div className="space-y-5">
+      <PageHeading
+        title="Bots"
+        subtitle="Connect bots, manage webhook health, and open each bot's saved users section."
+      />
       <AddBotForm />
 
       <Card>
@@ -53,6 +58,7 @@ export default async function BotsPage() {
                 <TableHead>Name</TableHead>
                 <TableHead>Username</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Saved users</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -60,17 +66,21 @@ export default async function BotsPage() {
             <TableBody>
               {bots.map((bot) => (
                 <TableRow key={bot.id}>
-                  <TableCell>{bot.displayName ?? "-"}</TableCell>
-                  <TableCell>@{bot.username ?? "-"}</TableCell>
-                  <TableCell>{statusBadge(bot.status)}</TableCell>
+                  <TableCell>
+                    <Link className="text-sm text-primary underline" href={`/bots/${bot.id}`}>
+                      {bot.displayName ?? bot.username ?? bot.id}
+                    </Link>
+                  </TableCell>
+                  <TableCell>{bot.username ? `@${bot.username}` : "-"}</TableCell>
+                  <TableCell>
+                    <BotStatusBadge status={bot.status} />
+                  </TableCell>
+                  <TableCell>{bot._count.botUsers}</TableCell>
                   <TableCell>
                     {new Date(bot.createdAt).toLocaleString()}
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                      <ReconnectBotButton botId={bot.id} />
-                      <DeleteBotButton botId={bot.id} />
-                    </div>
+                    <BotActionsMenu botId={bot.id} showViewLink />
                   </TableCell>
                 </TableRow>
               ))}

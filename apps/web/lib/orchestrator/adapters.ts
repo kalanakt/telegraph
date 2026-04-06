@@ -10,6 +10,7 @@ import {
   type ActionPayload,
   type ActionQueue,
   type BotRepository,
+  type BotUserRepository,
   type EntitlementPolicy,
   type EventRepository,
   type FlowDefinition,
@@ -115,8 +116,45 @@ export function createPrismaBotRepository(prismaClient = prisma): BotRepository 
         userId: bot.userId,
         encryptedToken,
         status: bot.status,
-        plan: normalizePlanKey(bot.user.subscription?.plan)
+        plan: normalizePlanKey(bot.user.subscription?.plan),
+        captureUsersEnabled: bot.captureUsersEnabled
       };
+    }
+  };
+}
+
+export function createPrismaBotUserRepository(prismaClient = prisma): BotUserRepository {
+  return {
+    async recordInteraction(input) {
+      await prismaClient.botUser.upsert({
+        where: {
+          botId_telegramUserId: {
+            botId: input.botId,
+            telegramUserId: BigInt(input.actor.id)
+          }
+        },
+        create: {
+          botId: input.botId,
+          telegramUserId: BigInt(input.actor.id),
+          username: input.actor.username ?? null,
+          firstName: input.actor.first_name ?? null,
+          lastName: input.actor.last_name ?? null,
+          languageCode: input.actor.language_code ?? null,
+          firstSeenAt: input.receivedAt,
+          lastSeenAt: input.receivedAt,
+          interactionCount: 1
+        },
+        update: {
+          username: input.actor.username ?? undefined,
+          firstName: input.actor.first_name ?? undefined,
+          lastName: input.actor.last_name ?? undefined,
+          languageCode: input.actor.language_code ?? undefined,
+          lastSeenAt: input.receivedAt,
+          interactionCount: {
+            increment: 1
+          }
+        }
+      });
     }
   };
 }

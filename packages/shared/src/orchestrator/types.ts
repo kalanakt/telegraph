@@ -2,6 +2,7 @@ import type { PlanKey } from "../config/limits.js";
 import type { ActionJob } from "../queue/contracts.js";
 import type { TelegramUpdate } from "../types/telegram.js";
 import type { ActionPayload, FlowDefinition, JsonValue, NormalizedEvent, TriggerType } from "../types/workflow.js";
+import type { TelegramActor } from "./actors.js";
 
 export type OrchestrationReason =
   | "inactive_bot"
@@ -34,6 +35,7 @@ export type BotContext = {
   encryptedToken: string;
   status: string;
   plan: PlanKey;
+  captureUsersEnabled: boolean;
 };
 
 export type RuleRecord = {
@@ -71,6 +73,14 @@ export interface EventRepository {
   }): Promise<CreatedEvent | DuplicateEvent>;
 }
 
+export interface BotUserRepository {
+  recordInteraction(input: {
+    botId: string;
+    actor: TelegramActor;
+    receivedAt: Date;
+  }): Promise<void>;
+}
+
 export interface RunRepository {
   createRunWithActions(input: {
     userId: string;
@@ -103,6 +113,7 @@ export interface EntitlementPolicy {
 
 export type OrchestratorDeps = {
   botRepository: BotRepository;
+  botUserRepository: BotUserRepository;
   ruleRepository: RuleRepository;
   eventRepository: EventRepository;
   runRepository: RunRepository;

@@ -1,7 +1,9 @@
 import { getExecutionPolicy } from "../domain/actions.js";
 import { buildIdempotencyKey } from "../domain/idempotency.js";
 import { deriveActionsFromFlow } from "../domain/flow.js";
+import { logWarn } from "../logging.js";
 import { normalizeTelegramUpdate } from "./normalize.js";
+import { extractTelegramActor } from "./actors.js";
 import type {
   AutomationOrchestrator,
   HandleIncomingUpdateInput,
@@ -17,7 +19,8 @@ async function processRules(
   botContext: Awaited<ReturnType<OrchestratorDeps["botRepository"]["findBotContext"]>>,
   event: NormalizedEvent,
   receivedAt: Date,
-  rules: RuleRecord[]
+  rules: RuleRecord[],
+  captureActor?: ReturnType<typeof extractTelegramActor>
 ): Promise<OrchestrationResult> {
   const bot = botContext;
   if (!bot || bot.status !== "active") {
@@ -46,6 +49,22 @@ async function processRules(
       queuedActions: 0,
       runIds: []
     };
+  }
+
+  if (bot.captureUsersEnabled && captureActor) {
+    try {
+      await deps.botUserRepository.recordInteraction({
+        botId: bot.botId,
+        actor: captureActor,
+        receivedAt
+      });
+    } catch (error) {
+      logWarn("bot_user_capture_failed", {
+        botId: bot.botId,
+        updateId: event.updateId,
+        error
+      });
+    }
   }
 
   const limitReached = await deps.entitlementPolicy.isMonthlyExecutionExceeded(bot.userId, bot.plan);
@@ -123,8 +142,9 @@ export function createAutomationOrchestrator(deps: OrchestratorDeps): Automation
     async handleIncomingUpdate(input: HandleIncomingUpdateInput): Promise<OrchestrationResult> {
       const event = normalizeTelegramUpdate(input.telegramUpdate);
       const bot = await deps.botRepository.findBotContext(input.botId);
+      const captureActor = bot?.captureUsersEnabled ? extractTelegramActor(input.telegramUpdate) : null;
       const rules = bot ? await deps.ruleRepository.listActiveRules(bot.botId, event.trigger) : [];
-      return processRules(deps, bot, event, input.receivedAt, rules);
+      return processRules(deps, bot, event, input.receivedAt, rules, captureActor);
     },
 
     async handleIncomingWebhook(input: HandleIncomingWebhookInput): Promise<OrchestrationResult> {

@@ -18,5 +18,6 @@ export * from "./telegram/client.js";
 export * from "./telegram/types.js";
 export * from "./telegram/capabilities.js";
 export * from "./orchestrator/types.js";
+export * from "./orchestrator/actors.js";
 export * from "./orchestrator/normalize.js";
 export * from "./orchestrator/orchestrator.js";

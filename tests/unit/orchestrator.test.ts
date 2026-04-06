@@ -3,6 +3,7 @@ import {
   createAutomationOrchestrator,
   type ActionJob,
   type BotRepository,
+  type BotUserRepository,
   type EntitlementPolicy,
   type EventRepository,
   type RuleRepository,
@@ -69,6 +70,23 @@ function makeUpdate(text = "hello") {
   };
 }
 
+function makeActiveBotContext(captureUsersEnabled = false) {
+  return {
+    botId: "bot_1",
+    userId: "user_1",
+    encryptedToken: "enc",
+    status: "active",
+    plan: "FREE" as const,
+    captureUsersEnabled
+  };
+}
+
+function createNoopBotUserRepository(): BotUserRepository {
+  return {
+    async recordInteraction() {}
+  };
+}
+
 describe("AutomationOrchestrator", () => {
   it("returns inactive_bot without side effects", async () => {
     const enqueued: ActionJob[] = [];
@@ -105,6 +123,7 @@ describe("AutomationOrchestrator", () => {
 
     const orchestrator = createAutomationOrchestrator({
       botRepository,
+      botUserRepository: createNoopBotUserRepository(),
       eventRepository,
       ruleRepository,
       runRepository,
@@ -134,15 +153,10 @@ describe("AutomationOrchestrator", () => {
     const orchestrator = createAutomationOrchestrator({
       botRepository: {
         async findBotContext() {
-          return {
-            botId: "bot_1",
-            userId: "user_1",
-            encryptedToken: "enc",
-            status: "active",
-            plan: "FREE"
-          };
+          return makeActiveBotContext();
         }
       },
+      botUserRepository: createNoopBotUserRepository(),
       eventRepository: {
         async createIncomingEvent() {
           return { status: "duplicate" };
@@ -186,15 +200,10 @@ describe("AutomationOrchestrator", () => {
     const orchestrator = createAutomationOrchestrator({
       botRepository: {
         async findBotContext() {
-          return {
-            botId: "bot_1",
-            userId: "user_1",
-            encryptedToken: "enc",
-            status: "active",
-            plan: "FREE"
-          };
+          return makeActiveBotContext();
         }
       },
+      botUserRepository: createNoopBotUserRepository(),
       eventRepository: {
         async createIncomingEvent() {
           return { status: "created", eventId: "evt_1" };
@@ -225,15 +234,10 @@ describe("AutomationOrchestrator", () => {
     const orchestrator = createAutomationOrchestrator({
       botRepository: {
         async findBotContext() {
-          return {
-            botId: "bot_1",
-            userId: "user_1",
-            encryptedToken: "enc",
-            status: "active",
-            plan: "FREE"
-          };
+          return makeActiveBotContext();
         }
       },
+      botUserRepository: createNoopBotUserRepository(),
       eventRepository: {
         async createIncomingEvent() {
           eventsCreated += 1;
@@ -279,15 +283,10 @@ describe("AutomationOrchestrator", () => {
     const orchestrator = createAutomationOrchestrator({
       botRepository: {
         async findBotContext() {
-          return {
-            botId: "bot_1",
-            userId: "user_1",
-            encryptedToken: "enc",
-            status: "active",
-            plan: "FREE"
-          };
+          return makeActiveBotContext();
         }
       },
+      botUserRepository: createNoopBotUserRepository(),
       eventRepository: {
         async createIncomingEvent() {
           return { status: "created", eventId: "evt_1" };
@@ -298,11 +297,13 @@ describe("AutomationOrchestrator", () => {
           return [
             {
               ruleId: "rule_match",
+              botId: "bot_1",
               trigger: "message_received",
               flowDefinition: flowThatRepliesIfContainsHello()
             },
             {
               ruleId: "rule_no_match",
+              botId: "bot_1",
               trigger: "message_received",
               flowDefinition: flowThatRepliesIfEqualsBye()
             }
@@ -344,5 +345,217 @@ describe("AutomationOrchestrator", () => {
     expect(result.queuedActions).toBe(1);
     expect(enqueued).toHaveLength(1);
     expect(enqueued[0].botToken).toBe("decrypted-token");
+  });
+
+  it("records bot users when capture is enabled and an actor exists", async () => {
+    const captured: Array<{ botId: string; actorId: number }> = [];
+
+    const orchestrator = createAutomationOrchestrator({
+      botRepository: {
+        async findBotContext() {
+          return makeActiveBotContext(true);
+        }
+      },
+      botUserRepository: {
+        async recordInteraction(input) {
+          captured.push({ botId: input.botId, actorId: input.actor.id });
+        }
+      },
+      eventRepository: {
+        async createIncomingEvent() {
+          return { status: "created", eventId: "evt_1" };
+        }
+      },
+      ruleRepository: {
+        async listActiveRules() {
+          return [];
+        }
+      },
+      runRepository: {
+        async createRunWithActions() {
+          return { runId: "run_1", actionRuns: [] };
+        }
+      },
+      actionQueue: {
+        async enqueueAction() {}
+      },
+      entitlementPolicy: {
+        async isMonthlyExecutionExceeded() {
+          return false;
+        }
+      },
+      decryptToken: () => "decrypted"
+    });
+
+    await orchestrator.handleIncomingUpdate({
+      botId: "bot_1",
+      telegramUpdate: makeUpdate(),
+      receivedAt: new Date()
+    });
+
+    expect(captured).toEqual([{ botId: "bot_1", actorId: 444 }]);
+  });
+
+  it("skips bot-user capture when the setting is off", async () => {
+    let captureCalls = 0;
+
+    const orchestrator = createAutomationOrchestrator({
+      botRepository: {
+        async findBotContext() {
+          return makeActiveBotContext(false);
+        }
+      },
+      botUserRepository: {
+        async recordInteraction() {
+          captureCalls += 1;
+        }
+      },
+      eventRepository: {
+        async createIncomingEvent() {
+          return { status: "created", eventId: "evt_1" };
+        }
+      },
+      ruleRepository: {
+        async listActiveRules() {
+          return [];
+        }
+      },
+      runRepository: {
+        async createRunWithActions() {
+          return { runId: "run_1", actionRuns: [] };
+        }
+      },
+      actionQueue: {
+        async enqueueAction() {}
+      },
+      entitlementPolicy: {
+        async isMonthlyExecutionExceeded() {
+          return false;
+        }
+      },
+      decryptToken: () => "decrypted"
+    });
+
+    await orchestrator.handleIncomingUpdate({
+      botId: "bot_1",
+      telegramUpdate: makeUpdate(),
+      receivedAt: new Date()
+    });
+
+    expect(captureCalls).toBe(0);
+  });
+
+  it("skips bot-user capture when the update has no actor", async () => {
+    let captureCalls = 0;
+
+    const orchestrator = createAutomationOrchestrator({
+      botRepository: {
+        async findBotContext() {
+          return makeActiveBotContext(true);
+        }
+      },
+      botUserRepository: {
+        async recordInteraction() {
+          captureCalls += 1;
+        }
+      },
+      eventRepository: {
+        async createIncomingEvent() {
+          return { status: "created", eventId: "evt_1" };
+        }
+      },
+      ruleRepository: {
+        async listActiveRules() {
+          return [];
+        }
+      },
+      runRepository: {
+        async createRunWithActions() {
+          return { runId: "run_1", actionRuns: [] };
+        }
+      },
+      actionQueue: {
+        async enqueueAction() {}
+      },
+      entitlementPolicy: {
+        async isMonthlyExecutionExceeded() {
+          return false;
+        }
+      },
+      decryptToken: () => "decrypted"
+    });
+
+    await orchestrator.handleIncomingUpdate({
+      botId: "bot_1",
+      telegramUpdate: { update_id: 100, channel_post: { message_id: 1, chat: { id: 2, type: "channel" }, text: "hello" } },
+      receivedAt: new Date()
+    });
+
+    expect(captureCalls).toBe(0);
+  });
+
+  it("does not fail orchestration when bot-user capture throws", async () => {
+    const enqueued: ActionJob[] = [];
+
+    const orchestrator = createAutomationOrchestrator({
+      botRepository: {
+        async findBotContext() {
+          return makeActiveBotContext(true);
+        }
+      },
+      botUserRepository: {
+        async recordInteraction() {
+          throw new Error("db unavailable");
+        }
+      },
+      eventRepository: {
+        async createIncomingEvent() {
+          return { status: "created", eventId: "evt_1" };
+        }
+      },
+      ruleRepository: {
+        async listActiveRules() {
+          return [
+            {
+              ruleId: "rule_match",
+              botId: "bot_1",
+              trigger: "message_received",
+              flowDefinition: flowThatRepliesIfContainsHello()
+            }
+          ];
+        }
+      },
+      runRepository: {
+        async createRunWithActions(input) {
+          return {
+            runId: `run_for_${input.rule.ruleId}`,
+            actionRuns: input.actions.map((action) => ({
+              actionRunId: `action_run_${action.actionId}`,
+              action: action.payload
+            }))
+          };
+        }
+      },
+      actionQueue: {
+        async enqueueAction(job) {
+          enqueued.push(job);
+        }
+      },
+      entitlementPolicy: {
+        async isMonthlyExecutionExceeded() {
+          return false;
+        }
+      },
+      decryptToken: () => "decrypted-token"
+    });
+
+    const result = await orchestrator.handleIncomingUpdate({
+      botId: "bot_1",
+      telegramUpdate: makeUpdate("hello there"),
+      receivedAt: new Date()
+    });
+
+    expect(result.reason).toBe("processed");
+    expect(enqueued).toHaveLength(1);
   });
 });

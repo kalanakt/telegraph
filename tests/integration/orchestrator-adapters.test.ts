@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createBullMqActionQueueAdapter,
+  createPrismaBotUserRepository,
   createPrismaEventRepository,
   createPrismaRunRepository
 } from "../../apps/web/lib/orchestrator/adapters";
@@ -140,5 +141,157 @@ describe("orchestrator adapters", () => {
       runId: "run_123",
       actionRuns: [{ actionId: "a1", actionRunId: "action_run_1", action: { type: "telegram.sendMessage", params: { chat_id: "1", text: "reply" } } }]
     });
+  });
+
+  it("bot-user repository creates a bot-scoped user record on first interaction", async () => {
+    const upsertCalls: unknown[] = [];
+
+    const repository = createPrismaBotUserRepository({
+      botUser: {
+        async upsert(args: unknown) {
+          upsertCalls.push(args);
+          return { id: "bot_user_1" };
+        }
+      }
+    } as {
+      botUser: { upsert: (args: unknown) => Promise<{ id: string }> };
+    });
+
+    const receivedAt = new Date("2026-04-06T10:00:00.000Z");
+
+    await repository.recordInteraction({
+      botId: "bot_1",
+      actor: {
+        id: 123,
+        username: "alice",
+        first_name: "Alice",
+        last_name: "Doe",
+        language_code: "en"
+      },
+      receivedAt
+    });
+
+    expect(upsertCalls).toEqual([
+      {
+        where: {
+          botId_telegramUserId: {
+            botId: "bot_1",
+            telegramUserId: BigInt(123)
+          }
+        },
+        create: {
+          botId: "bot_1",
+          telegramUserId: BigInt(123),
+          username: "alice",
+          firstName: "Alice",
+          lastName: "Doe",
+          languageCode: "en",
+          firstSeenAt: receivedAt,
+          lastSeenAt: receivedAt,
+          interactionCount: 1
+        },
+        update: {
+          username: "alice",
+          firstName: "Alice",
+          lastName: "Doe",
+          languageCode: "en",
+          lastSeenAt: receivedAt,
+          interactionCount: {
+            increment: 1
+          }
+        }
+      }
+    ]);
+  });
+
+  it("bot-user repository preserves stored fields when a later interaction omits them", async () => {
+    const upsertCalls: unknown[] = [];
+
+    const repository = createPrismaBotUserRepository({
+      botUser: {
+        async upsert(args: unknown) {
+          upsertCalls.push(args);
+          return { id: "bot_user_1" };
+        }
+      }
+    } as {
+      botUser: { upsert: (args: unknown) => Promise<{ id: string }> };
+    });
+
+    const receivedAt = new Date("2026-04-06T12:00:00.000Z");
+
+    await repository.recordInteraction({
+      botId: "bot_1",
+      actor: {
+        id: 123
+      },
+      receivedAt
+    });
+
+    expect(upsertCalls[0]).toEqual({
+      where: {
+        botId_telegramUserId: {
+          botId: "bot_1",
+          telegramUserId: BigInt(123)
+        }
+      },
+      create: {
+        botId: "bot_1",
+        telegramUserId: BigInt(123),
+        username: null,
+        firstName: null,
+        lastName: null,
+        languageCode: null,
+        firstSeenAt: receivedAt,
+        lastSeenAt: receivedAt,
+        interactionCount: 1
+      },
+      update: {
+        username: undefined,
+        firstName: undefined,
+        lastName: undefined,
+        languageCode: undefined,
+        lastSeenAt: receivedAt,
+        interactionCount: {
+          increment: 1
+        }
+      }
+    });
+  });
+
+  it("bot-user repository scopes the same Telegram user id to each bot independently", async () => {
+    const upsertCalls: Array<{ where: { botId_telegramUserId: { botId: string; telegramUserId: bigint } } }> = [];
+
+    const repository = createPrismaBotUserRepository({
+      botUser: {
+        async upsert(args: { where: { botId_telegramUserId: { botId: string; telegramUserId: bigint } } }) {
+          upsertCalls.push(args);
+          return { id: "bot_user_1" };
+        }
+      }
+    } as {
+      botUser: {
+        upsert: (args: { where: { botId_telegramUserId: { botId: string; telegramUserId: bigint } } }) => Promise<{ id: string }>;
+      };
+    });
+
+    const receivedAt = new Date("2026-04-06T13:00:00.000Z");
+
+    await repository.recordInteraction({
+      botId: "bot_1",
+      actor: { id: 999 },
+      receivedAt
+    });
+
+    await repository.recordInteraction({
+      botId: "bot_2",
+      actor: { id: 999 },
+      receivedAt
+    });
+
+    expect(upsertCalls.map((call) => call.where.botId_telegramUserId)).toEqual([
+      { botId: "bot_1", telegramUserId: BigInt(999) },
+      { botId: "bot_2", telegramUserId: BigInt(999) }
+    ]);
   });
 });

@@ -2,6 +2,7 @@ import { createAutomationOrchestrator, decrypt } from "@telegram-builder/shared"
 import {
   createBullMqActionQueueAdapter,
   createPrismaBotRepository,
+  createPrismaBotUserRepository,
   createPrismaEntitlementPolicy,
   createPrismaEventRepository,
   createPrismaRuleRepository,
@@ -14,6 +15,7 @@ export function getAutomationOrchestrator() {
   if (!orchestrator) {
     orchestrator = createAutomationOrchestrator({
       botRepository: createPrismaBotRepository(),
+      botUserRepository: createPrismaBotUserRepository(),
       ruleRepository: createPrismaRuleRepository(),
       eventRepository: createPrismaEventRepository(),
       runRepository: createPrismaRunRepository(),
