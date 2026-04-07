@@ -109,7 +109,7 @@ export function FlowCanvas({
         edgeTypes={edgeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
         connectionMode={ConnectionMode.Strict}
-        connectionLineType={ConnectionLineType.SmoothStep}
+        connectionLineType={ConnectionLineType.Bezier}
         isValidConnection={isValidConnection}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}

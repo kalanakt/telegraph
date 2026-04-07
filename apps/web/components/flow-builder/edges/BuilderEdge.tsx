@@ -1,7 +1,6 @@
 "use client";
 
-import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, type EdgeProps } from "@xyflow/react";
-import { Plus } from "lucide-react";
+import { BaseEdge, EdgeLabelRenderer, getBezierPath, type EdgeProps } from "@xyflow/react";
 
 export function BuilderEdge({
   id,
@@ -17,14 +16,14 @@ export function BuilderEdge({
   selected,
   data,
 }: EdgeProps) {
-  const [path, labelX, labelY] = getSmoothStepPath({
+  const [path, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
     targetX,
     targetY,
     sourcePosition,
     targetPosition,
-    borderRadius: 16,
+    curvature: 0.38,
   });
 
   const edgeData = (data ?? {}) as { onInsertNode?: (edgeId: string, anchor: { x: number; y: number }) => void };
@@ -37,6 +36,7 @@ export function BuilderEdge({
           <div
             className="nodrag nopan builder-edge-label"
             style={{ transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY - 18}px)` }}
+            title={String(label)}
           >
             {label}
           </div>
@@ -55,7 +55,7 @@ export function BuilderEdge({
           }}
           aria-label="Insert node on edge"
         >
-          <Plus className="h-3.5 w-3.5" />
+          Add
         </button>
       </EdgeLabelRenderer>
     </>

@@ -43,7 +43,7 @@ export function SwitchNode({ data }: { data: SwitchEditorData & { __meta?: Build
               id={item.id}
               type="source"
               position={Position.Right}
-              style={{ top: `${36 + index * 78}px` }}
+              style={{ top: "50%" }}
               className="!h-3 !w-3 !border-white !bg-primary"
             />
           </div>
@@ -57,7 +57,7 @@ export function SwitchNode({ data }: { data: SwitchEditorData & { __meta?: Build
             id="default"
             type="source"
             position={Position.Right}
-            style={{ top: `${36 + data.cases.length * 78}px` }}
+            style={{ top: "50%" }}
             className="!h-3 !w-3 !border-white !bg-primary"
           />
         </div>

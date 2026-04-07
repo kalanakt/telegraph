@@ -296,9 +296,12 @@
         font-weight: 600;
     }
 
-    .builder-flow .react-flow__edge-path {
+    .builder-flow .react-flow__edge-path,
+    .builder-flow .react-flow__connection-path {
         stroke: rgba(14, 165, 233, 0.42);
         stroke-width: 1.75;
+        stroke-linecap: round;
+        stroke-linejoin: round;
     }
 
     .builder-flow .react-flow__edge.selected .react-flow__edge-path,
@@ -342,6 +345,17 @@
         border: 1px solid oklch(var(--background));
         background: oklch(var(--primary) / 0.82);
         box-shadow: 0 0 0 1px oklch(var(--border) / 0.45);
+        transition:
+            transform 160ms ease,
+            box-shadow 160ms ease,
+            background-color 160ms ease;
+    }
+
+    .builder-flow .react-flow__handle:hover {
+        transform: scale(1.08);
+        box-shadow:
+            0 0 0 1px oklch(var(--border) / 0.5),
+            0 8px 16px rgba(14, 165, 233, 0.18);
     }
 
     .builder-flow .react-flow__handle::before {
@@ -398,11 +412,12 @@
     }
 
     .builder-edge-label {
-        @apply rounded-sm border border-border/80 bg-background/92 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground shadow-sm;
+        @apply inline-flex max-w-[110px] items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap rounded-sm border border-border/80 bg-background/94 px-1.5 py-0.5 text-[8.5px] font-medium text-muted-foreground shadow-sm;
+        width: fit-content;
     }
 
     .builder-edge-insert {
-        @apply flex h-7 w-7 items-center justify-center rounded-full border border-border/80 bg-background/95 text-foreground shadow-sm transition;
+        @apply inline-flex h-6 items-center justify-center rounded-full border border-border/80 bg-background/95 px-2 text-[9px] font-semibold uppercase tracking-[0.08em] text-foreground shadow-sm transition;
     }
 
     .builder-edge-insert:hover,

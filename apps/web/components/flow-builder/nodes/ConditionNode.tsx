@@ -118,7 +118,7 @@ export function ConditionNode({ data }: { data: ConditionEditorData & { __meta?:
               id={branch.handle}
               type="source"
               position={Position.Right}
-              style={{ top: `${30 + index * 78}px` }}
+              style={{ top: "50%" }}
               className="!h-3 !w-3 !border-white !bg-primary"
             />
           </div>
