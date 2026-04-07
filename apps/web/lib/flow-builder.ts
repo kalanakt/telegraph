@@ -11,6 +11,7 @@ import {
   type FlowDefinition,
   type TriggerType
 } from "@telegram-builder/shared";
+import type { BuilderNodeCatalogItem, BuilderNodeCatalogSection, FlowNodeKind } from "@/components/flow-builder/types";
 
 type LegacyNodeData = Record<string, unknown>;
 export type ActionTemplate = { type: ActionPayload["type"]; params: Record<string, unknown> };
@@ -20,6 +21,43 @@ export type TriggerGroup = {
   label: string;
   triggers: TriggerType[];
 };
+
+const LOGIC_CATALOG: Array<{
+  kind: FlowNodeKind;
+  group: string;
+  title: string;
+  description: string;
+  icon: string;
+}> = [
+  {
+    kind: "condition",
+    group: "Filters",
+    title: "Condition",
+    description: "Branch on text, variables, message context, or webhook fields.",
+    icon: "filter"
+  },
+  {
+    kind: "switch",
+    group: "Branching",
+    title: "Switch",
+    description: "Route to different paths based on one event or variable value.",
+    icon: "branch"
+  },
+  {
+    kind: "set_variable",
+    group: "Variables",
+    title: "Set Variable",
+    description: "Store a computed value so downstream nodes can reuse it.",
+    icon: "variable"
+  },
+  {
+    kind: "delay",
+    group: "Timing",
+    title: "Delay",
+    description: "Pause execution before continuing to the next node.",
+    icon: "delay"
+  }
+];
 
 function asString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim().length > 0 ? value : undefined;
@@ -42,6 +80,64 @@ function defaultChatId(data: LegacyNodeData): string {
   return asString(data.chatId) ?? "{{event.chatId}}";
 }
 
+function formatCatalogId(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+}
+
+function getTriggerCatalogGroup(trigger: TriggerType) {
+  if (trigger === "webhook.received") return "Webhooks";
+  if (trigger === "shipping_query_received" || trigger === "pre_checkout_query_received") return "Commerce";
+  if (
+    trigger === "chat_member_updated" ||
+    trigger === "my_chat_member_updated" ||
+    trigger === "chat_join_request_received"
+  ) {
+    return "Membership";
+  }
+  if (
+    trigger === "message_reaction_updated" ||
+    trigger === "message_reaction_count_updated" ||
+    trigger === "poll_received" ||
+    trigger === "poll_answer_received" ||
+    trigger === "update_received"
+  ) {
+    return "Engagement";
+  }
+  return "Conversations";
+}
+
+function getActionCatalogGroup(actionType: ActionPayload["type"], category: string) {
+  if (actionType === "webhook.send" || actionType === "http.request") {
+    return "External Calls";
+  }
+
+  if (
+    actionType === "telegram.sendPhoto" ||
+    actionType === "telegram.sendVideo" ||
+    actionType === "telegram.sendDocument" ||
+    actionType === "telegram.sendMediaGroup"
+  ) {
+    return "Media";
+  }
+
+  if (category === "moderation") return "Moderation";
+  if (category === "chat") return "Chat Management";
+  if (category === "admin" || category === "meta") return "Bot Admin";
+  return "Send & Reply";
+}
+
+function getActionCatalogIcon(actionType: ActionPayload["type"]) {
+  if (actionType === "http.request") return "globe";
+  if (actionType === "webhook.send") return "webhook";
+  if (actionType.includes("Photo")) return "image";
+  if (actionType.includes("Video")) return "video";
+  if (actionType.includes("Document")) return "file";
+  if (actionType.includes("Chat") || actionType.includes("Message")) return "message";
+  if (actionType.includes("Invite") || actionType.includes("Commands") || actionType.includes("Webhook")) return "bot";
+  if (actionType.includes("ban") || actionType.includes("restrict") || actionType.includes("approve") || actionType.includes("decline")) return "shield";
+  return "zap";
+}
+
 export function getTriggerGroups(): TriggerGroup[] {
   const available = new Set<TriggerType>(WORKFLOW_TRIGGER_TYPES);
   const grouped = new Map<string, TriggerType[]>();
@@ -50,13 +146,14 @@ export function getTriggerGroups(): TriggerGroup[] {
     if (!available.has(item.trigger)) {
       continue;
     }
-    const list = grouped.get(item.group) ?? [];
+    const label = getTriggerCatalogGroup(item.trigger);
+    const list = grouped.get(label) ?? [];
     list.push(item.trigger);
-    grouped.set(item.group, list);
+    grouped.set(label, list);
   }
 
   return Array.from(grouped.entries()).map(([label, triggers]) => ({
-    id: label.toLowerCase().replace(/\s+/g, "-"),
+    id: formatCatalogId(label),
     label,
     triggers
   }));
@@ -71,11 +168,97 @@ export function getActionTypeOptions(trigger?: TriggerType) {
     (item) => ({
       actionType: item.actionType,
       label: item.label,
-      category: item.category,
+      category: getActionCatalogGroup(item.actionType, item.category),
       description: item.description,
       source: item.source
     })
   );
+}
+
+export function getBuilderCatalog(trigger: TriggerType, hasTrigger: boolean): BuilderNodeCatalogSection[] {
+  const sections: BuilderNodeCatalogSection[] = [];
+
+  const triggerGroups = getTriggerGroups()
+    .map((group) => {
+      const items: BuilderNodeCatalogItem[] = group.triggers.map((triggerType) => {
+        const manifest = WORKFLOW_TRIGGER_MANIFEST.find((item) => item.trigger === triggerType);
+        return {
+          id: `trigger:${triggerType}`,
+          kind: "start",
+          title: formatTriggerLabel(triggerType),
+          description: manifest?.description ?? `Run when ${formatTriggerLabel(triggerType).toLowerCase()} happens.`,
+          group: group.label,
+          icon: triggerType === "webhook.received" ? "webhook" : "trigger",
+          trigger: triggerType,
+          disabled: hasTrigger && trigger !== triggerType,
+          disabledReason: hasTrigger && trigger !== triggerType ? "Flow already has a trigger node." : undefined
+        };
+      });
+
+      return {
+        id: `triggers:${group.id}`,
+        title: group.label,
+        items
+      };
+    })
+    .filter((section) => section.items.length > 0);
+
+  sections.push(...triggerGroups);
+
+  const logicSections = new Map<string, BuilderNodeCatalogItem[]>();
+  for (const item of LOGIC_CATALOG) {
+    const list = logicSections.get(item.group) ?? [];
+    list.push({
+      id: `logic:${item.kind}`,
+      kind: item.kind,
+      title: item.title,
+      description: item.description,
+      group: item.group,
+      icon: item.icon
+    });
+    logicSections.set(item.group, list);
+  }
+
+  for (const [group, items] of logicSections.entries()) {
+    sections.push({
+      id: `logic:${formatCatalogId(group)}`,
+      title: group,
+      items
+    });
+  }
+
+  const actionSections = new Map<string, BuilderNodeCatalogItem[]>();
+  for (const item of getActionTypeOptions(trigger)) {
+    const list = actionSections.get(item.category) ?? [];
+    list.push({
+      id: `action:${item.actionType}`,
+      kind: "action",
+      title: item.label,
+      description: item.description,
+      group: item.category,
+      icon: getActionCatalogIcon(item.actionType),
+      actionType: item.actionType
+    });
+    actionSections.set(item.category, list);
+  }
+
+  for (const [group, items] of actionSections.entries()) {
+    sections.push({
+      id: `actions:${formatCatalogId(group)}`,
+      title: group,
+      items
+    });
+  }
+
+  return sections;
+}
+
+export function formatTriggerLabel(trigger: string): string {
+  return trigger
+    .replaceAll(".", "_")
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
 }
 
 export function getActionPresets(actionType: ActionPayload["type"]) {

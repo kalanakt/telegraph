@@ -2,22 +2,27 @@
 
 import { Handle, Position } from "@xyflow/react";
 import type { TriggerType } from "@telegram-builder/shared";
-import type { BuilderNodeMeta } from "../types";
-import { getTriggerIcon, formatTriggerLabel } from "../TriggerPickerModal";
+import { formatTriggerLabel } from "@/lib/flow-builder";
+import { Button } from "@/components/ui/button";
+import type { BuilderNodeMeta, BuilderRuntimeData } from "../types";
+import { getTriggerIcon } from "../TriggerPickerModal";
 
 type StartNodeData = {
+  id?: string;
   trigger?: TriggerType;
   __meta?: BuilderNodeMeta;
+  __runtime?: BuilderRuntimeData;
 };
 
 export function StartNode({ data }: { data: StartNodeData }) {
   const trigger = data.trigger ?? "message_received";
   const Icon = getTriggerIcon(trigger);
   const label = data.__meta?.label?.trim() || "Trigger";
+  const runtime = data.__runtime;
 
   return (
     <div
-      className={`builder-node builder-node-start relative min-w-[220px] rounded-sm px-3 py-3 text-xs ${trigger ? "builder-node-start-configured" : ""}`}
+      className={`builder-node builder-node-start relative min-w-[300px] max-w-[360px] rounded-sm px-3 py-3 text-xs ${trigger ? "builder-node-start-configured" : ""} ${runtime?.connectState === "source" ? "builder-node-connect-source" : ""} ${runtime?.canConnectToPending ? "builder-node-connect-target" : ""}`}
     >
       <div className="flex items-start gap-2">
         <span className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-sm border border-border/85 bg-secondary/70 text-foreground">
@@ -28,7 +33,20 @@ export function StartNode({ data }: { data: StartNodeData }) {
           <div className="font-semibold leading-tight text-foreground">{label}</div>
           <div className="mt-0.5 text-[10px] text-foreground/80">{formatTriggerLabel(trigger)}</div>
           <div className="mt-0.5 font-mono text-[9px] text-muted-foreground">{trigger}</div>
-          <div className="mt-2 text-[10px] text-muted-foreground">Change in inspector →</div>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            <Button
+              type="button"
+              size="xs"
+              variant="outline"
+              onClick={(event) => {
+                event.stopPropagation();
+                runtime?.onTriggerSelect?.(trigger);
+              }}
+            >
+              Edit trigger
+            </Button>
+          </div>
+          <div className="mt-2 text-[10px] text-muted-foreground">Pick a trigger, then connect the rest of the graph.</div>
         </div>
       </div>
 

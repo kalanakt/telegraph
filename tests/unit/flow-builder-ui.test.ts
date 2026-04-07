@@ -3,10 +3,19 @@ import { TELEGRAM_TRIGGER_TYPES, actionSchema, flowDefinitionSchema } from "@tel
 import {
   coerceFlowDefinition,
   createActionTemplate,
+  getBuilderCatalog,
   getTriggerGroups,
   migrateLegacyActionData
 } from "@/lib/flow-builder";
-import { canCreateConnection, createFlowNode } from "@/components/flow-builder/utils";
+import {
+  buildCallbackToken,
+  canCreateConnection,
+  createBuilderEdge,
+  createFlowNode,
+  findLinkedCallbackFlows,
+  getBranchHandleForInsertedNode,
+  setInlineButtonCallbackToken,
+} from "@/components/flow-builder/utils";
 
 describe("flow-builder trigger groups", () => {
   it("covers all trigger types from shared capabilities", () => {
@@ -16,6 +25,20 @@ describe("flow-builder trigger groups", () => {
     for (const trigger of TELEGRAM_TRIGGER_TYPES) {
       expect(fromGroups.has(trigger)).toBe(true);
     }
+  });
+
+  it("builds a task-first builder catalog", () => {
+    const sections = getBuilderCatalog("message_received", false);
+    const titles = new Set(sections.map((section) => section.title));
+
+    expect(titles.has("Conversations")).toBe(true);
+    expect(titles.has("Filters")).toBe(true);
+    expect(titles.has("Send & Reply")).toBe(true);
+    expect(
+      sections.some((section) =>
+        section.items.some((item) => item.actionType === "telegram.sendMessage" && item.group === "Send & Reply"),
+      ),
+    ).toBe(true);
   });
 });
 
@@ -187,5 +210,73 @@ describe("flow-builder toolbar node creation", () => {
         edges,
       ),
     ).toBe(true);
+  });
+
+  it("creates smooth-step builder edges with branch labels", () => {
+    const edge = createBuilderEdge({
+      source: "condition_1",
+      sourceHandle: "true",
+      target: "action_1",
+      targetHandle: null,
+    });
+
+    expect(edge.type).toBe("builder-edge");
+    expect(edge.label).toBe("true");
+  });
+
+  it("uses a deterministic callback token and links matching callback flows", () => {
+    const token = buildCallbackToken({
+      ruleId: "rule_1",
+      nodeId: "action_1",
+      rowIndex: 0,
+      buttonIndex: 0,
+      buttonLabel: "Open settings",
+    });
+
+    const params = setInlineButtonCallbackToken(
+      {
+        reply_markup: {
+          inline_keyboard: [[{ text: "Open settings" }]],
+        },
+      },
+      0,
+      0,
+      token,
+    );
+
+    const linked = findLinkedCallbackFlows(
+      [
+        {
+          id: "callback_rule",
+          botId: "bot_1",
+          name: "Settings callback",
+          trigger: "callback_query_received",
+          flowDefinition: {
+            nodes: [
+              { id: "start_1", type: "start", position: { x: 0, y: 0 }, data: {} },
+              {
+                id: "condition_1",
+                type: "condition",
+                position: { x: 220, y: 0 },
+                data: { type: "callback_data_equals", value: token },
+              },
+            ],
+            edges: [{ id: "e1", source: "start_1", target: "condition_1" }],
+          },
+        },
+      ],
+      params,
+      0,
+      0,
+    );
+
+    expect(token).toContain("open_settings");
+    expect(linked[0]?.ruleId).toBe("callback_rule");
+  });
+
+  it("chooses the safe default branch when inserting nodes onto edges", () => {
+    expect(getBranchHandleForInsertedNode("condition")).toBe("true");
+    expect(getBranchHandleForInsertedNode("switch")).toBe("default");
+    expect(getBranchHandleForInsertedNode("action")).toBeUndefined();
   });
 });

@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Edge, IsValidConnection, Node } from "@xyflow/react";
-import { flowDefinitionSchema, type TriggerType } from "@telegram-builder/shared";
+import type { IsValidConnection, Node } from "@xyflow/react";
+import { flowDefinitionSchema, type FlowDefinition, type TriggerType } from "@telegram-builder/shared";
 import {
   Card,
   CardContent,
@@ -10,14 +10,40 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getBuilderCatalog, formatTriggerLabel } from "@/lib/flow-builder";
 import { useFlowState } from "./hooks/useFlowState";
 import { useFlowCallbacks } from "./hooks/useFlowCallbacks";
-import { canCreateConnection, defaultFlowDefinition, getNodeMeta, toFlowDefinition } from "./utils";
+import {
+  buildCallbackToken,
+  canCreateConnection,
+  createBuilderEdge,
+  defaultFlowDefinition,
+  findLinkedCallbackFlows,
+  getBranchHandleForInsertedNode,
+  getEdgeMidpoint,
+  getInlineButtonCallbackToken,
+  getInlineButtonLabel,
+  getInlineKeyboard,
+  getNodeMeta,
+  normalizeActionNodeData,
+  setInlineButtonCallbackToken,
+  toFlowDefinition,
+} from "./utils";
 import { FlowToolbar } from "./FlowToolbar";
 import { FlowCanvas } from "./FlowCanvas";
 import { FlowEditorLayout } from "./FlowEditorLayout";
 import { FlowInspector } from "./FlowInspector";
-import type { BotOption, RuleOption } from "./types";
+import { FlowNodePalette } from "./FlowNodePalette";
+import { QuickAddPopover } from "./QuickAddPopover";
+import type {
+  BotOption,
+  BuilderNodeCatalogItem,
+  DecoratedBuilderEdge,
+  DecoratedBuilderNode,
+  PendingConnection,
+  QuickAddContext,
+  RuleOption,
+} from "./types";
 
 type DraftPayload = {
   botId: string;
@@ -35,6 +61,28 @@ function getDraftStorageKey(ruleId: string) {
   return `telegraph.flow-builder.draft.${ruleId}`;
 }
 
+function buildCallbackFlowDefinition(token: string, buttonLabel: string): FlowDefinition {
+  return {
+    nodes: [
+      {
+        id: "start_callback",
+        type: "start",
+        position: { x: 60, y: 180 },
+        meta: { label: "Trigger", key: "trigger" },
+        data: {},
+      },
+      {
+        id: "condition_callback",
+        type: "condition",
+        position: { x: 320, y: 180 },
+        meta: { label: `${buttonLabel} pressed`, key: "button_pressed" },
+        data: { type: "callback_data_equals", value: token },
+      },
+    ],
+    edges: [{ id: "edge_callback_condition", source: "start_callback", target: "condition_callback" }],
+  };
+}
+
 type Props = {
   bots: BotOption[];
   rules: RuleOption[];
@@ -45,13 +93,19 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
   const [botId, setBotId] = useState(bots[0]?.id ?? "");
   const [name, setName] = useState("Flow");
   const [selectedRuleId, setSelectedRuleId] = useState<string>(initialRuleId ?? "new");
+  const [availableRules, setAvailableRules] = useState(rules);
   const [status, setStatus] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [autosaveState, setAutosaveState] = useState("Saved");
   const [viewportCenter, setViewportCenter] = useState({ x: 220, y: 180 });
-  const selectedRule = rules.find((rule) => rule.id === selectedRuleId) ?? null;
+  const [paletteQuery, setPaletteQuery] = useState("");
+  const [paletteMobileOpen, setPaletteMobileOpen] = useState(false);
+  const [quickAddContext, setQuickAddContext] = useState<QuickAddContext | null>(null);
+  const [quickAddQuery, setQuickAddQuery] = useState("");
+  const [pendingConnection, setPendingConnection] = useState<PendingConnection | null>(null);
+  const selectedRule = availableRules.find((rule) => rule.id === selectedRuleId) ?? null;
   const historyRef = useRef<CanvasSnapshot[]>([]);
   const historyIndexRef = useRef(-1);
   const isRestoringRef = useRef(false);
@@ -114,6 +168,7 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
       loadFlow(snapshot.flowDefinition, snapshot.trigger);
       setSelectedNodeId(null);
       setSelectedEdgeId(null);
+      setPendingConnection(null);
       window.setTimeout(() => {
         isRestoringRef.current = false;
       }, 0);
@@ -122,12 +177,15 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
   );
 
   useEffect(() => {
+    setAvailableRules(rules);
+  }, [rules]);
+
+  useEffect(() => {
     setSelectedRuleId(initialRuleId ?? "new");
   }, [initialRuleId]);
 
-  // Load rule when selectedRuleId changes
   useEffect(() => {
-    const existing = rules.find((rule) => rule.id === selectedRuleId);
+    const existing = availableRules.find((rule) => rule.id === selectedRuleId);
     let nextDraft: DraftPayload = {
       botId: existing?.botId ?? bots[0]?.id ?? "",
       name: existing?.name ?? "Flow",
@@ -171,7 +229,10 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
     baselineSignatureRef.current = JSON.stringify(nextDraft);
     setAutosaveState("Saved");
     setIsDirty(false);
-  }, [bots, rules, selectedRuleId]); // eslint-disable-line react-hooks/exhaustive-deps
+    setPaletteQuery("");
+    setQuickAddContext(null);
+    setQuickAddQuery("");
+  }, [availableRules, applySnapshot, bots, selectedRuleId]);
 
   const isValidConnection: IsValidConnection = useCallback(
     (connection) => canCreateConnection(connection, nodes, edges),
@@ -204,6 +265,21 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
 
     return [...base, ...nodeTokens];
   }, [nodes]);
+
+  const paletteSections = useMemo(
+    () => getBuilderCatalog(trigger, nodes.some((node) => node.type === "start")),
+    [nodes, trigger],
+  );
+  const quickAddSections = useMemo(
+    () =>
+      paletteSections
+        .map((section) => ({
+          ...section,
+          items: section.items.filter((item) => item.kind !== "start"),
+        }))
+        .filter((section) => section.items.length > 0),
+    [paletteSections],
+  );
 
   useEffect(() => {
     setIsDirty(editorSignature !== baselineSignatureRef.current);
@@ -250,7 +326,7 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
   }, [botId, currentFlowDefinition, name, selectedRuleId, trigger]);
 
   const onSelectionChange = useCallback(
-    ({ nodes: selectedNodes, edges: selectedEdges }: { nodes: Node[]; edges: Edge[] }) => {
+    ({ nodes: selectedNodes, edges: selectedEdges }: { nodes: Node[]; edges: DecoratedBuilderEdge[] }) => {
       setSelectedEdgeId(selectedEdges[0]?.id ?? null);
       setSelectedNodeId(selectedNodes[0]?.id ?? null);
     },
@@ -379,6 +455,12 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
         return;
       }
 
+      if (event.key === "Escape") {
+        setQuickAddContext(null);
+        setPendingConnection(null);
+        return;
+      }
+
       if (event.key === "Delete" || event.key === "Backspace") {
         if (selectedNode || selectedEdgeId) {
           event.preventDefault();
@@ -390,6 +472,339 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
     window.addEventListener("keydown", handleKeydown);
     return () => window.removeEventListener("keydown", handleKeydown);
   }, [deleteSelection, duplicateSelectedNode, pasteClipboardNode, redo, selectedEdgeId, selectedNode, undo]);
+
+  const persistDraftSnapshot = useCallback(
+    (nextNodes: Node[]) => {
+      if (typeof window === "undefined") {
+        return;
+      }
+
+      window.localStorage.setItem(
+        getDraftStorageKey(selectedRuleId),
+        JSON.stringify({
+          botId,
+          name,
+          trigger,
+          flowDefinition: toFlowDefinition(nextNodes, edges),
+        } satisfies DraftPayload),
+      );
+    },
+    [botId, edges, name, selectedRuleId, trigger],
+  );
+
+  const ensureInlineButtonToken = useCallback(
+    (nodeId: string, rowIndex: number, buttonIndex: number) => {
+      const actionNode = nodes.find((node) => node.id === nodeId && node.type === "action");
+      if (!actionNode) {
+        return null;
+      }
+
+      const action = normalizeActionNodeData(actionNode.data);
+      const buttonLabel = getInlineButtonLabel(action.params, rowIndex, buttonIndex);
+      let token = getInlineButtonCallbackToken(action.params, rowIndex, buttonIndex);
+      let nextParams = action.params;
+
+      if (!token) {
+        token = buildCallbackToken({
+          ruleId: selectedRuleId === "new" ? "draft" : selectedRuleId,
+          nodeId,
+          rowIndex,
+          buttonIndex,
+          buttonLabel,
+        });
+        nextParams = setInlineButtonCallbackToken(action.params, rowIndex, buttonIndex, token);
+        const nextNodes = nodes.map((node) =>
+          node.id === nodeId && node.type === "action"
+            ? { ...node, data: { ...action, params: nextParams } }
+            : node,
+        );
+        setNodes(nextNodes);
+        persistDraftSnapshot(nextNodes);
+      }
+
+      return { token, buttonLabel, params: nextParams };
+    },
+    [nodes, persistDraftSnapshot, selectedRuleId, setNodes],
+  );
+
+  const handleLinkCallbackFlow = useCallback(
+    (nodeId: string, rowIndex: number, buttonIndex: number) => {
+      const prepared = ensureInlineButtonToken(nodeId, rowIndex, buttonIndex);
+      if (!prepared) {
+        setStatus("Callback button not found.");
+        return;
+      }
+
+      const linked = findLinkedCallbackFlows(availableRules, prepared.params, rowIndex, buttonIndex);
+      if (linked[0]) {
+        window.location.href = `/flows?edit=${linked[0].ruleId}`;
+        return;
+      }
+
+      setStatus("No callback flow linked yet. Create one from this button.");
+    },
+    [availableRules, ensureInlineButtonToken],
+  );
+
+  const handleCreateCallbackFlow = useCallback(
+    async (nodeId: string, rowIndex: number, buttonIndex: number) => {
+      const prepared = ensureInlineButtonToken(nodeId, rowIndex, buttonIndex);
+      if (!prepared) {
+        setStatus("Callback button not found.");
+        return;
+      }
+
+      const linked = findLinkedCallbackFlows(availableRules, prepared.params, rowIndex, buttonIndex);
+      if (linked[0]) {
+        window.location.href = `/flows?edit=${linked[0].ruleId}`;
+        return;
+      }
+
+      setStatus("Creating callback flow...");
+      const callbackName = `${name}: ${prepared.buttonLabel}`;
+      const response = await fetch("/api/flows", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          botId,
+          name: callbackName,
+          trigger: "callback_query_received",
+          flowDefinition: buildCallbackFlowDefinition(prepared.token, prepared.buttonLabel),
+        }),
+      });
+
+      const json = await response.json();
+      if (!response.ok || !json.rule?.id) {
+        setStatus(json.error ?? "Failed to create callback flow.");
+        return;
+      }
+
+      const newRule: RuleOption = {
+        id: json.rule.id as string,
+        botId,
+        name: callbackName,
+        trigger: "callback_query_received",
+        flowDefinition: buildCallbackFlowDefinition(prepared.token, prepared.buttonLabel),
+        webhookEndpoint: null,
+      };
+      setAvailableRules((current) => [newRule, ...current]);
+      setStatus(`Created callback flow "${callbackName}".`);
+
+      if (selectedRuleId !== "new") {
+        window.location.href = `/flows?edit=${newRule.id}`;
+      }
+    },
+    [availableRules, botId, ensureInlineButtonToken, name, selectedRuleId],
+  );
+
+  const openQuickAdd = useCallback((sourceNodeId: string, sourceHandle: string | undefined, anchor: { x: number; y: number }) => {
+    setQuickAddQuery("");
+    setQuickAddContext({
+      mode: "branch",
+      sourceNodeId,
+      sourceHandle,
+      anchor,
+    });
+    setPendingConnection(null);
+  }, []);
+
+  const openEdgeInsert = useCallback(
+    (edgeId: string, anchor: { x: number; y: number }) => {
+      const edge = edges.find((item) => item.id === edgeId);
+      if (!edge) return;
+
+      setQuickAddQuery("");
+      setQuickAddContext({
+        mode: "edge",
+        edgeId,
+        sourceNodeId: edge.source,
+        sourceHandle: edge.sourceHandle ?? undefined,
+        targetNodeId: edge.target,
+        anchor,
+      });
+      setPendingConnection(null);
+    },
+    [edges],
+  );
+
+  const startConnectExisting = useCallback((sourceNodeId: string, sourceHandle?: string) => {
+    setPendingConnection({ sourceNodeId, sourceHandle });
+    setQuickAddContext(null);
+    setStatus("Select a target node to complete the connection.");
+  }, []);
+
+  const applyCatalogItem = useCallback(
+    (item: BuilderNodeCatalogItem, context: QuickAddContext | null) => {
+      if (item.kind === "start") {
+        const existingStart = nodes.find((node) => node.type === "start");
+        if (existingStart) {
+          setTrigger(item.trigger ?? trigger);
+          setSelectedNodeId(existingStart.id);
+          setStatus(`Trigger updated to ${formatTriggerLabel(item.trigger ?? trigger)}.`);
+        } else {
+          const nextNode = addNode("start", viewportCenter, { trigger: item.trigger });
+          if (nextNode) {
+            setStatus(`Added ${item.title}.`);
+          }
+        }
+        setPaletteMobileOpen(false);
+        return;
+      }
+
+      const edgeContext = context?.mode === "edge" ? edges.find((edge) => edge.id === context.edgeId) : null;
+      const position = edgeContext ? getEdgeMidpoint(edgeContext, nodes) : undefined;
+      const nextNode =
+        item.kind === "action"
+          ? addNode("action", viewportCenter, { actionType: item.actionType, position })
+          : addNode(item.kind, viewportCenter, { position });
+
+      if (!nextNode) {
+        return;
+      }
+
+      if (context?.mode === "branch") {
+        setEdges((current) => [
+          ...current,
+          createBuilderEdge({
+            source: context.sourceNodeId,
+            sourceHandle: context.sourceHandle ?? null,
+            target: nextNode.id,
+            targetHandle: null,
+          }),
+        ]);
+      }
+
+      if (context?.mode === "edge" && edgeContext) {
+        setEdges((current) => {
+          const withoutEdge = current.filter((edge) => edge.id !== edgeContext.id);
+          return [
+            ...withoutEdge,
+            createBuilderEdge({
+              source: edgeContext.source,
+              sourceHandle: edgeContext.sourceHandle ?? null,
+              target: nextNode.id,
+              targetHandle: null,
+            }),
+            createBuilderEdge({
+              source: nextNode.id,
+              sourceHandle: getBranchHandleForInsertedNode(item.kind) ?? null,
+              target: edgeContext.target,
+              targetHandle: null,
+            }),
+          ];
+        });
+      }
+
+      setSelectedNodeId(nextNode.id);
+      setStatus(context ? `Connected ${item.title}.` : `Added ${item.title}.`);
+      setPaletteMobileOpen(false);
+      setQuickAddContext(null);
+    },
+    [addNode, edges, nodes, setEdges, setSelectedNodeId, setTrigger, trigger, viewportCenter],
+  );
+
+  const handleNodeActivate = useCallback(
+    (node: Node) => {
+      if (pendingConnection) {
+        const connection = {
+          source: pendingConnection.sourceNodeId,
+          sourceHandle: pendingConnection.sourceHandle ?? null,
+          target: node.id,
+          targetHandle: null,
+        };
+
+        if (canCreateConnection(connection, nodes, edges)) {
+          onConnect(connection);
+          setPendingConnection(null);
+          setSelectedNodeId(node.id);
+          setStatus("Nodes connected.");
+          return;
+        }
+
+        setStatus("Connection blocked: branch already used, duplicate edge, or invalid.");
+      }
+
+      setSelectedEdgeId(null);
+      setSelectedNodeId(node.id);
+    },
+    [edges, nodes, onConnect, pendingConnection, setSelectedNodeId],
+  );
+
+  const decoratedNodes = useMemo<DecoratedBuilderNode[]>(
+    () =>
+      nodes.map((node) => {
+        const canConnectToPending =
+          pendingConnection &&
+          pendingConnection.sourceNodeId !== node.id &&
+          canCreateConnection(
+            {
+              source: pendingConnection.sourceNodeId,
+              sourceHandle: pendingConnection.sourceHandle ?? null,
+              target: node.id,
+              targetHandle: null,
+            },
+            nodes,
+            edges,
+          );
+
+        const action = node.type === "action" ? normalizeActionNodeData(node.data) : null;
+        const linked =
+          action
+            ? Array.from(
+                new Map(
+                  getInlineKeyboard(action.params)
+                    .flatMap((row, rowIndex) => {
+                      return row.flatMap((_, buttonIndex) =>
+                        findLinkedCallbackFlows(availableRules, action.params, rowIndex, buttonIndex),
+                      );
+                    })
+                    .map((item) => [`${item.ruleId}:${item.token}`, item]),
+                ).values(),
+              )
+            : [];
+
+        return {
+          ...node,
+          data: {
+            ...(node.data as Record<string, unknown>),
+            id: node.id,
+            __runtime: {
+              onAddNext: openQuickAdd,
+              onConnectExisting: startConnectExisting,
+              onTriggerSelect: () => setSelectedNodeId(node.id),
+              onCreateCallbackFlow: handleCreateCallbackFlow,
+              onLinkCallbackFlow: handleLinkCallbackFlow,
+              connectState: pendingConnection?.sourceNodeId === node.id ? "source" : "idle",
+              canConnectToPending: Boolean(canConnectToPending),
+              linkedCallbackFlows: linked,
+            },
+          },
+        };
+      }),
+    [
+      availableRules,
+      edges,
+      handleCreateCallbackFlow,
+      handleLinkCallbackFlow,
+      nodes,
+      openQuickAdd,
+      pendingConnection,
+      setSelectedNodeId,
+      startConnectExisting,
+    ],
+  );
+
+  const decoratedEdges = useMemo<DecoratedBuilderEdge[]>(
+    () =>
+      edges.map((edge) => ({
+        ...edge,
+        type: "builder-edge",
+        data: {
+          onInsertNode: openEdgeInsert,
+        },
+      })),
+    [edges, openEdgeInsert],
+  );
 
   async function saveFlow() {
     setIsSaving(true);
@@ -471,7 +886,7 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
       <CardHeader>
         <CardTitle className="text-xl">Flows Studio</CardTitle>
         <CardDescription>
-          Add trigger, condition, and action nodes from the toolbar, connect them on the canvas, then configure the selected node in the inspector.
+          Use the node catalog to add triggers, logic, and actions. Connect nodes directly from each card, or insert new nodes on any edge.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -480,40 +895,56 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
           bots={bots}
           name={name}
           selectedRuleId={selectedRuleId}
-          rules={rules}
+          rules={availableRules}
           isSaving={isSaving}
           isDirty={isDirty}
           autosaveState={autosaveState}
           status={status}
           nodeCount={nodes.length}
           edgeCount={edges.length}
-          hasTrigger={nodes.some((node) => node.type === "start")}
           validationIssues={validationIssues}
           canUndo={historyIndexRef.current > 0}
           canRedo={historyIndexRef.current < historyRef.current.length - 1}
           onBotChange={setBotId}
           onNameChange={setName}
           onRuleChange={setSelectedRuleId}
-          onAddNode={(kind) => addNode(kind, viewportCenter)}
           onUndo={undo}
           onRedo={redo}
           onDuplicateNode={duplicateSelectedNode}
           onSave={saveFlow}
+          onOpenPalette={() => setPaletteMobileOpen(true)}
         />
 
         <FlowEditorLayout
           hasInspector={Boolean(selectedNode)}
+          palette={
+            <FlowNodePalette
+              sections={paletteSections}
+              query={paletteQuery}
+              onQueryChange={setPaletteQuery}
+              onSelectItem={(item) => applyCatalogItem(item, null)}
+              mobileOpen={paletteMobileOpen}
+              onMobileClose={() => setPaletteMobileOpen(false)}
+            />
+          }
           canvas={
             <FlowCanvas
-              nodes={nodes}
-              edges={edges}
+              nodes={decoratedNodes}
+              edges={decoratedEdges}
               trigger={trigger}
+              pendingConnection={pendingConnection}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
               onSelectionChange={onSelectionChange}
               isValidConnection={isValidConnection}
               onViewportCenterChange={setViewportCenter}
+              onNodeActivate={handleNodeActivate}
+              onPaneClick={() => {
+                setSelectedNodeId(null);
+                setSelectedEdgeId(null);
+                setPendingConnection(null);
+              }}
             />
           }
           inspector={
@@ -531,6 +962,15 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
           }
         />
       </CardContent>
+
+      <QuickAddPopover
+        context={quickAddContext}
+        sections={quickAddSections}
+        query={quickAddQuery}
+        onQueryChange={setQuickAddQuery}
+        onSelectItem={(item) => applyCatalogItem(item, quickAddContext)}
+        onClose={() => setQuickAddContext(null)}
+      />
     </Card>
   );
 }

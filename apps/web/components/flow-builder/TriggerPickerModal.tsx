@@ -19,7 +19,7 @@ import {
   Webhook,
 } from "lucide-react";
 import type { TriggerType } from "@telegram-builder/shared";
-import { getTriggerGroups } from "@/lib/flow-builder";
+import { formatTriggerLabel, getTriggerGroups } from "@/lib/flow-builder";
 import { Input } from "@/components/ui/input";
 
 const TRIGGER_ICONS: Record<string, React.ElementType> = {
@@ -46,14 +46,6 @@ const TRIGGER_ICONS: Record<string, React.ElementType> = {
 
 export function getTriggerIcon(trigger: string): React.ElementType {
   return TRIGGER_ICONS[trigger] ?? Radio;
-}
-
-export function formatTriggerLabel(trigger: string): string {
-  return trigger
-    .replaceAll(".", "_")
-    .split("_")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
 }
 
 type Props = {

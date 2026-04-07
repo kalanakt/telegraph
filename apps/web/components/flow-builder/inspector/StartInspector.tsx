@@ -1,6 +1,7 @@
 "use client";
 
 import type { TriggerType } from "@telegram-builder/shared";
+import { formatTriggerLabel, getTriggerGroups } from "@/lib/flow-builder";
 import {
   Select,
   SelectContent,
@@ -10,9 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getTriggerGroups } from "@/lib/flow-builder";
 import type { RuleOption } from "../types";
-import { getTriggerIcon, formatTriggerLabel } from "../TriggerPickerModal";
+import { getTriggerIcon } from "../TriggerPickerModal";
 
 type Props = {
   trigger: TriggerType;

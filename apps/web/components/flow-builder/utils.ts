@@ -5,6 +5,7 @@ import {
   type Node,
 } from "@xyflow/react";
 import {
+  type ActionPayload,
   conditionSchema,
   type FlowDelayNodeData,
   type FlowDefinition,
@@ -15,6 +16,7 @@ import {
 } from "@telegram-builder/shared";
 import {
   createActionTemplate,
+  formatTriggerLabel,
   getConditionOptions,
   migrateLegacyActionData,
 } from "@/lib/flow-builder";
@@ -25,6 +27,8 @@ import type {
   DelayEditorData,
   FlowNodeKind,
   InlineKeyboardButton,
+  LinkedCallbackFlow,
+  RuleOption,
   ReplyKeyboardButton,
   SetVariableEditorData,
   SwitchEditorData,
@@ -33,7 +37,7 @@ import type {
 export const EDGE_STYLE = { stroke: "rgba(14, 165, 233, 0.46)", strokeWidth: 1.5 };
 
 export const defaultEdgeOptions = {
-  type: "bezier",
+  type: "builder-edge",
   style: EDGE_STYLE,
   markerEnd: { type: MarkerType.ArrowClosed, color: "rgba(14, 165, 233, 0.56)" },
   animated: false,
@@ -412,19 +416,76 @@ export function createFlowNode(
   kind: FlowNodeKind,
   nodes: Node[],
   viewportCenter?: { x: number; y: number },
+  options?: {
+    actionType?: ActionPayload["type"];
+    trigger?: TriggerType;
+    position?: { x: number; y: number };
+  },
 ): Node {
   const id = `${kind}_${Date.now()}`;
-  const data = getDefaultNodeData(kind) as Record<string, unknown>;
+  const data = (
+    kind === "action" && options?.actionType
+      ? withNodeMeta(createActionTemplate(options.actionType), buildDefaultNodeMeta(kind, kind))
+      : kind === "start" && options?.trigger
+      ? withNodeMeta({ trigger: options.trigger }, buildDefaultNodeMeta(kind, kind))
+      : getDefaultNodeData(kind)
+  ) as Record<string, unknown>;
   data.__meta = sanitizeNodeMeta((data as { __meta?: BuilderNodeMeta }).__meta, buildDefaultNodeMeta(kind, id));
   return {
     id,
     type: kind,
-    position: getNextNodePosition(nodes, kind, viewportCenter),
+    position: options?.position ?? getNextNodePosition(nodes, kind, viewportCenter),
     data,
   };
 }
 
-export function makeEdgeId(connection: Connection) {
+export function createBuilderEdge(
+  connection: {
+    source: string;
+    target: string;
+    sourceHandle?: string | null;
+    targetHandle?: string | null;
+    label?: string;
+  },
+): Edge {
+  return {
+    id: makeEdgeId(connection),
+    source: connection.source ?? "",
+    target: connection.target ?? "",
+    sourceHandle: connection.sourceHandle ?? undefined,
+    targetHandle: connection.targetHandle ?? undefined,
+    label:
+      connection.label ??
+      (connection.sourceHandle && connection.sourceHandle !== "default" ? connection.sourceHandle : undefined),
+    ...defaultEdgeOptions,
+  };
+}
+
+export function getBranchHandleForInsertedNode(kind: FlowNodeKind): string | undefined {
+  if (kind === "condition") return "true";
+  if (kind === "switch") return "default";
+  return undefined;
+}
+
+export function getEdgeMidpoint(edge: Edge, nodes: Node[]) {
+  const sourceNode = nodes.find((node) => node.id === edge.source);
+  const targetNode = nodes.find((node) => node.id === edge.target);
+  if (!sourceNode || !targetNode) {
+    return { x: 240, y: 200 };
+  }
+
+  return {
+    x: Math.round((sourceNode.position.x + targetNode.position.x) / 2 / 20) * 20,
+    y: Math.round((sourceNode.position.y + targetNode.position.y) / 2 / 20) * 20,
+  };
+}
+
+export function makeEdgeId(connection: {
+  source?: string | null;
+  target?: string | null;
+  sourceHandle?: string | null;
+  targetHandle?: string | null;
+}) {
   return `${connection.source}_${connection.sourceHandle ?? "default"}_${connection.target}_${connection.targetHandle ?? "default"}_${Date.now()}`;
 }
 
@@ -519,6 +580,127 @@ export function getInlineKeyboard(params: Record<string, unknown>): InlineKeyboa
     if (buttons.length > 0) rows.push(buttons);
   }
   return rows;
+}
+
+export function buildCallbackToken({
+  ruleId,
+  nodeId,
+  rowIndex,
+  buttonIndex,
+  buttonLabel,
+}: {
+  ruleId: string;
+  nodeId: string;
+  rowIndex: number;
+  buttonIndex: number;
+  buttonLabel: string;
+}) {
+  const slug = buttonLabel
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 24);
+  return [ruleId || "flow", nodeId, `r${rowIndex + 1}`, `b${buttonIndex + 1}`, slug || "button"].join(":");
+}
+
+export function getInlineButtonCallbackToken(
+  params: Record<string, unknown>,
+  rowIndex: number,
+  buttonIndex: number,
+) {
+  return getInlineKeyboard(params)[rowIndex]?.[buttonIndex]?.callback_data?.trim() || null;
+}
+
+export function getInlineButtonLabel(
+  params: Record<string, unknown>,
+  rowIndex: number,
+  buttonIndex: number,
+) {
+  return getInlineKeyboard(params)[rowIndex]?.[buttonIndex]?.text?.trim() || `Button ${rowIndex + 1}.${buttonIndex + 1}`;
+}
+
+export function setInlineButtonCallbackToken(
+  params: Record<string, unknown>,
+  rowIndex: number,
+  buttonIndex: number,
+  token: string,
+) {
+  const rows = getInlineKeyboard(params);
+  if (!rows[rowIndex]?.[buttonIndex]) {
+    return params;
+  }
+
+  const nextRows = rows.map((row, currentRowIndex) =>
+    row.map((button, currentButtonIndex) =>
+      currentRowIndex === rowIndex && currentButtonIndex === buttonIndex
+        ? { ...button, callback_data: token }
+        : button,
+    ),
+  );
+
+  return {
+    ...params,
+    reply_markup: {
+      ...(typeof params.reply_markup === "object" && params.reply_markup !== null
+        ? (params.reply_markup as Record<string, unknown>)
+        : {}),
+      inline_keyboard: nextRows,
+    },
+  };
+}
+
+export function findLinkedCallbackFlows(
+  rules: RuleOption[],
+  params: Record<string, unknown>,
+  rowIndex: number,
+  buttonIndex: number,
+): LinkedCallbackFlow[] {
+  const token = getInlineButtonCallbackToken(params, rowIndex, buttonIndex);
+  const buttonLabel = getInlineButtonLabel(params, rowIndex, buttonIndex);
+  if (!token) return [];
+
+  return rules.flatMap((rule) => {
+    if (rule.trigger !== "callback_query_received") {
+      return [];
+    }
+
+    const matchingCondition = rule.flowDefinition.nodes.find(
+      (node) =>
+        node.type === "condition" &&
+        node.data.type === "callback_data_equals" &&
+        String(node.data.value ?? "") === token,
+    );
+
+    if (!matchingCondition) {
+      return [];
+    }
+
+    return [
+      {
+        token,
+        buttonLabel,
+        ruleId: rule.id,
+        ruleName: rule.name,
+      },
+    ];
+  });
+}
+
+export function describeInlineButtonLinks(params: Record<string, unknown>, rules: RuleOption[]) {
+  const rows = getInlineKeyboard(params);
+  return rows.flatMap((row, rowIndex) =>
+    row.map((button, buttonIndex) => ({
+      rowIndex,
+      buttonIndex,
+      button,
+      linkedFlows: findLinkedCallbackFlows(rules, params, rowIndex, buttonIndex),
+    })),
+  );
+}
+
+export function describeTriggerSelection(trigger: TriggerType) {
+  return formatTriggerLabel(trigger);
 }
 
 export function getReplyKeyboard(params: Record<string, unknown>): ReplyKeyboardButton[][] {

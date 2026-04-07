@@ -6,6 +6,7 @@ import type {
   FlowSwitchNodeData,
   TriggerType,
 } from "@telegram-builder/shared";
+import type { Edge, Node } from "@xyflow/react";
 
 export type BotOption = {
   id: string;
@@ -52,6 +53,75 @@ export type InlineKeyboardButton = {
 };
 
 export type ReplyKeyboardButton = { text: string };
+
+export type QuickAddContext =
+  | {
+      mode: "branch";
+      sourceNodeId: string;
+      sourceHandle?: string;
+      anchor: { x: number; y: number };
+    }
+  | {
+      mode: "edge";
+      edgeId: string;
+      sourceNodeId: string;
+      sourceHandle?: string;
+      targetNodeId: string;
+      anchor: { x: number; y: number };
+    };
+
+export type PendingConnection = {
+  sourceNodeId: string;
+  sourceHandle?: string;
+};
+
+export type LinkedCallbackFlow = {
+  token: string;
+  buttonLabel: string;
+  ruleId: string;
+  ruleName: string;
+};
+
+export type BuilderRuntimeData = {
+  onAddNext?: (sourceNodeId: string, sourceHandle: string | undefined, anchor: { x: number; y: number }) => void;
+  onConnectExisting?: (sourceNodeId: string, sourceHandle?: string) => void;
+  onTriggerSelect?: (trigger: TriggerType) => void;
+  onCreateCallbackFlow?: (nodeId: string, rowIndex: number, buttonIndex: number) => void;
+  onLinkCallbackFlow?: (nodeId: string, rowIndex: number, buttonIndex: number) => void;
+  connectState?: "idle" | "source" | "target";
+  canConnectToPending?: boolean;
+  linkedCallbackFlows?: LinkedCallbackFlow[];
+};
+
+export type BuilderNodeCatalogItem = {
+  id: string;
+  kind: FlowNodeKind;
+  title: string;
+  description: string;
+  group: string;
+  icon: string;
+  actionType?: ActionPayload["type"];
+  trigger?: TriggerType;
+  disabled?: boolean;
+  disabledReason?: string;
+};
+
+export type BuilderNodeCatalogSection = {
+  id: string;
+  title: string;
+  items: BuilderNodeCatalogItem[];
+};
+
+export type DecoratedBuilderNode = Node<
+  Record<string, unknown> & {
+    __meta?: BuilderNodeMeta;
+    __runtime?: BuilderRuntimeData;
+  }
+>;
+
+export type DecoratedBuilderEdge = Edge<{
+  onInsertNode?: (edgeId: string, anchor: { x: number; y: number }) => void;
+}>;
 
 export type ActionEditorData = {
   type: ActionPayload["type"];

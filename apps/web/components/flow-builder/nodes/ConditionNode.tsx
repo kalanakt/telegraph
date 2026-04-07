@@ -12,7 +12,8 @@ import {
   GitBranch,
   MousePointerClick,
 } from "lucide-react";
-import type { BuilderNodeMeta, ConditionEditorData } from "../types";
+import type { BuilderNodeMeta, BuilderRuntimeData, ConditionEditorData } from "../types";
+import { NodeConnectActions } from "./NodeConnectActions";
 
 const CONDITION_ICONS: Record<string, React.ElementType> = {
   text_contains: MessageSquare,
@@ -75,9 +76,11 @@ export function ConditionNode({ data }: { data: ConditionEditorData & { __meta?:
   const Icon = CONDITION_ICONS[type] ?? Filter;
   const summary = formatConditionSummary(data);
   const label = data.__meta?.label?.trim() || formatConditionLabel(type);
+  const runtime = (data as ConditionEditorData & { __runtime?: BuilderRuntimeData; id?: string }).__runtime;
+  const nodeId = (data as ConditionEditorData & { id?: string }).id ?? "";
 
   return (
-    <div className="builder-node builder-node-condition relative min-w-[250px] rounded-sm px-3 py-3 text-xs">
+    <div className={`builder-node builder-node-condition relative min-w-[320px] max-w-[380px] rounded-sm px-3 py-3 text-xs ${runtime?.connectState === "source" ? "builder-node-connect-source" : ""} ${runtime?.canConnectToPending ? "builder-node-connect-target" : ""}`}>
       <Handle
         type="target"
         position={Position.Left}
@@ -92,37 +95,35 @@ export function ConditionNode({ data }: { data: ConditionEditorData & { __meta?:
           <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Condition</div>
           <div className="font-semibold leading-tight text-foreground">{label}</div>
           <div className="mt-0.5 text-[10px] text-foreground/80">{formatConditionLabel(type)}</div>
-          <div className="mt-1 truncate rounded-sm border border-border/80 bg-secondary/55 px-1.5 py-1 font-mono text-[9px] text-muted-foreground">
+          <div className="mt-2 rounded-sm border border-border/80 bg-secondary/55 px-2 py-1.5 font-mono text-[10px] text-muted-foreground">
             {summary}
           </div>
         </div>
       </div>
 
-      <div className="absolute right-4 top-[32%] -translate-y-1/2">
-        <span className="rounded-sm border border-border/80 bg-emerald-50 px-1 py-0.5 text-[9px] font-semibold text-emerald-700">
-          true
-        </span>
+      <div className="mt-3 space-y-2 border-t border-border/80 pt-3 pr-8">
+        {[
+          { handle: "true", label: "True branch", tone: "bg-emerald-50 text-emerald-700" },
+          { handle: "false", label: "False branch", tone: "bg-rose-50 text-rose-700" },
+        ].map((branch, index) => (
+          <div key={branch.handle} className="relative rounded-sm border border-border/80 bg-background/60 px-2 py-2">
+            <div className="flex items-center gap-2">
+              <span className={`rounded-sm border border-border/80 px-1.5 py-0.5 text-[9px] font-semibold ${branch.tone}`}>
+                {branch.handle}
+              </span>
+              <span className="text-[11px] font-medium text-foreground">{branch.label}</span>
+            </div>
+            <NodeConnectActions nodeId={nodeId} sourceHandle={branch.handle} runtime={runtime} compact />
+            <Handle
+              id={branch.handle}
+              type="source"
+              position={Position.Right}
+              style={{ top: `${30 + index * 78}px` }}
+              className="!h-3 !w-3 !border-white !bg-primary"
+            />
+          </div>
+        ))}
       </div>
-      <div className="absolute right-4 top-[72%] -translate-y-1/2">
-        <span className="rounded-sm border border-border/80 bg-rose-50 px-1 py-0.5 text-[9px] font-semibold text-rose-700">
-          false
-        </span>
-      </div>
-
-      <Handle
-        id="true"
-        type="source"
-        position={Position.Right}
-        style={{ top: "35%" }}
-        className="!h-3 !w-3 !border-white !bg-primary"
-      />
-      <Handle
-        id="false"
-        type="source"
-        position={Position.Right}
-        style={{ top: "72%" }}
-        className="!h-3 !w-3 !border-white !bg-primary"
-      />
     </div>
   );
 }

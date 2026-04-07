@@ -4,8 +4,7 @@ import { type TriggerType } from "@telegram-builder/shared";
 import {
   canCreateConnection,
   createFlowNode,
-  defaultEdgeOptions,
-  makeEdgeId,
+  createBuilderEdge,
   normalizeActionNodeData,
 } from "../utils";
 import type { ActionEditorData, FlowNodeKind } from "../types";
@@ -39,16 +38,22 @@ export function useFlowCallbacks(state: FlowState, setStatus: (msg: string) => v
     (
       kind: FlowNodeKind,
       viewportCenter?: { x: number; y: number },
+      options?: {
+        actionType?: import("@telegram-builder/shared").ActionPayload["type"];
+        trigger?: TriggerType;
+        position?: { x: number; y: number };
+      },
     ) => {
       if (kind === "start" && nodes.some((node) => node.type === "start")) {
         setStatus("Only one trigger node is allowed in a flow.");
         return;
       }
 
-      const newNode = createFlowNode(kind, nodes, viewportCenter);
+      const newNode = createFlowNode(kind, nodes, viewportCenter, options);
       setNodes((curr) => [...curr, newNode]);
       setSelectedNodeId(newNode.id);
       setStatus("");
+      return newNode;
     },
     [nodes, setNodes, setSelectedNodeId, setStatus],
   );
@@ -60,15 +65,7 @@ export function useFlowCallbacks(state: FlowState, setStatus: (msg: string) => v
         return;
       }
 
-      const edge: Edge = {
-        id: makeEdgeId(connection),
-        source: connection.source ?? "",
-        target: connection.target ?? "",
-        sourceHandle: connection.sourceHandle ?? undefined,
-        targetHandle: connection.targetHandle ?? undefined,
-        label: connection.sourceHandle && connection.sourceHandle !== "default" ? connection.sourceHandle : undefined,
-        ...defaultEdgeOptions,
-      };
+      const edge: Edge = createBuilderEdge(connection);
 
       setStatus("");
       setEdges((current) => addEdge(edge, current));

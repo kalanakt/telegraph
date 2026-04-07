@@ -12,7 +12,6 @@ import {
   ReactFlow,
   type ReactFlowInstance,
   type Connection,
-  type Edge,
   type IsValidConnection,
   type Node,
   type OnEdgesChange,
@@ -20,14 +19,17 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import type { TriggerType } from "@telegram-builder/shared";
+import { formatTriggerLabel } from "@/lib/flow-builder";
 import { StartNode } from "./nodes/StartNode";
 import { ConditionNode } from "./nodes/ConditionNode";
 import { ActionNode } from "./nodes/ActionNode";
 import { SwitchNode } from "./nodes/SwitchNode";
 import { SetVariableNode } from "./nodes/SetVariableNode";
 import { DelayNode } from "./nodes/DelayNode";
+import { BuilderEdge } from "./edges/BuilderEdge";
 import { defaultEdgeOptions } from "./utils";
-import { formatTriggerLabel, getTriggerIcon } from "./TriggerPickerModal";
+import { getTriggerIcon } from "./TriggerPickerModal";
+import type { DecoratedBuilderEdge, DecoratedBuilderNode, PendingConnection } from "./types";
 
 const nodeTypes = {
   start: StartNode,
@@ -38,28 +40,38 @@ const nodeTypes = {
   delay: DelayNode,
 };
 
+const edgeTypes = {
+  "builder-edge": BuilderEdge,
+};
+
 type Props = {
-  nodes: Node[];
-  edges: Edge[];
+  nodes: DecoratedBuilderNode[];
+  edges: DecoratedBuilderEdge[];
   trigger: TriggerType;
+  pendingConnection?: PendingConnection | null;
   onNodesChange: OnNodesChange;
   onEdgesChange: OnEdgesChange;
   onConnect: (connection: Connection) => void;
-  onSelectionChange: (params: { nodes: Node[]; edges: Edge[] }) => void;
+  onSelectionChange: (params: { nodes: Node[]; edges: DecoratedBuilderEdge[] }) => void;
   isValidConnection: IsValidConnection;
   onViewportCenterChange: (center: { x: number; y: number }) => void;
+  onNodeActivate?: (node: Node) => void;
+  onPaneClick?: () => void;
 };
 
 export function FlowCanvas({
   nodes,
   edges,
   trigger,
+  pendingConnection = null,
   onNodesChange,
   onEdgesChange,
   onConnect,
   onSelectionChange,
   isValidConnection,
   onViewportCenterChange,
+  onNodeActivate,
+  onPaneClick,
 }: Props) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const instanceRef = useRef<ReactFlowInstance | null>(null);
@@ -80,14 +92,11 @@ export function FlowCanvas({
   );
 
   return (
-    <div
-      ref={wrapperRef}
-      className="builder-canvas relative h-[720px] overflow-hidden rounded-sm border border-border/80"
-    >
+    <div ref={wrapperRef} className="builder-canvas relative h-[720px] overflow-hidden rounded-sm border border-border/80">
       {nodes.length === 0 ? (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center px-4">
           <div className="max-w-sm rounded-sm border border-border/85 bg-background/80 px-4 py-3 text-center text-sm text-muted-foreground shadow-sm backdrop-blur-sm">
-            Add a trigger, condition, or action from the toolbar, then connect them with lines.
+            Add a trigger, logic block, or action from the node catalog to start building.
           </div>
         </div>
       ) : null}
@@ -97,16 +106,17 @@ export function FlowCanvas({
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
         connectionMode={ConnectionMode.Strict}
-        connectionLineType={ConnectionLineType.Bezier}
+        connectionLineType={ConnectionLineType.SmoothStep}
         isValidConnection={isValidConnection}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onSelectionChange={onSelectionChange}
-        onNodeClick={(_, node) => onSelectionChange({ nodes: [node], edges: [] })}
-        onPaneClick={() => onSelectionChange({ nodes: [], edges: [] })}
+        onNodeClick={(_, node) => onNodeActivate?.(node)}
+        onPaneClick={() => onPaneClick?.()}
         connectionRadius={26}
         snapToGrid
         snapGrid={[20, 20]}
@@ -133,6 +143,15 @@ export function FlowCanvas({
           {formatTriggerLabel(trigger)}
         </Panel>
 
+        {pendingConnection ? (
+          <Panel
+            position="top-center"
+            className="rounded-sm border border-primary/35 bg-background/90 px-3 py-2 text-xs text-foreground shadow-sm backdrop-blur-sm"
+          >
+            Select a target node to complete the connection.
+          </Panel>
+        ) : null}
+
         <MiniMap
           pannable
           zoomable
@@ -141,12 +160,7 @@ export function FlowCanvas({
           maskColor="rgba(148, 163, 184, 0.18)"
         />
         <Controls showInteractive={false} position="bottom-left" />
-        <Background
-          variant={BackgroundVariant.Lines}
-          gap={26}
-          size={0.6}
-          color="rgba(148, 163, 184, 0.18)"
-        />
+        <Background variant={BackgroundVariant.Lines} gap={26} size={0.6} color="rgba(148, 163, 184, 0.18)" />
       </ReactFlow>
     </div>
   );
