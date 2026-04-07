@@ -29,7 +29,7 @@ import { DelayNode } from "./nodes/DelayNode";
 import { BuilderEdge } from "./edges/BuilderEdge";
 import { defaultEdgeOptions } from "./utils";
 import { getTriggerIcon } from "./TriggerPickerModal";
-import type { DecoratedBuilderEdge, DecoratedBuilderNode, PendingConnection } from "./types";
+import type { DecoratedBuilderEdge, DecoratedBuilderNode } from "./types";
 
 const nodeTypes = {
   start: StartNode,
@@ -48,7 +48,6 @@ type Props = {
   nodes: DecoratedBuilderNode[];
   edges: DecoratedBuilderEdge[];
   trigger: TriggerType;
-  pendingConnection?: PendingConnection | null;
   onNodesChange: OnNodesChange;
   onEdgesChange: OnEdgesChange;
   onConnect: (connection: Connection) => void;
@@ -63,7 +62,6 @@ export function FlowCanvas({
   nodes,
   edges,
   trigger,
-  pendingConnection = null,
   onNodesChange,
   onEdgesChange,
   onConnect,
@@ -110,6 +108,7 @@ export function FlowCanvas({
         defaultEdgeOptions={defaultEdgeOptions}
         connectionMode={ConnectionMode.Strict}
         connectionLineType={ConnectionLineType.Bezier}
+        connectOnClick
         isValidConnection={isValidConnection}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
@@ -142,15 +141,6 @@ export function FlowCanvas({
           </span>
           {formatTriggerLabel(trigger)}
         </Panel>
-
-        {pendingConnection ? (
-          <Panel
-            position="top-center"
-            className="rounded-sm border border-primary/35 bg-background/90 px-3 py-2 text-xs text-foreground shadow-sm backdrop-blur-sm"
-          >
-            Select a target node to complete the connection.
-          </Panel>
-        ) : null}
 
         <MiniMap
           pannable

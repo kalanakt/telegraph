@@ -342,6 +342,7 @@
 
     .builder-flow .react-flow__handle {
         position: relative;
+        cursor: crosshair;
         border: 1px solid oklch(var(--background));
         background: oklch(var(--primary) / 0.82);
         box-shadow: 0 0 0 1px oklch(var(--border) / 0.45);

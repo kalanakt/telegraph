@@ -40,7 +40,6 @@ import type {
   BuilderNodeCatalogItem,
   DecoratedBuilderEdge,
   DecoratedBuilderNode,
-  PendingConnection,
   QuickAddContext,
   RuleOption,
 } from "./types";
@@ -104,7 +103,6 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
   const [paletteMobileOpen, setPaletteMobileOpen] = useState(false);
   const [quickAddContext, setQuickAddContext] = useState<QuickAddContext | null>(null);
   const [quickAddQuery, setQuickAddQuery] = useState("");
-  const [pendingConnection, setPendingConnection] = useState<PendingConnection | null>(null);
   const selectedRule = availableRules.find((rule) => rule.id === selectedRuleId) ?? null;
   const historyRef = useRef<CanvasSnapshot[]>([]);
   const historyIndexRef = useRef(-1);
@@ -168,7 +166,6 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
       loadFlow(snapshot.flowDefinition, snapshot.trigger);
       setSelectedNodeId(null);
       setSelectedEdgeId(null);
-      setPendingConnection(null);
       window.setTimeout(() => {
         isRestoringRef.current = false;
       }, 0);
@@ -457,7 +454,6 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
 
       if (event.key === "Escape") {
         setQuickAddContext(null);
-        setPendingConnection(null);
         return;
       }
 
@@ -597,17 +593,6 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
     [availableRules, botId, ensureInlineButtonToken, name, selectedRuleId],
   );
 
-  const openQuickAdd = useCallback((sourceNodeId: string, sourceHandle: string | undefined, anchor: { x: number; y: number }) => {
-    setQuickAddQuery("");
-    setQuickAddContext({
-      mode: "branch",
-      sourceNodeId,
-      sourceHandle,
-      anchor,
-    });
-    setPendingConnection(null);
-  }, []);
-
   const openEdgeInsert = useCallback(
     (edgeId: string, anchor: { x: number; y: number }) => {
       const edge = edges.find((item) => item.id === edgeId);
@@ -622,16 +607,9 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
         targetNodeId: edge.target,
         anchor,
       });
-      setPendingConnection(null);
     },
     [edges],
   );
-
-  const startConnectExisting = useCallback((sourceNodeId: string, sourceHandle?: string) => {
-    setPendingConnection({ sourceNodeId, sourceHandle });
-    setQuickAddContext(null);
-    setStatus("Select a target node to complete the connection.");
-  }, []);
 
   const applyCatalogItem = useCallback(
     (item: BuilderNodeCatalogItem, context: QuickAddContext | null) => {
@@ -660,18 +638,6 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
 
       if (!nextNode) {
         return;
-      }
-
-      if (context?.mode === "branch") {
-        setEdges((current) => [
-          ...current,
-          createBuilderEdge({
-            source: context.sourceNodeId,
-            sourceHandle: context.sourceHandle ?? null,
-            target: nextNode.id,
-            targetHandle: null,
-          }),
-        ]);
       }
 
       if (context?.mode === "edge" && edgeContext) {
@@ -705,48 +671,15 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
 
   const handleNodeActivate = useCallback(
     (node: Node) => {
-      if (pendingConnection) {
-        const connection = {
-          source: pendingConnection.sourceNodeId,
-          sourceHandle: pendingConnection.sourceHandle ?? null,
-          target: node.id,
-          targetHandle: null,
-        };
-
-        if (canCreateConnection(connection, nodes, edges)) {
-          onConnect(connection);
-          setPendingConnection(null);
-          setSelectedNodeId(node.id);
-          setStatus("Nodes connected.");
-          return;
-        }
-
-        setStatus("Connection blocked: branch already used, duplicate edge, or invalid.");
-      }
-
       setSelectedEdgeId(null);
       setSelectedNodeId(node.id);
     },
-    [edges, nodes, onConnect, pendingConnection, setSelectedNodeId],
+    [setSelectedNodeId],
   );
 
   const decoratedNodes = useMemo<DecoratedBuilderNode[]>(
     () =>
       nodes.map((node) => {
-        const canConnectToPending =
-          pendingConnection &&
-          pendingConnection.sourceNodeId !== node.id &&
-          canCreateConnection(
-            {
-              source: pendingConnection.sourceNodeId,
-              sourceHandle: pendingConnection.sourceHandle ?? null,
-              target: node.id,
-              targetHandle: null,
-            },
-            nodes,
-            edges,
-          );
-
         const action = node.type === "action" ? normalizeActionNodeData(node.data) : null;
         const linked =
           action
@@ -769,13 +702,9 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
             ...(node.data as Record<string, unknown>),
             id: node.id,
             __runtime: {
-              onAddNext: openQuickAdd,
-              onConnectExisting: startConnectExisting,
               onTriggerSelect: () => setSelectedNodeId(node.id),
               onCreateCallbackFlow: handleCreateCallbackFlow,
               onLinkCallbackFlow: handleLinkCallbackFlow,
-              connectState: pendingConnection?.sourceNodeId === node.id ? "source" : "idle",
-              canConnectToPending: Boolean(canConnectToPending),
               linkedCallbackFlows: linked,
             },
           },
@@ -783,14 +712,10 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
       }),
     [
       availableRules,
-      edges,
       handleCreateCallbackFlow,
       handleLinkCallbackFlow,
       nodes,
-      openQuickAdd,
-      pendingConnection,
       setSelectedNodeId,
-      startConnectExisting,
     ],
   );
 
@@ -932,7 +857,6 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
               nodes={decoratedNodes}
               edges={decoratedEdges}
               trigger={trigger}
-              pendingConnection={pendingConnection}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
@@ -943,7 +867,6 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
               onPaneClick={() => {
                 setSelectedNodeId(null);
                 setSelectedEdgeId(null);
-                setPendingConnection(null);
               }}
             />
           }

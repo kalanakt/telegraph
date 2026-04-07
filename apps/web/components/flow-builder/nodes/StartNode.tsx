@@ -22,7 +22,7 @@ export function StartNode({ data }: { data: StartNodeData }) {
 
   return (
     <div
-      className={`builder-node builder-node-start relative min-w-[300px] max-w-[360px] rounded-sm px-3 py-3 text-xs ${trigger ? "builder-node-start-configured" : ""} ${runtime?.connectState === "source" ? "builder-node-connect-source" : ""} ${runtime?.canConnectToPending ? "builder-node-connect-target" : ""}`}
+      className={`builder-node builder-node-start relative min-w-[300px] max-w-[360px] rounded-sm px-3 py-3 text-xs ${trigger ? "builder-node-start-configured" : ""}`}
     >
       <div className="flex items-start gap-2">
         <span className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-sm border border-border/85 bg-secondary/70 text-foreground">

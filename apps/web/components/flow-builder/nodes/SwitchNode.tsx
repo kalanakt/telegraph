@@ -2,17 +2,14 @@
 
 import { Handle, Position } from "@xyflow/react";
 import { GitBranch } from "lucide-react";
-import type { BuilderNodeMeta, BuilderRuntimeData, SwitchEditorData } from "../types";
-import { NodeConnectActions } from "./NodeConnectActions";
+import type { BuilderNodeMeta, SwitchEditorData } from "../types";
 
 export function SwitchNode({ data }: { data: SwitchEditorData & { __meta?: BuilderNodeMeta } }) {
   const label = data.__meta?.label?.trim() || "Switch";
   const path = data.path || "event.text";
-  const runtime = (data as SwitchEditorData & { __runtime?: BuilderRuntimeData; id?: string }).__runtime;
-  const nodeId = (data as SwitchEditorData & { id?: string }).id ?? "";
 
   return (
-    <div className={`builder-node builder-node-condition relative min-w-[340px] max-w-[420px] rounded-sm px-3 py-3 text-xs ${runtime?.connectState === "source" ? "builder-node-connect-source" : ""} ${runtime?.canConnectToPending ? "builder-node-connect-target" : ""}`}>
+    <div className="builder-node builder-node-condition relative min-w-[340px] max-w-[420px] rounded-sm px-3 py-3 text-xs">
       <Handle
         type="target"
         position={Position.Left}
@@ -38,7 +35,6 @@ export function SwitchNode({ data }: { data: SwitchEditorData & { __meta?: Build
             <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Branch</div>
             <div className="text-[11px] font-semibold text-foreground">{item.label || `Case ${index + 1}`}</div>
             <div className="font-mono text-[9px] text-muted-foreground">{item.value || "(empty)"}</div>
-            <NodeConnectActions nodeId={nodeId} sourceHandle={item.id} runtime={runtime} compact />
             <Handle
               id={item.id}
               type="source"
@@ -52,7 +48,6 @@ export function SwitchNode({ data }: { data: SwitchEditorData & { __meta?: Build
           <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Fallback</div>
           <div className="text-[11px] font-semibold text-foreground">Default branch</div>
           <div className="font-mono text-[9px] text-muted-foreground">fallback branch</div>
-          <NodeConnectActions nodeId={nodeId} sourceHandle="default" runtime={runtime} compact />
           <Handle
             id="default"
             type="source"

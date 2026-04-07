@@ -12,8 +12,7 @@ import {
   GitBranch,
   MousePointerClick,
 } from "lucide-react";
-import type { BuilderNodeMeta, BuilderRuntimeData, ConditionEditorData } from "../types";
-import { NodeConnectActions } from "./NodeConnectActions";
+import type { BuilderNodeMeta, ConditionEditorData } from "../types";
 
 const CONDITION_ICONS: Record<string, React.ElementType> = {
   text_contains: MessageSquare,
@@ -76,11 +75,9 @@ export function ConditionNode({ data }: { data: ConditionEditorData & { __meta?:
   const Icon = CONDITION_ICONS[type] ?? Filter;
   const summary = formatConditionSummary(data);
   const label = data.__meta?.label?.trim() || formatConditionLabel(type);
-  const runtime = (data as ConditionEditorData & { __runtime?: BuilderRuntimeData; id?: string }).__runtime;
-  const nodeId = (data as ConditionEditorData & { id?: string }).id ?? "";
 
   return (
-    <div className={`builder-node builder-node-condition relative min-w-[320px] max-w-[380px] rounded-sm px-3 py-3 text-xs ${runtime?.connectState === "source" ? "builder-node-connect-source" : ""} ${runtime?.canConnectToPending ? "builder-node-connect-target" : ""}`}>
+    <div className="builder-node builder-node-condition relative min-w-[320px] max-w-[380px] rounded-sm px-3 py-3 text-xs">
       <Handle
         type="target"
         position={Position.Left}
@@ -113,7 +110,6 @@ export function ConditionNode({ data }: { data: ConditionEditorData & { __meta?:
               </span>
               <span className="text-[11px] font-medium text-foreground">{branch.label}</span>
             </div>
-            <NodeConnectActions nodeId={nodeId} sourceHandle={branch.handle} runtime={runtime} compact />
             <Handle
               id={branch.handle}
               type="source"

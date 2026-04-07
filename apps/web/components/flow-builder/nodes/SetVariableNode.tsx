@@ -2,16 +2,13 @@
 
 import { Handle, Position } from "@xyflow/react";
 import { Variable } from "lucide-react";
-import type { BuilderNodeMeta, BuilderRuntimeData, SetVariableEditorData } from "../types";
-import { NodeConnectActions } from "./NodeConnectActions";
+import type { BuilderNodeMeta, SetVariableEditorData } from "../types";
 
 export function SetVariableNode({ data }: { data: SetVariableEditorData & { __meta?: BuilderNodeMeta } }) {
   const label = data.__meta?.label?.trim() || "Set Variable";
-  const runtime = (data as SetVariableEditorData & { __runtime?: BuilderRuntimeData; id?: string }).__runtime;
-  const nodeId = (data as SetVariableEditorData & { id?: string }).id ?? "";
 
   return (
-    <div className={`builder-node builder-node-action relative min-w-[300px] max-w-[380px] rounded-sm text-xs ${runtime?.connectState === "source" ? "builder-node-connect-source" : ""} ${runtime?.canConnectToPending ? "builder-node-connect-target" : ""}`}>
+    <div className="builder-node builder-node-action relative min-w-[300px] max-w-[380px] rounded-sm text-xs">
       <Handle type="target" position={Position.Left} className="!h-3 !w-3 !border-white !bg-primary" />
 
       <div className="px-3 pb-2 pt-3">
@@ -32,7 +29,6 @@ export function SetVariableNode({ data }: { data: SetVariableEditorData & { __me
 
       <div className="relative border-t border-border/80 px-3 py-2">
         <span className="text-[9px] uppercase tracking-[0.12em] text-muted-foreground">Next</span>
-        <NodeConnectActions nodeId={nodeId} runtime={runtime} />
         <Handle id="default" type="source" position={Position.Right} className="!h-3 !w-3 !border-white !bg-primary" />
       </div>
     </div>

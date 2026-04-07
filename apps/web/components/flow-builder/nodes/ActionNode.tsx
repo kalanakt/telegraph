@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { getCapabilityLabel, migrateLegacyActionData, summarizeAction } from "@/lib/flow-builder";
 import { getInlineKeyboard } from "../utils";
 import type { ActionEditorData, BuilderNodeMeta, BuilderRuntimeData } from "../types";
-import { NodeConnectActions } from "./NodeConnectActions";
 
 const ACTION_ICONS: Record<string, React.ElementType> = {
   "telegram.sendMessage": Send,
@@ -45,7 +44,7 @@ export function ActionNode({ data }: { data: ActionEditorData & { __meta?: Build
   const inlineButtons = getInlineKeyboard(payload.params);
 
   return (
-    <div className={`builder-node builder-node-action relative min-w-[320px] max-w-[420px] rounded-sm text-xs ${runtime?.connectState === "source" ? "builder-node-connect-source" : ""} ${runtime?.canConnectToPending ? "builder-node-connect-target" : ""}`}>
+    <div className="builder-node builder-node-action relative min-w-[320px] max-w-[420px] rounded-sm text-xs">
       <Handle type="target" position={Position.Left} className="!h-3 !w-3 !border-white !bg-primary" />
 
       <div className="px-3 pb-2 pt-3">
@@ -164,7 +163,6 @@ export function ActionNode({ data }: { data: ActionEditorData & { __meta?: Build
 
       <div className="relative border-t border-border/80 px-3 py-2">
         <span className="text-[9px] uppercase tracking-[0.12em] text-muted-foreground">Next</span>
-        <NodeConnectActions nodeId={nodeId} runtime={runtime} />
         <Handle id="default" type="source" position={Position.Right} className="!h-3 !w-3 !border-white !bg-primary" />
       </div>
     </div>

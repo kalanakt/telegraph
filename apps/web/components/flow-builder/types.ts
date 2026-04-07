@@ -55,13 +55,7 @@ export type InlineKeyboardButton = {
 export type ReplyKeyboardButton = { text: string };
 
 export type QuickAddContext =
-  | {
-      mode: "branch";
-      sourceNodeId: string;
-      sourceHandle?: string;
-      anchor: { x: number; y: number };
-    }
-  | {
+  {
       mode: "edge";
       edgeId: string;
       sourceNodeId: string;
@@ -69,11 +63,6 @@ export type QuickAddContext =
       targetNodeId: string;
       anchor: { x: number; y: number };
     };
-
-export type PendingConnection = {
-  sourceNodeId: string;
-  sourceHandle?: string;
-};
 
 export type LinkedCallbackFlow = {
   token: string;
@@ -83,13 +72,9 @@ export type LinkedCallbackFlow = {
 };
 
 export type BuilderRuntimeData = {
-  onAddNext?: (sourceNodeId: string, sourceHandle: string | undefined, anchor: { x: number; y: number }) => void;
-  onConnectExisting?: (sourceNodeId: string, sourceHandle?: string) => void;
   onTriggerSelect?: (trigger: TriggerType) => void;
   onCreateCallbackFlow?: (nodeId: string, rowIndex: number, buttonIndex: number) => void;
   onLinkCallbackFlow?: (nodeId: string, rowIndex: number, buttonIndex: number) => void;
-  connectState?: "idle" | "source" | "target";
-  canConnectToPending?: boolean;
   linkedCallbackFlows?: LinkedCallbackFlow[];
 };
 

@@ -53,9 +53,7 @@ export function QuickAddPopover({
       >
         <div className="flex items-center justify-between border-b border-border/80 px-3 py-3">
           <div>
-            <p className="text-sm font-semibold text-foreground">
-              {context.mode === "edge" ? "Insert node" : "Add next node"}
-            </p>
+            <p className="text-sm font-semibold text-foreground">Insert node</p>
             <p className="text-xs text-muted-foreground">Choose what to connect next.</p>
           </div>
           <button type="button" onClick={onClose} className="rounded-sm border border-border/80 bg-background/90 p-1.5 text-muted-foreground">
