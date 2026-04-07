@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { DeleteFlowButton } from "@/components/DeleteFlowButton";
 import { FlowStatusToggle } from "@/components/FlowStatusToggle";
-import { PageHeading } from "@/components/PageHeading";
 import { FlowBuilderStudio } from "@/components/flow-builder";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -119,9 +118,7 @@ export default async function FlowsPage({
 
       <Card className="interactive-lift">
         <CardHeader>
-          <CardTitle className="font-[var(--font-display)]">
-            Active Flows
-          </CardTitle>
+          <CardTitle className="font-(--font-display)">Active Flows</CardTitle>
           <CardDescription>
             Recent saved flows for your connected bots.
           </CardDescription>

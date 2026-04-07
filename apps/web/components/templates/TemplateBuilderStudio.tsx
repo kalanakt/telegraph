@@ -440,7 +440,7 @@ export function TemplateBuilderStudio({ template, bots }: Props) {
             <Badge variant="outline">Build flows and save</Badge>
             {isPublished ? <Badge variant="secondary">Public snapshot live</Badge> : <Badge variant="outline">Draft only</Badge>}
           </div>
-          <CardTitle className="font-[var(--font-display)]">Build the template bundle</CardTitle>
+          <CardTitle className="font-(--font-display)">Build the template bundle</CardTitle>
           <CardDescription>
             Fine-tune the template details, build each included flow, then save or publish when the draft is ready.
           </CardDescription>
@@ -559,7 +559,7 @@ export function TemplateBuilderStudio({ template, bots }: Props) {
         <CardHeader className="border-b border-border/80">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="space-y-1">
-              <CardTitle className="font-[var(--font-display)]">Template flows</CardTitle>
+              <CardTitle className="font-(--font-display)">Template flows</CardTitle>
               <CardDescription>
                 Switch between flows here. Add a new one only when this template truly needs another automation.
               </CardDescription>

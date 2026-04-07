@@ -78,7 +78,7 @@ export default async function BotDetailPage({
 
       <Card className="interactive-lift">
         <CardHeader>
-          <CardTitle className="font-[var(--font-display)]">
+          <CardTitle className="font-(--font-display)">
             Bot overview
           </CardTitle>
           <CardDescription>
@@ -126,7 +126,7 @@ export default async function BotDetailPage({
 
       <Card className="interactive-lift">
         <CardHeader>
-          <CardTitle className="font-[var(--font-display)]">Users</CardTitle>
+          <CardTitle className="font-(--font-display)">Users</CardTitle>
           <CardDescription>
             Saved users are unique to this bot and start collecting only after
             save-users is turned on.

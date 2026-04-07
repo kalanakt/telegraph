@@ -157,7 +157,7 @@ export default async function DashboardPage() {
             <Badge variant="secondary" className="w-fit">
               Live overview
             </Badge>
-            <CardTitle className="text-[1.36rem] font-[var(--font-display)] tracking-[-0.03em]">
+            <CardTitle className="text-[1.36rem] font-(--font-display) tracking-[-0.03em]">
               Workspace health
             </CardTitle>
             <CardDescription>
@@ -192,7 +192,7 @@ export default async function DashboardPage() {
             <Badge variant="secondary" className="w-fit">
               Shortcuts
             </Badge>
-            <CardTitle className="font-[var(--font-display)] tracking-[-0.03em]">
+            <CardTitle className="font-(--font-display) tracking-[-0.03em]">
               Common actions
             </CardTitle>
             <CardDescription>
@@ -227,7 +227,7 @@ export default async function DashboardPage() {
                 {RUN_ACTIVITY_WINDOW_DAYS}-day window
               </Badge>
             </CardAction>
-            <CardTitle className="font-[var(--font-display)] tracking-[-0.03em]">
+            <CardTitle className="font-(--font-display) tracking-[-0.03em]">
               Runs over time
             </CardTitle>
             <CardDescription>
@@ -271,7 +271,7 @@ export default async function DashboardPage() {
             <Badge variant="secondary" className="w-fit">
               Getting started
             </Badge>
-            <CardTitle className="font-[var(--font-display)] tracking-[-0.03em]">
+            <CardTitle className="font-(--font-display) tracking-[-0.03em]">
               Quick start
             </CardTitle>
             <CardDescription>
@@ -305,7 +305,7 @@ export default async function DashboardPage() {
         <Card className="interactive-lift">
           <CardHeader>
             <Badge className="w-fit">Reliability</Badge>
-            <CardTitle className="font-[var(--font-display)] tracking-[-0.03em]">
+            <CardTitle className="font-(--font-display) tracking-[-0.03em]">
               Production-ready by default
             </CardTitle>
             <CardDescription>

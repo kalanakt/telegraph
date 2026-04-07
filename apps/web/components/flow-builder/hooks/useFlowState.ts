@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useEdgesState, useNodesState, type Edge, type Node } from "@xyflow/react";
 import { type FlowDefinition, type TriggerType } from "@telegram-builder/shared";
 import { toCanvasEdges, toCanvasNodes, defaultFlowDefinition, extractTriggerFromNodes } from "../utils";
@@ -18,11 +18,14 @@ export function useFlowState(initialFlow?: FlowDefinition, initialTrigger?: Trig
     [nodes, selectedNodeId],
   );
 
-  function loadFlow(flow: FlowDefinition, legacyTrigger?: TriggerType) {
-    setNodes(toCanvasNodes(flow, legacyTrigger));
-    setEdges(toCanvasEdges(flow));
-    setSelectedNodeId(null);
-  }
+  const loadFlow = useCallback(
+    (flow: FlowDefinition, legacyTrigger?: TriggerType) => {
+      setNodes(toCanvasNodes(flow, legacyTrigger));
+      setEdges(toCanvasEdges(flow));
+      setSelectedNodeId(null);
+    },
+    [setEdges, setNodes],
+  );
 
   return {
     nodes,

@@ -91,7 +91,7 @@ function PlanCard({
         >
           {eyebrow}
         </Badge>
-        <CardTitle className="font-[var(--font-display)] text-[1.35rem] tracking-[-0.03em]">
+        <CardTitle className="font-(--font-display) text-[1.35rem] tracking-[-0.03em]">
           {title}
         </CardTitle>
         <div className="flex items-end gap-2">
@@ -245,7 +245,7 @@ export function BillingOverviewCard({
         >
           Telegraph billing
         </Badge>
-        <CardTitle className="font-[var(--font-display)] text-[1.35rem] tracking-[-0.03em]">
+        <CardTitle className="font-(--font-display) text-[1.35rem] tracking-[-0.03em]">
           {plan} plan
         </CardTitle>
         <CardDescription>

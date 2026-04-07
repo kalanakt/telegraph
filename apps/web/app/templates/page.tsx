@@ -31,7 +31,7 @@ export default async function TemplatesPage() {
 
       <Card className="interactive-lift">
         <CardHeader>
-          <CardTitle className="font-[var(--font-display)]">My Templates</CardTitle>
+          <CardTitle className="font-(--font-display)">My Templates</CardTitle>
           <CardDescription>Draft and published templates owned by your account.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -82,7 +82,7 @@ export default async function TemplatesPage() {
 
       <Card className="interactive-lift">
         <CardHeader>
-          <CardTitle className="font-[var(--font-display)]">Public Marketplace</CardTitle>
+          <CardTitle className="font-(--font-display)">Public Marketplace</CardTitle>
           <CardDescription>Published templates that anyone can browse and install.</CardDescription>
         </CardHeader>
         <CardContent>

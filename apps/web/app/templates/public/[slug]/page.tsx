@@ -45,7 +45,7 @@ export default async function PublicTemplatePage({
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <Card className="interactive-lift">
           <CardHeader>
-            <CardTitle className="font-[var(--font-display)]">Template Snapshot</CardTitle>
+            <CardTitle className="font-(--font-display)">Template Snapshot</CardTitle>
             <CardDescription>
               Public installs clone these flows into your bot as disabled drafts for review.
             </CardDescription>
@@ -79,7 +79,7 @@ export default async function PublicTemplatePage({
 
         <Card className="interactive-lift">
           <CardHeader>
-            <CardTitle className="font-[var(--font-display)]">Install</CardTitle>
+            <CardTitle className="font-(--font-display)">Install</CardTitle>
             <CardDescription>
               Installing creates normal flows in your selected bot. They start disabled so you can review them first.
             </CardDescription>

@@ -47,7 +47,7 @@ export default async function BotsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="font-[var(--font-display)]">
+          <CardTitle className="font-(--font-display)">
             Connected Bots
           </CardTitle>
         </CardHeader>
