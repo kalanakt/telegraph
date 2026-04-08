@@ -94,29 +94,27 @@ export default async function FlowsPage({
         </Card>
       ) : null}
 
-      <div className="app-breakout">
-        <FlowBuilderStudio
-          bots={bots.map((bot) => ({
-            id: bot.id,
-            label: `${bot.displayName ?? bot.username ?? bot.id} (${bot.status})`,
-          }))}
-          rules={flowRules.map((rule) => ({
-            id: rule.id,
-            botId: rule.botId,
-            name: rule.name,
-            trigger: rule.trigger as TriggerType,
-            flowDefinition: rule.flowDefinition,
-            webhookEndpoint: rule.webhookEndpoint
-              ? {
-                  endpointId: rule.webhookEndpoint.endpointId,
-                  signatureHeaderName: rule.webhookEndpoint.signatureHeaderName,
-                  enabled: rule.webhookEndpoint.enabled,
-                }
-              : null,
-          }))}
-          initialRuleId={params.edit}
-        />
-      </div>
+      <FlowBuilderStudio
+        bots={bots.map((bot) => ({
+          id: bot.id,
+          label: `${bot.displayName ?? bot.username ?? bot.id} (${bot.status})`,
+        }))}
+        rules={flowRules.map((rule) => ({
+          id: rule.id,
+          botId: rule.botId,
+          name: rule.name,
+          trigger: rule.trigger as TriggerType,
+          flowDefinition: rule.flowDefinition,
+          webhookEndpoint: rule.webhookEndpoint
+            ? {
+                endpointId: rule.webhookEndpoint.endpointId,
+                signatureHeaderName: rule.webhookEndpoint.signatureHeaderName,
+                enabled: rule.webhookEndpoint.enabled,
+              }
+            : null,
+        }))}
+        initialRuleId={params.edit}
+      />
 
       <Card className="interactive-lift">
         <CardHeader>

@@ -56,7 +56,7 @@ export default async function AccountProfilePage({
   });
 
   return (
-    <div className="mx-auto max-w-8xl space-y-6">
+    <div className="space-y-6">
       <PageHeading
         title="Account"
         subtitle="Manage your Telegraph billing state and Clerk account settings from one place."
