@@ -1,7 +1,7 @@
 "use client";
 
 import { Handle, Position } from "@xyflow/react";
-import { ExternalLink, FileText, Image, Link2, Plus, Send, Video, Zap } from "lucide-react";
+import { ExternalLink, FileText, Image, Link2, Plus, Send, Trash2, Video, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getCapabilityLabel, migrateLegacyActionData, summarizeAction } from "@/lib/flow-builder";
@@ -64,6 +64,35 @@ export function ActionNode({ data }: { data: ActionEditorData & { __meta?: Build
             </div>
             <div className="font-semibold leading-tight text-foreground">{nodeLabel}</div>
             <div className="mt-0.5 text-[10px] text-foreground/80">{label}</div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <Button
+                type="button"
+                size="xs"
+                variant="outline"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  const rect = (event.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                  runtime?.onQuickAdd?.(nodeId, "default", {
+                    x: rect.left + rect.width / 2,
+                    y: rect.bottom,
+                  });
+                }}
+              >
+                Add next
+              </Button>
+              <Button
+                type="button"
+                size="xs"
+                variant="outline"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  runtime?.onDeleteNode?.(nodeId);
+                }}
+              >
+                <Trash2 className="h-3 w-3" />
+                Delete
+              </Button>
+            </div>
           </div>
         </div>
 

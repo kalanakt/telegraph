@@ -19,6 +19,7 @@ export function StartNode({ data }: { data: StartNodeData }) {
   const Icon = getTriggerIcon(trigger);
   const label = data.__meta?.label?.trim() || "Trigger";
   const runtime = data.__runtime;
+  const nodeId = data.id ?? "";
 
   return (
     <div
@@ -44,6 +45,21 @@ export function StartNode({ data }: { data: StartNodeData }) {
               }}
             >
               Edit trigger
+            </Button>
+            <Button
+              type="button"
+              size="xs"
+              variant="outline"
+              onClick={(event) => {
+                event.stopPropagation();
+                const rect = (event.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                runtime?.onQuickAdd?.(nodeId, undefined, {
+                  x: rect.left + rect.width / 2,
+                  y: rect.bottom,
+                });
+              }}
+            >
+              Add next
             </Button>
           </div>
           <div className="mt-2 text-[10px] text-muted-foreground">Pick a trigger, then connect the rest of the graph.</div>

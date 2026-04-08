@@ -137,6 +137,7 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
     updateSelectedNodeData,
     replaceSelectedAction,
     updateSelectedActionParams,
+    deleteNodeById,
     deleteSelectedNode,
   } = callbacks;
 
@@ -593,32 +594,17 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
     [availableRules, botId, ensureInlineButtonToken, name, selectedRuleId],
   );
 
-  const openEdgeInsert = useCallback(
-    (edgeId: string, anchor: { x: number; y: number }) => {
-      const edge = edges.find((item) => item.id === edgeId);
-      if (!edge) return;
-
+  const openNodeInsert = useCallback(
+    (nodeId: string, sourceHandle: string | undefined, anchor: { x: number; y: number }) => {
       setQuickAddQuery("");
       setQuickAddContext({
-        mode: "edge",
-        edgeId,
-        sourceNodeId: edge.source,
-        sourceHandle: edge.sourceHandle ?? undefined,
-        targetNodeId: edge.target,
+        mode: "node",
+        sourceNodeId: nodeId,
+        sourceHandle,
         anchor,
       });
     },
-    [edges],
-  );
-
-  const deleteEdgeById = useCallback(
-    (edgeId: string) => {
-      setEdges((current) => current.filter((edge) => edge.id !== edgeId));
-      setSelectedEdgeId((current) => (current === edgeId ? null : current));
-      setQuickAddContext((current) => (current?.mode === "edge" && current.edgeId === edgeId ? null : current));
-      setStatus("Edge removed.");
-    },
-    [setEdges],
+    [],
   );
 
   const applyCatalogItem = useCallback(
@@ -640,7 +626,16 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
       }
 
       const edgeContext = context?.mode === "edge" ? edges.find((edge) => edge.id === context.edgeId) : null;
-      const position = edgeContext ? getEdgeMidpoint(edgeContext, nodes) : undefined;
+      const sourceNode = context ? nodes.find((node) => node.id === context.sourceNodeId) : null;
+      const position =
+        edgeContext
+          ? getEdgeMidpoint(edgeContext, nodes)
+          : sourceNode
+          ? {
+              x: Math.round((sourceNode.position.x + 280) / 20) * 20,
+              y: Math.round(sourceNode.position.y / 20) * 20,
+            }
+          : undefined;
       const nextNode =
         item.kind === "action"
           ? addNode("action", viewportCenter, { actionType: item.actionType, position })
@@ -669,6 +664,24 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
             }),
           ];
         });
+      } else if (context?.mode === "node") {
+        const candidate = createBuilderEdge({
+          source: context.sourceNodeId,
+          sourceHandle: context.sourceHandle ?? null,
+          target: nextNode.id,
+          targetHandle: null,
+        });
+
+        if (!canCreateConnection(candidate, [...nodes, nextNode], edges)) {
+          setNodes((current) => current.filter((node) => node.id !== nextNode.id));
+          setSelectedNodeId(context.sourceNodeId);
+          setStatus("That branch already has a connection.");
+          setPaletteMobileOpen(false);
+          setQuickAddContext(null);
+          return;
+        }
+
+        setEdges((current) => [...current, candidate]);
       }
 
       setSelectedNodeId(nextNode.id);
@@ -716,6 +729,8 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
               onCreateCallbackFlow: handleCreateCallbackFlow,
               onLinkCallbackFlow: handleLinkCallbackFlow,
               linkedCallbackFlows: linked,
+              onQuickAdd: openNodeInsert,
+              onDeleteNode: deleteNodeById,
             },
           },
         };
@@ -723,8 +738,10 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
     [
       availableRules,
       handleCreateCallbackFlow,
+      deleteNodeById,
       handleLinkCallbackFlow,
       nodes,
+      openNodeInsert,
       setSelectedNodeId,
     ],
   );
@@ -734,12 +751,13 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
       edges.map((edge) => ({
         ...edge,
         type: "builder-edge",
-        data: {
-          onInsertNode: openEdgeInsert,
-          onDeleteEdge: deleteEdgeById,
-        },
+        className:
+          selectedNodeId && (edge.source === selectedNodeId || edge.target === selectedNodeId)
+            ? "builder-edge-connected"
+            : undefined,
+        data: {},
       })),
-    [deleteEdgeById, edges, openEdgeInsert],
+    [edges, selectedNodeId],
   );
 
   async function saveFlow() {

@@ -62,6 +62,12 @@ export type QuickAddContext =
       sourceHandle?: string;
       targetNodeId: string;
       anchor: { x: number; y: number };
+    }
+  | {
+      mode: "node";
+      sourceNodeId: string;
+      sourceHandle?: string;
+      anchor: { x: number; y: number };
     };
 
 export type LinkedCallbackFlow = {
@@ -76,6 +82,8 @@ export type BuilderRuntimeData = {
   onCreateCallbackFlow?: (nodeId: string, rowIndex: number, buttonIndex: number) => void;
   onLinkCallbackFlow?: (nodeId: string, rowIndex: number, buttonIndex: number) => void;
   linkedCallbackFlows?: LinkedCallbackFlow[];
+  onQuickAdd?: (nodeId: string, sourceHandle: string | undefined, anchor: { x: number; y: number }) => void;
+  onDeleteNode?: (nodeId: string) => void;
 };
 
 export type BuilderNodeCatalogItem = {

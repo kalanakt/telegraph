@@ -3,6 +3,7 @@
 import { Handle, Position } from "@xyflow/react";
 import {
   Filter,
+  Plus,
   MessageSquare,
   User,
   Hash,
@@ -11,8 +12,10 @@ import {
   Variable,
   GitBranch,
   MousePointerClick,
+  Trash2,
 } from "lucide-react";
-import type { BuilderNodeMeta, ConditionEditorData } from "../types";
+import { Button } from "@/components/ui/button";
+import type { BuilderNodeMeta, BuilderRuntimeData, ConditionEditorData } from "../types";
 
 const CONDITION_ICONS: Record<string, React.ElementType> = {
   text_contains: MessageSquare,
@@ -70,11 +73,13 @@ function formatConditionLabel(type: string): string {
     .join(" ");
 }
 
-export function ConditionNode({ data }: { data: ConditionEditorData & { __meta?: BuilderNodeMeta } }) {
+export function ConditionNode({ data }: { data: ConditionEditorData & { __meta?: BuilderNodeMeta; __runtime?: BuilderRuntimeData; id?: string } }) {
   const type = data.type ?? "text_contains";
   const Icon = CONDITION_ICONS[type] ?? Filter;
   const summary = formatConditionSummary(data);
   const label = data.__meta?.label?.trim() || formatConditionLabel(type);
+  const runtime = data.__runtime;
+  const nodeId = data.id ?? "";
 
   return (
     <div className="builder-node builder-node-condition relative min-w-[320px] max-w-[380px] rounded-sm px-3 py-3 text-xs">
@@ -95,6 +100,20 @@ export function ConditionNode({ data }: { data: ConditionEditorData & { __meta?:
           <div className="mt-2 rounded-sm border border-border/80 bg-secondary/55 px-2 py-1.5 font-mono text-[10px] text-muted-foreground">
             {summary}
           </div>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            <Button
+              type="button"
+              size="xs"
+              variant="outline"
+              onClick={(event) => {
+                event.stopPropagation();
+                runtime?.onDeleteNode?.(nodeId);
+              }}
+            >
+              <Trash2 className="h-3 w-3" />
+              Delete
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -104,11 +123,29 @@ export function ConditionNode({ data }: { data: ConditionEditorData & { __meta?:
           { handle: "false", label: "False branch", tone: "bg-rose-50 text-rose-700" },
         ].map((branch, index) => (
           <div key={branch.handle} className="relative rounded-sm border border-border/80 bg-background/60 px-2 py-2">
-            <div className="flex items-center gap-2">
-              <span className={`rounded-sm border border-border/80 px-1.5 py-0.5 text-[9px] font-semibold ${branch.tone}`}>
-                {branch.handle}
-              </span>
-              <span className="text-[11px] font-medium text-foreground">{branch.label}</span>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className={`rounded-sm border border-border/80 px-1.5 py-0.5 text-[9px] font-semibold ${branch.tone}`}>
+                  {branch.handle}
+                </span>
+                <span className="text-[11px] font-medium text-foreground">{branch.label}</span>
+              </div>
+              <Button
+                type="button"
+                size="xs"
+                variant="outline"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  const rect = (event.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                  runtime?.onQuickAdd?.(nodeId, branch.handle, {
+                    x: rect.left + rect.width / 2,
+                    y: rect.bottom,
+                  });
+                }}
+              >
+                <Plus className="h-3 w-3" />
+                Add
+              </Button>
             </div>
             <Handle
               id={branch.handle}

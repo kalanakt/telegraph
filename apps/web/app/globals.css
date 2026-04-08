@@ -298,16 +298,24 @@
 
     .builder-flow .react-flow__edge-path,
     .builder-flow .react-flow__connection-path {
-        stroke: rgba(14, 165, 233, 0.42);
-        stroke-width: 1.75;
+        stroke: rgba(14, 165, 233, 0.58);
+        stroke-width: 2.1;
         stroke-linecap: round;
         stroke-linejoin: round;
+        filter: drop-shadow(0 0 6px rgba(14, 165, 233, 0.12));
     }
 
     .builder-flow .react-flow__edge.selected .react-flow__edge-path,
     .builder-flow .react-flow__edge:hover .react-flow__edge-path {
-        stroke: rgba(14, 165, 233, 0.72);
-        stroke-width: 2.1;
+        stroke: rgba(14, 165, 233, 0.9);
+        stroke-width: 2.6;
+        filter: drop-shadow(0 0 10px rgba(14, 165, 233, 0.28));
+    }
+
+    .builder-flow .react-flow__edge.builder-edge-connected .react-flow__edge-path {
+        stroke: rgba(34, 197, 94, 0.82);
+        stroke-width: 2.5;
+        filter: drop-shadow(0 0 10px rgba(34, 197, 94, 0.22));
     }
 
     .builder-flow .react-flow__controls {

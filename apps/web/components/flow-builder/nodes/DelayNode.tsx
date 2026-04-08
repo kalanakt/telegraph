@@ -1,8 +1,9 @@
 "use client";
 
 import { Handle, Position } from "@xyflow/react";
-import { TimerReset } from "lucide-react";
-import type { BuilderNodeMeta, DelayEditorData } from "../types";
+import { Plus, TimerReset, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { BuilderNodeMeta, BuilderRuntimeData, DelayEditorData } from "../types";
 
 function formatDelay(ms: number) {
   if (ms % 3_600_000 === 0) return `${ms / 3_600_000}h`;
@@ -11,8 +12,10 @@ function formatDelay(ms: number) {
   return `${ms}ms`;
 }
 
-export function DelayNode({ data }: { data: DelayEditorData & { __meta?: BuilderNodeMeta } }) {
+export function DelayNode({ data }: { data: DelayEditorData & { __meta?: BuilderNodeMeta; __runtime?: BuilderRuntimeData; id?: string } }) {
   const label = data.__meta?.label?.trim() || "Delay";
+  const runtime = data.__runtime;
+  const nodeId = data.id ?? "";
 
   return (
     <div className="builder-node builder-node-action relative min-w-[300px] max-w-[360px] rounded-sm text-xs">
@@ -27,6 +30,36 @@ export function DelayNode({ data }: { data: DelayEditorData & { __meta?: Builder
             <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Delay</div>
             <div className="font-semibold leading-tight text-foreground">{label}</div>
             <div className="mt-2 text-[11px] leading-5 text-foreground/76">Wait {formatDelay(data.delay_ms)} before continuing to the next node.</div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <Button
+                type="button"
+                size="xs"
+                variant="outline"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  const rect = (event.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                  runtime?.onQuickAdd?.(nodeId, "default", {
+                    x: rect.left + rect.width / 2,
+                    y: rect.bottom,
+                  });
+                }}
+              >
+                <Plus className="h-3 w-3" />
+                Add next
+              </Button>
+              <Button
+                type="button"
+                size="xs"
+                variant="outline"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  runtime?.onDeleteNode?.(nodeId);
+                }}
+              >
+                <Trash2 className="h-3 w-3" />
+                Delete
+              </Button>
+            </div>
           </div>
         </div>
       </div>

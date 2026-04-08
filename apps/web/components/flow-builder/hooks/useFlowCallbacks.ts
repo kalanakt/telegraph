@@ -15,7 +15,7 @@ type FlowState = {
   edges: Edge[];
   setEdges: React.Dispatch<React.SetStateAction<Edge[]>>;
   selectedNodeId: string | null;
-  setSelectedNodeId: (id: string | null) => void;
+  setSelectedNodeId: React.Dispatch<React.SetStateAction<string | null>>;
   selectedNode: Node | null;
 };
 
@@ -114,17 +114,62 @@ export function useFlowCallbacks(state: FlowState, setStatus: (msg: string) => v
     [replaceSelectedAction, selectedNode],
   );
 
+  const deleteNodeById = useCallback(
+    (nodeId: string) => {
+      const node = nodes.find((item) => item.id === nodeId);
+      if (!node || node.type === "start") return;
+
+      const incoming = edges.filter((edge) => edge.target === nodeId);
+      const outgoing = edges.filter((edge) => edge.source === nodeId);
+      const remainingNodes = nodes.filter((item) => item.id !== nodeId);
+      const remainingEdges = edges.filter((edge) => edge.source !== nodeId && edge.target !== nodeId);
+
+      let nextEdges = remainingEdges;
+      const isLinearPassthrough =
+        (node.type === "action" || node.type === "set_variable" || node.type === "delay") && outgoing.length === 1;
+
+      if (isLinearPassthrough) {
+        const downstream = outgoing[0];
+        if (!downstream) {
+          setNodes(remainingNodes);
+          setEdges(nextEdges);
+          setSelectedNodeId((current) => (current === nodeId ? null : current));
+          setStatus("Node removed.");
+          return;
+        }
+        const additions: Edge[] = [];
+
+        for (const edge of incoming) {
+          const candidate = createBuilderEdge({
+            source: edge.source,
+            sourceHandle: edge.sourceHandle ?? null,
+            target: downstream.target,
+            targetHandle: downstream.targetHandle ?? null,
+          });
+
+          if (
+            candidate.source !== candidate.target &&
+            canCreateConnection(candidate, remainingNodes, [...nextEdges, ...additions])
+          ) {
+            additions.push(candidate);
+          }
+        }
+
+        nextEdges = [...nextEdges, ...additions];
+      }
+
+      setNodes(remainingNodes);
+      setEdges(nextEdges);
+      setSelectedNodeId((current) => (current === nodeId ? null : current));
+      setStatus("Node removed.");
+    },
+    [edges, nodes, setEdges, setNodes, setSelectedNodeId, setStatus],
+  );
+
   const deleteSelectedNode = useCallback(() => {
     if (!selectedNodeId) return;
-    setNodes((current) => current.filter((node) => node.id !== selectedNodeId));
-    setEdges((current) =>
-      current.filter(
-        (edge) => edge.source !== selectedNodeId && edge.target !== selectedNodeId,
-      ),
-    );
-    setSelectedNodeId(null);
-    setStatus("Node removed.");
-  }, [selectedNodeId, setEdges, setNodes, setSelectedNodeId, setStatus]);
+    deleteNodeById(selectedNodeId);
+  }, [deleteNodeById, selectedNodeId]);
 
   return {
     setTrigger,
@@ -133,6 +178,7 @@ export function useFlowCallbacks(state: FlowState, setStatus: (msg: string) => v
     updateSelectedNodeData,
     replaceSelectedAction,
     updateSelectedActionParams,
+    deleteNodeById,
     deleteSelectedNode,
   };
 }

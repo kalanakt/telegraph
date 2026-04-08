@@ -1,11 +1,14 @@
 "use client";
 
 import { Handle, Position } from "@xyflow/react";
-import { Variable } from "lucide-react";
-import type { BuilderNodeMeta, SetVariableEditorData } from "../types";
+import { Plus, Trash2, Variable } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { BuilderNodeMeta, BuilderRuntimeData, SetVariableEditorData } from "../types";
 
-export function SetVariableNode({ data }: { data: SetVariableEditorData & { __meta?: BuilderNodeMeta } }) {
+export function SetVariableNode({ data }: { data: SetVariableEditorData & { __meta?: BuilderNodeMeta; __runtime?: BuilderRuntimeData; id?: string } }) {
   const label = data.__meta?.label?.trim() || "Set Variable";
+  const runtime = data.__runtime;
+  const nodeId = data.id ?? "";
 
   return (
     <div className="builder-node builder-node-action relative min-w-[300px] max-w-[380px] rounded-sm text-xs">
@@ -23,6 +26,36 @@ export function SetVariableNode({ data }: { data: SetVariableEditorData & { __me
               {data.path}
             </div>
             <div className="mt-2 text-[11px] text-foreground/74">Stores a reusable value for the rest of the workflow.</div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <Button
+                type="button"
+                size="xs"
+                variant="outline"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  const rect = (event.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                  runtime?.onQuickAdd?.(nodeId, "default", {
+                    x: rect.left + rect.width / 2,
+                    y: rect.bottom,
+                  });
+                }}
+              >
+                <Plus className="h-3 w-3" />
+                Add next
+              </Button>
+              <Button
+                type="button"
+                size="xs"
+                variant="outline"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  runtime?.onDeleteNode?.(nodeId);
+                }}
+              >
+                <Trash2 className="h-3 w-3" />
+                Delete
+              </Button>
+            </div>
           </div>
         </div>
       </div>
