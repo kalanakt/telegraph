@@ -116,6 +116,12 @@
         @apply relative mx-auto min-h-screen w-full max-w-[1480px] px-4 pb-16 pt-4;
     }
 
+    .app-breakout {
+        width: 100vw;
+        margin-left: calc(50% - 50vw);
+        margin-right: calc(50% - 50vw);
+    }
+
     .page-heading {
         @apply mb-8 flex flex-col gap-3;
     }
@@ -473,6 +479,11 @@
         @apply px-8 pt-6;
     }
 
+    .app-breakout {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+
     .page-title {
         font-size: 2.9rem;
     }
@@ -490,11 +501,21 @@
     .app-shell {
         @apply px-10;
     }
+
+    .app-breakout {
+        padding-left: 2.5rem;
+        padding-right: 2.5rem;
+    }
 }
 
 @media (min-width: 1536px) {
     .app-shell {
         @apply px-12;
+    }
+
+    .app-breakout {
+        padding-left: 3rem;
+        padding-right: 3rem;
     }
 }
 
