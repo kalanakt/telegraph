@@ -611,6 +611,16 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
     [edges],
   );
 
+  const deleteEdgeById = useCallback(
+    (edgeId: string) => {
+      setEdges((current) => current.filter((edge) => edge.id !== edgeId));
+      setSelectedEdgeId((current) => (current === edgeId ? null : current));
+      setQuickAddContext((current) => (current?.mode === "edge" && current.edgeId === edgeId ? null : current));
+      setStatus("Edge removed.");
+    },
+    [setEdges],
+  );
+
   const applyCatalogItem = useCallback(
     (item: BuilderNodeCatalogItem, context: QuickAddContext | null) => {
       if (item.kind === "start") {
@@ -726,9 +736,10 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
         type: "builder-edge",
         data: {
           onInsertNode: openEdgeInsert,
+          onDeleteEdge: deleteEdgeById,
         },
       })),
-    [edges, openEdgeInsert],
+    [deleteEdgeById, edges, openEdgeInsert],
   );
 
   async function saveFlow() {

@@ -106,6 +106,7 @@ export type DecoratedBuilderNode = Node<
 
 export type DecoratedBuilderEdge = Edge<{
   onInsertNode?: (edgeId: string, anchor: { x: number; y: number }) => void;
+  onDeleteEdge?: (edgeId: string) => void;
 }>;
 
 export type ActionEditorData = {

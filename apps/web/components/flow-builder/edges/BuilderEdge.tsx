@@ -26,7 +26,10 @@ export function BuilderEdge({
     curvature: 0.38,
   });
 
-  const edgeData = (data ?? {}) as { onInsertNode?: (edgeId: string, anchor: { x: number; y: number }) => void };
+  const edgeData = (data ?? {}) as {
+    onInsertNode?: (edgeId: string, anchor: { x: number; y: number }) => void;
+    onDeleteEdge?: (edgeId: string) => void;
+  };
 
   return (
     <>
@@ -43,20 +46,41 @@ export function BuilderEdge({
         </EdgeLabelRenderer>
       ) : null}
       <EdgeLabelRenderer>
-        <button
-          type="button"
-          className={`nodrag nopan builder-edge-insert ${selected ? "builder-edge-insert-active" : ""}`}
-          style={{ transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)` }}
-          onClick={(event) => {
-            edgeData.onInsertNode?.(id, {
-              x: event.clientX,
-              y: event.clientY,
-            });
+        <div
+          className="nodrag nopan flex items-center gap-2"
+          style={{
+            transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
+            pointerEvents: "all",
           }}
-          aria-label="Insert node on edge"
         >
-          Add
-        </button>
+          <button
+            type="button"
+            className={`builder-edge-insert ${selected ? "builder-edge-insert-active" : ""}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              edgeData.onInsertNode?.(id, {
+                x: event.clientX,
+                y: event.clientY,
+              });
+            }}
+            aria-label="Insert node on edge"
+          >
+            Add
+          </button>
+          {selected ? (
+            <button
+              type="button"
+              className="rounded-sm border border-rose-300/80 bg-background/96 px-2 py-1 text-[10px] font-medium text-rose-700 shadow-sm transition hover:bg-rose-50"
+              onClick={(event) => {
+                event.stopPropagation();
+                edgeData.onDeleteEdge?.(id);
+              }}
+              aria-label="Delete edge"
+            >
+              Delete
+            </button>
+          ) : null}
+        </div>
       </EdgeLabelRenderer>
     </>
   );
