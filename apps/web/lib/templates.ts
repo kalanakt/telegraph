@@ -494,6 +494,7 @@ export async function listPublicTemplates() {
         description: version.description,
         authorLabel: buildAuthorLabel(template.user),
         flowCount: version.flows.length,
+        triggers: [...new Set(version.flows.map((flow) => flow.trigger as TriggerType))],
         publishedAt: version.createdAt,
         version: version.version
       };

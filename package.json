@@ -20,7 +20,8 @@
     "test:watch": "vitest",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:push": "prisma db push"
+    "prisma:push": "prisma db push",
+    "db:seed:templates": "pnpm exec tsx scripts/seed-workflow-templates.ts"
   },
   "devDependencies": {
     "@prisma/client": "^6.19.2",

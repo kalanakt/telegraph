@@ -9,6 +9,10 @@ import { getAuthUserId } from "@/lib/clerk-auth";
 import { listPublicTemplates, listUserTemplates } from "@/lib/templates";
 import { requireAppUser } from "@/lib/user";
 
+function formatTriggerLabel(trigger: string) {
+  return trigger.replaceAll("_", " ");
+}
+
 export default async function TemplatesPage() {
   const userId = await getAuthUserId();
   if (!userId) {
@@ -106,6 +110,9 @@ export default async function TemplatesPage() {
                       <div className="space-y-1">
                         <p>{template.title}</p>
                         <p className="text-xs text-muted-foreground">{template.description ?? "No description"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Triggers: {template.triggers.map(formatTriggerLabel).join(" • ")}
+                        </p>
                       </div>
                     </TableCell>
                     <TableCell>{template.authorLabel}</TableCell>
