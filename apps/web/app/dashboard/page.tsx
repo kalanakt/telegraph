@@ -4,6 +4,7 @@ import {
   Activity,
   Bot,
   CalendarCheck2,
+  Check,
   Clock3,
   MoveRight,
   Rocket,
@@ -11,6 +12,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { redirect } from "next/navigation";
+import { PageHeading } from "@/components/PageHeading";
 import type { RunsOverTimePoint } from "@/components/dashboard/RunsOverTimeChart";
 import { RunsOverTimeChartClient } from "@/components/dashboard/RunsOverTimeChartClient";
 import { Badge } from "@/components/ui/badge";
@@ -66,7 +68,51 @@ function buildRunActivityPoints(
   });
 }
 
-function StatTile({
+function getWorkspaceStatus(botCount: number, flowCount: number, runCount: number) {
+  if (botCount === 0) {
+    return {
+      label: "Setup needed",
+      title: "Connect your first Telegram bot",
+      description:
+        "The workspace is ready, but it still needs a BotFather token before flows can receive events or queue actions.",
+      ctaHref: "/bots",
+      ctaLabel: "Open bots",
+    };
+  }
+
+  if (flowCount === 0) {
+    return {
+      label: "Ready for flows",
+      title: "Create the first automation path",
+      description:
+        "You have a bot connected. The next useful step is wiring a trigger, optional conditions, and the actions you want to send.",
+      ctaHref: "/flows",
+      ctaLabel: "Open flows",
+    };
+  }
+
+  if (runCount === 0) {
+    return {
+      label: "Awaiting activity",
+      title: "Everything is configured and waiting for live events",
+      description:
+        "Your bot and flows are in place. Trigger a Telegram event or publish a flow to start generating run history.",
+      ctaHref: "/runs",
+      ctaLabel: "Inspect runs",
+    };
+  }
+
+  return {
+    label: "Active workspace",
+    title: "Automation traffic is moving through the system",
+    description:
+      "Use this dashboard to monitor throughput, spot slow days, and jump back into the core surfaces that keep workflows shipping.",
+    ctaHref: "/runs",
+    ctaLabel: "Review run history",
+  };
+}
+
+function OverviewMetric({
   icon: Icon,
   label,
   value,
@@ -78,24 +124,75 @@ function StatTile({
   detail: string;
 }) {
   return (
-    <div className="metric-tile flex flex-col gap-3">
+    <div className="bg-background p-4">
       <div className="flex items-center gap-2 text-muted-foreground">
-        <span className="flex size-9 items-center justify-center rounded-sm bg-primary/10 text-primary">
+        <span className="flex size-9 items-center justify-center border border-primary/20 bg-primary/10 text-primary">
           <Icon className="size-4" />
         </span>
-        <span className="text-[0.72rem] font-semibold uppercase tracking-[0.14em]">
+        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em]">
           {label}
-        </span>
+        </p>
       </div>
-      <p className="text-[2rem] font-semibold leading-none tracking-[-0.05em]">
+      <p className="mt-3 text-[2rem] font-semibold leading-none tracking-[-0.05em] tabular-nums">
         {typeof value === "number" ? numberFormatter.format(value) : value}
       </p>
-      <p className="text-sm text-muted-foreground">{detail}</p>
+      <p className="mt-2 max-w-[30ch] text-sm leading-6 text-muted-foreground">
+        {detail}
+      </p>
     </div>
   );
 }
 
-function UtilitySection({
+function ActivityStat({
+  icon: Icon,
+  label,
+  value,
+  detail,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: number | string;
+  detail: string;
+}) {
+  return (
+    <div className="bg-background p-4">
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <Icon className="size-4" />
+        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em]">
+          {label}
+        </p>
+      </div>
+      <p className="mt-3 text-[1.65rem] font-semibold leading-none tracking-[-0.05em] tabular-nums">
+        {typeof value === "number" ? numberFormatter.format(value) : value}
+      </p>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">{detail}</p>
+    </div>
+  );
+}
+
+function ChecklistItem({
+  done,
+  title,
+  detail,
+}: {
+  done: boolean;
+  title: string;
+  detail: string;
+}) {
+  return (
+    <div className="flex items-start gap-3 border-t border-border/70 pt-3 first:border-t-0 first:pt-0">
+      <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center border border-border/80 bg-background text-muted-foreground">
+        {done ? <Check className="size-3.5 text-primary" /> : <span className="text-[0.68rem] font-semibold">•</span>}
+      </span>
+      <div className="space-y-1">
+        <p className="text-sm font-semibold">{title}</p>
+        <p className="text-sm leading-6 text-muted-foreground">{detail}</p>
+      </div>
+    </div>
+  );
+}
+
+function RailSection({
   badge,
   title,
   description,
@@ -116,9 +213,7 @@ function UtilitySection({
           <h2 className="font-(--font-display) text-[1.08rem] font-semibold tracking-[-0.03em]">
             {title}
           </h2>
-          <p className="max-w-[54ch] text-sm text-muted-foreground">
-            {description}
-          </p>
+          <p className="text-sm leading-6 text-muted-foreground">{description}</p>
         </div>
       </div>
       <div className="px-5 py-5">{children}</div>
@@ -172,318 +267,277 @@ export default async function DashboardPage() {
       : (runActivityTotal / runActivity.length).toFixed(
           runActivityTotal % runActivity.length === 0 ? 0 : 1,
         );
+  const status = getWorkspaceStatus(botCount, flowCount, runCount);
+  const windowRange = `${runActivity[0]?.label ?? "Start"} - ${runActivity[runActivity.length - 1]?.label ?? "Today"}`;
+  const checklist = [
+    {
+      done: botCount > 0,
+      title: "Connect at least one bot",
+      detail:
+        "Add a BotFather token on the Bots page so Telegraph can receive updates and send actions back to Telegram.",
+    },
+    {
+      done: flowCount > 0,
+      title: "Publish a workflow",
+      detail:
+        "Build a trigger-first flow, then add the conditions and actions that should fire when an event arrives.",
+    },
+    {
+      done: runCount > 0,
+      title: "Verify live execution",
+      detail:
+        "Use the Runs page to confirm that real Telegram traffic is producing workflow and action history.",
+    },
+  ];
 
   return (
-    <div className="min-w-0 space-y-5">
-      <section className="border-b border-border/70 pb-5 lg:pb-6">
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_320px]">
-            <div className="space-y-5">
-              <div className="space-y-3">
+    <div className="min-w-0 space-y-6">
+      <PageHeading
+        title="Dashboard"
+        subtitle="Monitor workspace health, see whether automation traffic is moving, and jump back into the main operating surfaces without hunting through the product."
+        action={
+          <div className="flex w-full flex-wrap gap-2 md:w-auto">
+            <Button asChild size="sm">
+              <Link href="/bots">
+                <Rocket data-icon="inline-start" />
+                Add bot
+              </Link>
+            </Button>
+            <Button asChild size="sm" variant="secondary">
+              <Link href="/flows">
+                Open flows
+                <MoveRight data-icon="inline-end" />
+              </Link>
+            </Button>
+          </div>
+        }
+      />
+
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_360px]">
+        <article className="border border-border/80 bg-card">
+          <div className="grid gap-6 p-5 lg:p-6">
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px]">
+              <div className="space-y-4">
                 <Badge variant="secondary" className="w-fit">
-                  Operations
+                  {status.label}
                 </Badge>
                 <div className="space-y-2">
-                  <h1 className="font-(--font-display) text-[2.4rem] font-semibold leading-none tracking-[-0.06em]">
-                    Dashboard
-                  </h1>
-                  <p className="max-w-[62ch] text-sm leading-6 text-muted-foreground">
-                    Track workspace health, inspect run volume, and jump straight
-                    back into the surfaces that keep Telegram automations
-                    shipping.
+                  <h2 className="font-(--font-display) text-[2rem] font-semibold leading-[0.98] tracking-[-0.055em] text-balance">
+                    {status.title}
+                  </h2>
+                  <p className="max-w-[58ch] text-sm leading-6 text-muted-foreground text-pretty">
+                    {status.description}
                   </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={status.ctaHref}>
+                      {status.ctaLabel}
+                      <MoveRight data-icon="inline-end" />
+                    </Link>
+                  </Button>
+                  <Button asChild variant="ghost" size="sm">
+                    <Link href="/runs">See recent runs</Link>
+                  </Button>
                 </div>
               </div>
 
-              <div className="grid gap-px border border-border/80 bg-border/80 sm:grid-cols-3">
-                <div className="bg-background p-4">
-                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Connected bots
-                  </p>
-                  <p className="mt-2 text-[2rem] font-semibold leading-none tracking-[-0.05em]">
-                    {numberFormatter.format(botCount)}
-                  </p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Bots with active webhooks and stored credentials.
-                  </p>
-                </div>
-                <div className="bg-background p-4">
-                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Active flows
-                  </p>
-                  <p className="mt-2 text-[2rem] font-semibold leading-none tracking-[-0.05em]">
-                    {numberFormatter.format(flowCount)}
-                  </p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Published or in-progress workflow definitions.
-                  </p>
-                </div>
-                <div className="bg-background p-4">
-                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Historical runs
-                  </p>
-                  <p className="mt-2 text-[2rem] font-semibold leading-none tracking-[-0.05em]">
-                    {numberFormatter.format(runCount)}
-                  </p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Execution volume currently available for review.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="border border-border/80 bg-card p-5">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Current window
-                  </p>
-                  <p className="mt-1 text-lg font-semibold tracking-[-0.04em]">
-                    Execution snapshot
-                  </p>
-                </div>
-                <Badge variant="outline">
-                  {RUN_ACTIVITY_WINDOW_DAYS}-day window
-                </Badge>
-              </div>
-
-              <div className="mt-5 grid gap-px border border-border/80 bg-border/80">
-                <div className="grid gap-px bg-border/80 sm:grid-cols-3 xl:grid-cols-1">
-                  <div className="bg-background p-4">
-                    <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      Window total
-                    </p>
-                    <p className="mt-2 text-2xl font-semibold tracking-[-0.05em]">
-                      {numberFormatter.format(runActivityTotal)}
-                    </p>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      Recorded from {runActivity[0]?.label} to{" "}
-                      {runActivity[runActivity.length - 1]?.label}.
-                    </p>
-                  </div>
-                  <div className="bg-background p-4">
-                    <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      Peak day
-                    </p>
-                    <p className="mt-2 text-2xl font-semibold tracking-[-0.05em]">
-                      {numberFormatter.format(peakDay.value)}
-                    </p>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      {peakDay.value === 0
-                        ? "No completed activity has landed in this window yet."
-                        : `${peakDay.label} carried the highest run volume.`}
-                    </p>
-                  </div>
-                  <div className="bg-background p-4">
-                    <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      Daily pace
-                    </p>
-                    <p className="mt-2 text-2xl font-semibold tracking-[-0.05em]">
-                      {averageRuns}
-                    </p>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      Today has logged {numberFormatter.format(todayRuns)} run
-                      {todayRuns === 1 ? "" : "s"} so far.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-5 grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
-                <Button asChild>
-                  <Link href="/bots">
-                    <Rocket data-icon="inline-start" />
-                    Add bot
-                  </Link>
-                </Button>
-                <Button asChild variant="secondary">
-                  <Link href="/flows">
-                    Open flows
-                    <MoveRight data-icon="inline-end" />
-                  </Link>
-                </Button>
-                <Button asChild variant="outline">
-                  <Link href="/runs">Inspect runs</Link>
-                </Button>
-              </div>
-            </div>
-          </div>
-      </section>
-
-      <section className="grid gap-6 border-b border-border/70 pb-5 lg:pb-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.85fr)]">
-          <section className="border border-border/80 bg-card">
-            <div className="flex items-start justify-between gap-4 border-b border-border/70 px-5 py-5">
-              <div className="space-y-1">
-                <Badge variant="secondary" className="w-fit">
-                  Activity
-                </Badge>
-                <h2 className="font-(--font-display) text-[1.08rem] font-semibold tracking-[-0.03em]">
-                  Runs over time
-                </h2>
-                <p className="max-w-[54ch] text-sm text-muted-foreground">
-                  Daily workflow executions across all flows for the last{" "}
-                  {RUN_ACTIVITY_WINDOW_DAYS} days.
+              <aside className="border border-border/80 bg-background px-4 py-4">
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Activity window
                 </p>
-              </div>
-              <Badge variant="outline">Live overview</Badge>
+                <p className="mt-2 font-(--font-display) text-[1.65rem] font-semibold leading-none tracking-[-0.05em] tabular-nums">
+                  {numberFormatter.format(runActivityTotal)}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Runs recorded over the last {RUN_ACTIVITY_WINDOW_DAYS} days.
+                </p>
+                <div className="mt-4 space-y-3 border-t border-border/70 pt-4 text-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-muted-foreground">Today</span>
+                    <span className="font-semibold tabular-nums">
+                      {numberFormatter.format(todayRuns)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-muted-foreground">Peak day</span>
+                    <span className="font-semibold">
+                      {peakDay.value === 0 ? "None yet" : peakDay.label}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-muted-foreground">Average pace</span>
+                    <span className="font-semibold tabular-nums">{averageRuns}</span>
+                  </div>
+                </div>
+              </aside>
             </div>
-            <div className="px-5 py-5">
-              <RunsOverTimeChartClient points={runActivity} />
-            </div>
-            <div className="grid gap-px border-t border-border/80 bg-border/80 sm:grid-cols-3">
-              <div className="bg-muted/50 p-4">
-                <StatTile
-                  icon={Activity}
-                  label="Window total"
-                  value={runActivityTotal}
-                  detail={`Runs recorded from ${runActivity[0]?.label} to ${runActivity[runActivity.length - 1]?.label}.`}
-                />
-              </div>
-              <div className="bg-muted/50 p-4">
-                <StatTile
-                  icon={CalendarCheck2}
-                  label="Peak day"
-                  value={peakDay.value}
-                  detail={
-                    peakDay.value === 0
-                      ? "No completed workflow activity has landed in this window yet."
-                      : `${peakDay.label} carried the highest run volume.`
-                  }
-                />
-              </div>
-              <div className="bg-muted/50 p-4">
-                <StatTile
-                  icon={Clock3}
-                  label="Daily pace"
-                  value={averageRuns}
-                  detail={`Today has logged ${numberFormatter.format(todayRuns)} run${todayRuns === 1 ? "" : "s"} so far.`}
-                />
-              </div>
-            </div>
-          </section>
 
-          <div className="grid gap-6">
-            <UtilitySection
-              badge="Getting started"
-              title="Quick start"
-              description="Trigger first, optional conditions second, actions last."
-            >
-              <div className="grid gap-px border border-border/80 bg-border/80">
-                <div className="bg-background p-4 text-sm text-muted-foreground">
-                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    Step 1
-                  </p>
-                  <p className="mt-2">
-                    Connect your BotFather API token from the Bots page.
-                  </p>
-                </div>
-                <div className="bg-background p-4 text-sm text-muted-foreground">
-                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    Step 2
-                  </p>
-                  <p className="mt-2">
-                    Open Flows and pick a trigger for incoming events.
-                  </p>
-                </div>
-                <div className="bg-background p-4 text-sm text-muted-foreground">
-                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    Step 3
-                  </p>
-                  <p className="mt-2">
-                    Add condition and action nodes from the inline plus
-                    controls.
-                  </p>
-                </div>
-              </div>
-            </UtilitySection>
-
-            <UtilitySection
-              badge="Reliability"
-              title="Production-ready by default"
-              description="Queue-backed processing and run logs help operators spot issues fast."
-            >
-              <div className="grid gap-px border border-border/80 bg-border/80">
-                <div className="bg-background p-4 text-sm text-muted-foreground">
-                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    Durable execution
-                  </p>
-                  <p className="mt-2">
-                    Action jobs move through Redis-backed workers instead of
-                    depending on page request lifecycles.
-                  </p>
-                </div>
-                <div className="bg-background p-4 text-sm text-muted-foreground">
-                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    Audit trail
-                  </p>
-                  <p className="mt-2">
-                    Workflow runs and action status history give operators
-                    something concrete to inspect during incidents.
-                  </p>
-                </div>
-                <div className="bg-background p-4 text-sm text-muted-foreground">
-                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    Guardrails
-                  </p>
-                  <p className="mt-2">
-                    Billing and plan limits are checked before new work is
-                    enqueued, which keeps execution predictable.
-                  </p>
-                </div>
-              </div>
-            </UtilitySection>
+            <div className="grid gap-px border border-border/80 bg-border/80 md:grid-cols-3">
+              <OverviewMetric
+                icon={Bot}
+                label="Connected bots"
+                value={botCount}
+                detail="Bots with stored credentials and webhook connectivity available to the workspace."
+              />
+              <OverviewMetric
+                icon={Sparkles}
+                label="Saved flows"
+                value={flowCount}
+                detail="Workflow definitions available to receive events, branch on conditions, and dispatch actions."
+              />
+              <OverviewMetric
+                icon={Activity}
+                label="Historical runs"
+                value={runCount}
+                detail="Total execution history currently available for review, debugging, and operations follow-up."
+              />
+            </div>
           </div>
+        </article>
+
+        <div className="grid gap-6">
+          <RailSection
+            badge="Next steps"
+            title="Operator checklist"
+            description="The dashboard should make the next useful move obvious, especially when a workspace is still getting configured."
+          >
+            <div className="space-y-3">
+              {checklist.map((item) => (
+                <ChecklistItem
+                  key={item.title}
+                  done={item.done}
+                  title={item.title}
+                  detail={item.detail}
+                />
+              ))}
+            </div>
+          </RailSection>
+
+          <RailSection
+            badge="Shortcuts"
+            title="Fast navigation"
+            description="Jump directly into the surfaces that most often follow a dashboard review."
+          >
+            <div className="grid gap-2">
+              <Button asChild variant="outline" className="justify-between">
+                <Link href="/bots">
+                  Manage bots
+                  <MoveRight data-icon="inline-end" />
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="justify-between">
+                <Link href="/flows">
+                  Edit flows
+                  <MoveRight data-icon="inline-end" />
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="justify-between">
+                <Link href="/runs">
+                  Audit run logs
+                  <MoveRight data-icon="inline-end" />
+                </Link>
+              </Button>
+            </div>
+          </RailSection>
+        </div>
       </section>
 
-      <section>
-          <div className="grid gap-6 border border-border/80 bg-card p-5 xl:grid-cols-[1.1fr_0.9fr]">
-            <div className="space-y-4">
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_360px]">
+        <article className="border border-border/80 bg-card">
+          <div className="flex flex-col gap-4 border-b border-border/70 px-5 py-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-1">
               <Badge variant="secondary" className="w-fit">
-                Operating notes
+                Activity
               </Badge>
-              <div className="space-y-2">
-                <h2 className="font-(--font-display) text-[1.08rem] font-semibold tracking-[-0.03em]">
-                  Where to focus next
-                </h2>
-                <p className="max-w-[56ch] text-sm leading-6 text-muted-foreground">
-                  The dashboard now behaves like a workspace surface instead of
-                  a marketing page: left rail for movement, primary data in the
-                  center, and support panels off to the side.
-                </p>
-              </div>
+              <h2 className="font-(--font-display) text-[1.12rem] font-semibold tracking-[-0.03em]">
+                Runs over time
+              </h2>
+              <p className="max-w-[52ch] text-sm leading-6 text-muted-foreground">
+                Daily workflow executions across the current {RUN_ACTIVITY_WINDOW_DAYS}-day window.
+              </p>
             </div>
-
-            <div className="grid gap-px border border-border/80 bg-border/80">
-              <div className="bg-background p-4">
-                <div className="flex items-start gap-3">
-                  <span className="flex size-9 items-center justify-center bg-primary/12 text-primary">
-                    <Sparkles className="size-4" />
-                  </span>
-                  <div>
-                    <p className="text-sm font-semibold">Flows stay central</p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      The main canvas of the page is now reserved for activity
-                      and operating context instead of stacked promo-style cards.
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-background p-4">
-                <div className="flex items-start gap-3">
-                  <span className="flex size-9 items-center justify-center bg-primary/12 text-primary">
-                    <ShieldCheck className="size-4" />
-                  </span>
-                  <div>
-                    <p className="text-sm font-semibold">Support info is quieter</p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Reliability, billing, and setup guidance still exist, but
-                      they no longer compete with the dashboard’s main working
-                      surface.
-                    </p>
-                  </div>
-                </div>
-              </div>
+            <div className="border border-border/80 bg-background px-3 py-2 text-right">
+              <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Window range
+              </p>
+              <p className="mt-1 text-sm font-semibold">{windowRange}</p>
             </div>
           </div>
+
+          <div className="px-5 py-5">
+            <RunsOverTimeChartClient points={runActivity} />
+          </div>
+
+          <div className="grid gap-px border-t border-border/80 bg-border/80 md:grid-cols-3">
+            <ActivityStat
+              icon={CalendarCheck2}
+              label="Window total"
+              value={runActivityTotal}
+              detail={`Recorded from ${runActivity[0]?.label} to ${runActivity[runActivity.length - 1]?.label}.`}
+            />
+            <ActivityStat
+              icon={Activity}
+              label="Peak day"
+              value={peakDay.value}
+              detail={
+                peakDay.value === 0
+                  ? "No completed workflow activity has landed in this window yet."
+                  : `${peakDay.label} carried the highest run volume.`
+              }
+            />
+            <ActivityStat
+              icon={Clock3}
+              label="Daily pace"
+              value={averageRuns}
+              detail={`Today has logged ${numberFormatter.format(todayRuns)} run${todayRuns === 1 ? "" : "s"} so far.`}
+            />
+          </div>
+        </article>
+
+        <div className="grid gap-6">
+          <RailSection
+            badge="Reliability"
+            title="What the platform is handling for you"
+            description="Support information should stay nearby, but it should not compete with the core working surface."
+          >
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 border-t border-border/70 pt-3 first:border-t-0 first:pt-0">
+                <span className="flex size-8 shrink-0 items-center justify-center border border-border/80 bg-background text-primary">
+                  <ShieldCheck className="size-4" />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold">Queue-backed execution</p>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                    Action jobs move through background workers so workflow execution does not depend on a single request lifecycle.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 border-t border-border/70 pt-3">
+                <span className="flex size-8 shrink-0 items-center justify-center border border-border/80 bg-background text-primary">
+                  <Activity className="size-4" />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold">Inspectable audit trail</p>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                    Workflow runs and action history stay visible so operators can trace failures and verify completed work.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 border-t border-border/70 pt-3">
+                <span className="flex size-8 shrink-0 items-center justify-center border border-border/80 bg-background text-primary">
+                  <Sparkles className="size-4" />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold">Pre-flight guardrails</p>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                    Billing and plan checks run before new work is enqueued, which helps keep execution predictable as the workspace grows.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </RailSection>
+        </div>
       </section>
     </div>
   );
