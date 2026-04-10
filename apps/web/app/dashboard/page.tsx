@@ -270,7 +270,7 @@ function RailSection({
           {badge}
         </Badge>
         <div className="mt-3 space-y-1">
-          <h2 className="font-(--font-display) text-[1.08rem] font-semibold tracking-[-0.03em]">
+          <h2 className="text-[1.08rem] font-semibold tracking-[-0.03em]">
             {title}
           </h2>
           <p className="text-sm leading-6 text-muted-foreground">
@@ -364,7 +364,7 @@ export default async function DashboardPage() {
                   {status.label}
                 </Badge>
                 <div className="space-y-2">
-                  <h2 className="font-(--font-display) text-[2rem] font-semibold leading-[0.98] tracking-[-0.055em] text-balance">
+                  <h2 className="text-[2rem] font-semibold leading-[0.98] tracking-[-0.055em] text-balance">
                     {status.title}
                   </h2>
                   <p className="max-w-[58ch] text-sm leading-6 text-muted-foreground text-pretty">
@@ -389,7 +389,7 @@ export default async function DashboardPage() {
                 <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                   Activity window
                 </p>
-                <p className="mt-2 font-(--font-display) text-[1.65rem] font-semibold leading-none tracking-[-0.05em] tabular-nums">
+                <p className="mt-2 text-[1.65rem] font-semibold leading-none tracking-[-0.05em] tabular-nums">
                   {numberFormatter.format(runActivityTotal)}
                 </p>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -495,7 +495,7 @@ export default async function DashboardPage() {
               <Badge variant="secondary" className="w-fit">
                 Activity
               </Badge>
-              <h2 className="font-(--font-display) text-[1.12rem] font-semibold tracking-[-0.03em]">
+              <h2 className="text-[1.12rem] font-semibold tracking-[-0.03em]">
                 Runs over time
               </h2>
               <p className="max-w-[52ch] text-sm leading-6 text-muted-foreground">

@@ -199,6 +199,15 @@ export function WorkspaceAppShell({
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
+            <div className="workspace-sidebar-context-card group-data-[collapsible=icon]:hidden">
+              <p className="workspace-sidebar-context-label">Current section</p>
+              <p className="workspace-sidebar-context-title">
+                {currentSection?.label ?? "Workspace"}
+              </p>
+              <p className="workspace-sidebar-context-detail">
+                {currentSection?.detail ?? "Telegram automation control"}
+              </p>
+            </div>
           </SidebarHeader>
 
           <SidebarContent className="px-2 pb-3 pt-2">
@@ -217,17 +226,22 @@ export function WorkspaceAppShell({
 
           <SidebarFooter className="workspace-sidebar-footer p-3">
             <div className="workspace-sidebar-meta group-data-[collapsible=icon]:hidden">
-              <p className="workspace-sidebar-meta-label">Current section</p>
               <div className="flex items-center justify-between gap-3">
-                <p className="workspace-sidebar-meta-value">
-                  {currentSection?.label ?? "Workspace"}
-                </p>
+                <p className="workspace-sidebar-meta-label">Sidebar toggle</p>
                 <span className="workspace-sidebar-keycap">Cmd/Ctrl + B</span>
               </div>
+              <p className="workspace-sidebar-meta-note">
+                Collapse the rail when you want more canvas space for editing flows and reviewing runs.
+              </p>
             </div>
             <div className="grid gap-2 group-data-[collapsible=icon]:hidden">
               <div className="workspace-sidebar-account-row">
-                <span className="workspace-sidebar-account-label">Workspace</span>
+                <div className="workspace-sidebar-account-copy">
+                  <span className="workspace-sidebar-account-label">Workspace</span>
+                  <span className="workspace-sidebar-account-detail">
+                    Switch organizations and open workspace settings.
+                  </span>
+                </div>
                 <OrganizationSwitcher
                   appearance={clerkUserButtonAppearance}
                   afterSelectOrganizationUrl="/dashboard"
@@ -237,7 +251,12 @@ export function WorkspaceAppShell({
                 />
               </div>
               <div className="workspace-sidebar-account-row">
-                <span className="workspace-sidebar-account-label">Account</span>
+                <div className="workspace-sidebar-account-copy">
+                  <span className="workspace-sidebar-account-label">Account</span>
+                  <span className="workspace-sidebar-account-detail">
+                    Manage profile access, session state, and billing pages.
+                  </span>
+                </div>
                 <UserButton
                   afterSignOutUrl="/"
                   appearance={clerkUserButtonAppearance}
