@@ -68,7 +68,11 @@ function buildRunActivityPoints(
   });
 }
 
-function getWorkspaceStatus(botCount: number, flowCount: number, runCount: number) {
+function getWorkspaceStatus(
+  botCount: number,
+  flowCount: number,
+  runCount: number,
+) {
   if (botCount === 0) {
     return {
       label: "Setup needed",
@@ -189,10 +193,16 @@ function MiniRunTrend({ points }: { points: RunsOverTimePoint[] }) {
       </div>
       <div className="mt-4 grid h-28 grid-cols-7 items-end gap-2">
         {safePoints.map((point) => {
-          const height = point.value === 0 ? 12 : Math.max((point.value / maxValue) * 100, 18);
+          const height =
+            point.value === 0
+              ? 12
+              : Math.max((point.value / maxValue) * 100, 18);
 
           return (
-            <div key={point.iso} className="flex min-w-0 flex-col items-center gap-2">
+            <div
+              key={point.iso}
+              className="flex min-w-0 flex-col items-center gap-2"
+            >
               <div className="flex h-20 w-full items-end">
                 <div
                   className="w-full border border-primary/20 bg-primary/12"
@@ -228,7 +238,11 @@ function ChecklistItem({
   return (
     <div className="flex items-start gap-3 border-t border-border/70 pt-3 first:border-t-0 first:pt-0">
       <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center border border-border/80 bg-background text-muted-foreground">
-        {done ? <Check className="size-3.5 text-primary" /> : <span className="text-[0.68rem] font-semibold">•</span>}
+        {done ? (
+          <Check className="size-3.5 text-primary" />
+        ) : (
+          <span className="text-[0.68rem] font-semibold">•</span>
+        )}
       </span>
       <div className="space-y-1">
         <p className="text-sm font-semibold">{title}</p>
@@ -259,7 +273,9 @@ function RailSection({
           <h2 className="font-(--font-display) text-[1.08rem] font-semibold tracking-[-0.03em]">
             {title}
           </h2>
-          <p className="text-sm leading-6 text-muted-foreground">{description}</p>
+          <p className="text-sm leading-6 text-muted-foreground">
+            {description}
+          </p>
         </div>
       </div>
       <div className="px-5 py-5">{children}</div>
@@ -339,27 +355,6 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-w-0 space-y-6">
-      <PageHeading
-        title="Dashboard"
-        subtitle="Monitor workspace health, see whether automation traffic is moving, and jump back into the main operating surfaces without hunting through the product."
-        action={
-          <div className="flex w-full flex-wrap gap-2 md:w-auto">
-            <Button asChild size="sm">
-              <Link href="/bots">
-                <Rocket data-icon="inline-start" />
-                Add bot
-              </Link>
-            </Button>
-            <Button asChild size="sm" variant="secondary">
-              <Link href="/flows">
-                Open flows
-                <MoveRight data-icon="inline-end" />
-              </Link>
-            </Button>
-          </div>
-        }
-      />
-
       <section className="grid gap-6 xl:items-start xl:grid-cols-[minmax(0,1.5fr)_360px]">
         <article className="border border-border/80 bg-card">
           <div className="grid gap-6 p-5 lg:p-6">
@@ -415,7 +410,9 @@ export default async function DashboardPage() {
                   </div>
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-muted-foreground">Average pace</span>
-                    <span className="font-semibold tabular-nums">{averageRuns}</span>
+                    <span className="font-semibold tabular-nums">
+                      {averageRuns}
+                    </span>
                   </div>
                 </div>
               </aside>
@@ -502,7 +499,8 @@ export default async function DashboardPage() {
                 Runs over time
               </h2>
               <p className="max-w-[52ch] text-sm leading-6 text-muted-foreground">
-                Daily workflow executions across the current {RUN_ACTIVITY_WINDOW_DAYS}-day window.
+                Daily workflow executions across the current{" "}
+                {RUN_ACTIVITY_WINDOW_DAYS}-day window.
               </p>
             </div>
             <div className="border border-border/80 bg-background px-3 py-2 text-right">
@@ -555,9 +553,12 @@ export default async function DashboardPage() {
                   <ShieldCheck className="size-4" />
                 </span>
                 <div>
-                  <p className="text-sm font-semibold">Queue-backed execution</p>
+                  <p className="text-sm font-semibold">
+                    Queue-backed execution
+                  </p>
                   <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                    Action jobs move through background workers so workflow execution does not depend on a single request lifecycle.
+                    Action jobs move through background workers so workflow
+                    execution does not depend on a single request lifecycle.
                   </p>
                 </div>
               </div>
@@ -566,9 +567,12 @@ export default async function DashboardPage() {
                   <Activity className="size-4" />
                 </span>
                 <div>
-                  <p className="text-sm font-semibold">Inspectable audit trail</p>
+                  <p className="text-sm font-semibold">
+                    Inspectable audit trail
+                  </p>
                   <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                    Workflow runs and action history stay visible so operators can trace failures and verify completed work.
+                    Workflow runs and action history stay visible so operators
+                    can trace failures and verify completed work.
                   </p>
                 </div>
               </div>
@@ -579,7 +583,9 @@ export default async function DashboardPage() {
                 <div>
                   <p className="text-sm font-semibold">Pre-flight guardrails</p>
                   <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                    Billing and plan checks run before new work is enqueued, which helps keep execution predictable as the workspace grows.
+                    Billing and plan checks run before new work is enqueued,
+                    which helps keep execution predictable as the workspace
+                    grows.
                   </p>
                 </div>
               </div>
