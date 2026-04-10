@@ -1,17 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Script from "next/script";
-import { cookies } from "next/headers";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Oxanium, Source_Code_Pro } from "next/font/google";
 import { AnalyticsConsentBanner } from "@/components/analytics/AnalyticsConsentBanner";
+import { AppChrome } from "@/components/AppChrome";
 import { Nav } from "@/components/Nav";
-import {
-  ANALYTICS_CONSENT_COOKIE,
-  getAnalyticsConsent,
-  getContentsquareScriptUrl,
-  isContentsquareEnabled
-} from "@/lib/analytics";
+import { getContentsquareScriptUrl, isContentsquareEnabled } from "@/lib/analytics";
 import { getServerAnalyticsConsent } from "@/lib/analytics.server";
 import { clerkAppearance } from "@/lib/clerk-appearance";
 import { cn } from "@/lib/utils";
@@ -65,41 +60,44 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-  const cookieStore = await cookies();
   const analyticsConsent = await getServerAnalyticsConsent();
   const contentsquareEnabled = isContentsquareEnabled();
   const contentsquareScriptUrl = contentsquareEnabled && analyticsConsent === "granted" ? getContentsquareScriptUrl() : null;
+  const footer = (
+    <footer className="mt-10 border-t border-border/70 pt-5 text-sm text-muted-foreground md:mt-12">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <p className="max-w-[42ch]">
+          Telegraph, the Telegram bot builder with a visual flow editor.
+        </p>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <Link className="focus-ring" href="/blog">
+            Blog
+          </Link>
+          <Link className="focus-ring" href="/privacy">
+            Privacy policy
+          </Link>
+          <Link className="focus-ring" href="/terms">
+            Terms of service
+          </Link>
+          <Link className="focus-ring" href="/cookies">
+            Cookie policy
+          </Link>
+        </div>
+      </div>
+    </footer>
+  );
+  const analyticsBanner =
+    contentsquareEnabled && analyticsConsent === "unknown" ? (
+      <AnalyticsConsentBanner />
+    ) : null;
   const appShell = (
     <>
       <a className="skip-link focus-ring" href="#main-content">
         Skip to content
       </a>
-      <div className="app-shell">
-        <Nav />
-        <main id="main-content">{children}</main>
-        <footer className="mt-10 border-t border-border/70 pt-5 text-sm text-muted-foreground md:mt-12">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <p className="max-w-[42ch]">
-              Telegraph, the Telegram bot builder with a visual flow editor.
-            </p>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-              <Link className="focus-ring" href="/blog">
-                Blog
-              </Link>
-              <Link className="focus-ring" href="/privacy">
-                Privacy policy
-              </Link>
-              <Link className="focus-ring" href="/terms">
-                Terms of service
-              </Link>
-              <Link className="focus-ring" href="/cookies">
-                Cookie policy
-              </Link>
-            </div>
-          </div>
-        </footer>
-      </div>
-      {contentsquareEnabled && analyticsConsent === "unknown" ? <AnalyticsConsentBanner /> : null}
+      <AppChrome nav={<Nav />} footer={footer} analyticsBanner={analyticsBanner}>
+        {children}
+      </AppChrome>
     </>
   );
 

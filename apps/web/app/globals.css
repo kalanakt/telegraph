@@ -45,8 +45,8 @@
         --sidebar-foreground: 0.24 0.01 270;
         --sidebar-primary: 0.54 0.17 32;
         --sidebar-primary-foreground: 1 0 0;
-        --sidebar-accent: 0.62 0.08 245;
-        --sidebar-accent-foreground: 1 0 0;
+        --sidebar-accent: 0.82 0.005 95;
+        --sidebar-accent-foreground: 0.24 0.01 270;
         --sidebar-border: 0.52 0 0;
         --sidebar-ring: 0.54 0.17 32;
     }
@@ -79,8 +79,8 @@
         --sidebar-foreground: 0.92 0 0;
         --sidebar-primary: 0.66 0.16 32;
         --sidebar-primary-foreground: 1 0 0;
-        --sidebar-accent: 0.78 0.1 245;
-        --sidebar-accent-foreground: 0 0 0;
+        --sidebar-accent: 0.27 0 0;
+        --sidebar-accent-foreground: 0.92 0 0;
         --sidebar-border: 0.42 0 0;
         --sidebar-ring: 0.66 0.16 32;
     }
@@ -114,6 +114,94 @@
 @layer components {
     .app-shell {
         @apply relative min-h-screen w-full px-4 pb-16 pt-4;
+    }
+
+    .workspace-toolbar {
+        @apply sticky top-0 z-20 flex h-12 items-center gap-2 border-b border-border/70 bg-background/92 px-3 backdrop-blur;
+    }
+
+    .workspace-sidebar-shell [data-slot="sidebar-container"] {
+        background:
+            radial-gradient(
+                240px 180px at 0% 0%,
+                oklch(var(--primary) / 0.08),
+                transparent 68%
+            ),
+            radial-gradient(
+                220px 160px at 100% 14%,
+                oklch(var(--secondary) / 0.06),
+                transparent 70%
+            ),
+            linear-gradient(
+                180deg,
+                oklch(var(--sidebar) / 0.98) 0%,
+                oklch(var(--sidebar) / 0.94) 100%
+            );
+        border-right: 1px solid oklch(var(--sidebar-border) / 0.72);
+    }
+
+    .workspace-sidebar-shell [data-slot="sidebar-inner"] {
+        background: transparent;
+    }
+
+    .workspace-sidebar-header {
+        @apply border-b border-sidebar-border/75;
+    }
+
+    .workspace-sidebar-brand {
+        @apply rounded-none border border-sidebar-border/75 bg-background/72 shadow-[0_10px_30px_rgba(58,38,14,0.06)];
+    }
+
+    .workspace-sidebar-brand-mark {
+        @apply flex size-8 items-center justify-center border border-sidebar-border/80 bg-primary/12 text-sm font-semibold tracking-[0.02em] text-primary;
+    }
+
+    .workspace-sidebar-header-panel {
+        @apply mt-3 rounded-none border border-sidebar-border/75 bg-background/58 px-3 py-3;
+    }
+
+    .workspace-sidebar-group-label {
+        @apply px-2 pb-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground;
+    }
+
+    .workspace-sidebar-menu-button {
+        @apply rounded-none border border-transparent bg-transparent transition-colors duration-150;
+    }
+
+    .workspace-sidebar-menu-button[data-active="true"] {
+        @apply border-sidebar-border/80 bg-background/78 text-foreground shadow-[0_10px_24px_rgba(58,38,14,0.06)];
+    }
+
+    .workspace-sidebar-menu-button:hover {
+        @apply border-sidebar-border/65 bg-background/48;
+    }
+
+    .workspace-sidebar-icon-wrap {
+        @apply flex size-8 items-center justify-center border border-sidebar-border/75 bg-background/60 text-muted-foreground transition-colors;
+    }
+
+    .workspace-sidebar-menu-button[data-active="true"] .workspace-sidebar-icon-wrap {
+        @apply bg-primary/12 text-primary;
+    }
+
+    .workspace-sidebar-footer {
+        @apply border-t border-sidebar-border/75;
+    }
+
+    .workspace-sidebar-shortcut {
+        @apply mb-2 flex items-center justify-between border border-sidebar-border/75 bg-background/58 px-3 py-2.5;
+    }
+
+    .workspace-sidebar-account-row {
+        @apply flex items-center justify-between border border-sidebar-border/75 bg-background/70 px-3 py-2.5;
+    }
+
+    .workspace-content {
+        @apply flex flex-1 flex-col px-4 py-4;
+    }
+
+    .workspace-content .page-heading {
+        @apply mb-5 gap-2.5;
     }
 
     .page-heading {
@@ -481,6 +569,14 @@
         @apply px-8 pt-6;
     }
 
+    .workspace-toolbar {
+        @apply px-4;
+    }
+
+    .workspace-content {
+        @apply px-5 py-4;
+    }
+
     .page-title {
         font-size: 2.9rem;
     }
@@ -497,6 +593,10 @@
 @media (min-width: 1280px) {
     .app-shell {
         @apply px-10;
+    }
+
+    .workspace-content {
+        @apply px-6;
     }
 }
 
