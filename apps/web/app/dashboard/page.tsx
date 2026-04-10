@@ -170,6 +170,52 @@ function ActivityStat({
   );
 }
 
+function MiniRunTrend({ points }: { points: RunsOverTimePoint[] }) {
+  const safePoints = points.length
+    ? points
+    : [{ iso: "today", label: "Today", tickLabel: "Today", value: 0 }];
+  const maxValue = Math.max(...safePoints.map((point) => point.value), 1);
+
+  return (
+    <div className="border border-border/80 bg-background px-4 py-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            Recent trend
+          </p>
+          <p className="mt-1 text-sm font-semibold">Last 7 days</p>
+        </div>
+        <Badge variant="outline">{safePoints.length} points</Badge>
+      </div>
+      <div className="mt-4 grid h-28 grid-cols-7 items-end gap-2">
+        {safePoints.map((point) => {
+          const height = point.value === 0 ? 12 : Math.max((point.value / maxValue) * 100, 18);
+
+          return (
+            <div key={point.iso} className="flex min-w-0 flex-col items-center gap-2">
+              <div className="flex h-20 w-full items-end">
+                <div
+                  className="w-full border border-primary/20 bg-primary/12"
+                  style={{ height: `${height}%` }}
+                  aria-hidden="true"
+                />
+              </div>
+              <div className="w-full text-center">
+                <p className="truncate text-[0.66rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  {point.tickLabel}
+                </p>
+                <p className="mt-1 text-[0.75rem] font-medium tabular-nums">
+                  {numberFormatter.format(point.value)}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ChecklistItem({
   done,
   title,
@@ -269,6 +315,7 @@ export default async function DashboardPage() {
         );
   const status = getWorkspaceStatus(botCount, flowCount, runCount);
   const windowRange = `${runActivity[0]?.label ?? "Start"} - ${runActivity[runActivity.length - 1]?.label ?? "Today"}`;
+  const recentTrend = runActivity.slice(-7);
   const checklist = [
     {
       done: botCount > 0,
@@ -313,10 +360,10 @@ export default async function DashboardPage() {
         }
       />
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_360px]">
+      <section className="grid gap-6 xl:items-start xl:grid-cols-[minmax(0,1.5fr)_360px]">
         <article className="border border-border/80 bg-card">
           <div className="grid gap-6 p-5 lg:p-6">
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px]">
+            <div className="grid gap-5 lg:items-start lg:grid-cols-[minmax(0,1fr)_220px]">
               <div className="space-y-4">
                 <Badge variant="secondary" className="w-fit">
                   {status.label}
@@ -340,9 +387,10 @@ export default async function DashboardPage() {
                     <Link href="/runs">See recent runs</Link>
                   </Button>
                 </div>
+                <MiniRunTrend points={recentTrend} />
               </div>
 
-              <aside className="border border-border/80 bg-background px-4 py-4">
+              <aside className="h-fit border border-border/80 bg-background px-4 py-4">
                 <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                   Activity window
                 </p>
@@ -396,7 +444,7 @@ export default async function DashboardPage() {
           </div>
         </article>
 
-        <div className="grid gap-6">
+        <div className="grid content-start gap-6 self-start">
           <RailSection
             badge="Next steps"
             title="Operator checklist"
@@ -443,7 +491,7 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_360px]">
+      <section className="grid gap-6 xl:items-start xl:grid-cols-[minmax(0,1.5fr)_360px]">
         <article className="border border-border/80 bg-card">
           <div className="flex flex-col gap-4 border-b border-border/70 px-5 py-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-1">
@@ -495,7 +543,7 @@ export default async function DashboardPage() {
           </div>
         </article>
 
-        <div className="grid gap-6">
+        <div className="grid content-start gap-6 self-start">
           <RailSection
             badge="Reliability"
             title="What the platform is handling for you"
