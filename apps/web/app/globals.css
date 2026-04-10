@@ -123,19 +123,19 @@
     .workspace-sidebar-shell [data-slot="sidebar-container"] {
         background:
             radial-gradient(
-                240px 180px at 0% 0%,
-                oklch(var(--primary) / 0.08),
-                transparent 68%
+                260px 180px at 0% 0%,
+                oklch(var(--primary) / 0.055),
+                transparent 70%
             ),
             radial-gradient(
-                220px 160px at 100% 14%,
-                oklch(var(--secondary) / 0.06),
+                220px 180px at 100% 16%,
+                oklch(var(--secondary) / 0.045),
                 transparent 70%
             ),
             linear-gradient(
                 180deg,
-                oklch(var(--sidebar) / 0.98) 0%,
-                oklch(var(--sidebar) / 0.94) 100%
+                oklch(var(--sidebar) / 0.985) 0%,
+                oklch(var(--sidebar) / 0.96) 100%
             );
         border-right: 1px solid oklch(var(--sidebar-border) / 0.72);
     }
@@ -149,51 +149,96 @@
     }
 
     .workspace-sidebar-brand {
-        @apply rounded-none border border-sidebar-border/75 bg-background/72 shadow-[0_10px_30px_rgba(58,38,14,0.06)];
+        @apply rounded-none border border-border/75 bg-card/80 shadow-none transition-colors duration-150;
+    }
+
+    .workspace-sidebar-brand:hover {
+        @apply bg-card;
     }
 
     .workspace-sidebar-brand-mark {
-        @apply flex size-8 items-center justify-center border border-sidebar-border/80 bg-primary/12 text-sm font-semibold tracking-[0.02em] text-primary;
+        @apply flex size-9 items-center justify-center border border-primary/20 bg-primary/10 text-sm font-semibold tracking-[0.02em] text-primary;
     }
 
-    .workspace-sidebar-header-panel {
-        @apply mt-3 rounded-none border border-sidebar-border/75 bg-background/58 px-3 py-3;
+    .workspace-sidebar-brand-copy {
+        @apply grid min-w-0 flex-1 gap-0.5 text-left group-data-[collapsible=icon]:hidden;
+    }
+
+    .workspace-sidebar-kicker {
+        @apply truncate text-[0.64rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground;
+    }
+
+    .workspace-sidebar-brand-title {
+        @apply truncate font-(--font-display) text-[1.08rem] font-semibold leading-none tracking-[-0.04em] text-foreground;
+    }
+
+    .workspace-sidebar-brand-detail {
+        @apply truncate text-[0.76rem] leading-5 text-muted-foreground;
     }
 
     .workspace-sidebar-group-label {
-        @apply px-2 pb-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground;
+        @apply px-3 pb-2 text-[0.66rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground;
     }
 
     .workspace-sidebar-menu-button {
-        @apply rounded-none border border-transparent bg-transparent transition-colors duration-150;
+        @apply relative rounded-none border border-transparent bg-transparent text-sidebar-foreground/90 transition-all duration-150;
+    }
+
+    .workspace-sidebar-menu-button::before {
+        content: "";
+        @apply absolute inset-y-2 left-0 w-px bg-transparent transition-colors duration-150;
     }
 
     .workspace-sidebar-menu-button[data-active="true"] {
-        @apply border-sidebar-border/80 bg-background/78 text-foreground shadow-[0_10px_24px_rgba(58,38,14,0.06)];
+        @apply border-border/80 bg-card text-foreground shadow-none;
+    }
+
+    .workspace-sidebar-menu-button[data-active="true"]::before {
+        background: oklch(var(--primary));
     }
 
     .workspace-sidebar-menu-button:hover {
-        @apply border-sidebar-border/65 bg-background/48;
+        @apply border-border/55 bg-card/75 text-foreground;
     }
 
     .workspace-sidebar-icon-wrap {
-        @apply flex size-8 items-center justify-center border border-sidebar-border/75 bg-background/60 text-muted-foreground transition-colors;
+        @apply flex size-9 items-center justify-center border border-transparent bg-transparent text-muted-foreground transition-colors duration-150;
+    }
+
+    .workspace-sidebar-menu-button:hover .workspace-sidebar-icon-wrap {
+        @apply bg-background/70 text-foreground;
     }
 
     .workspace-sidebar-menu-button[data-active="true"] .workspace-sidebar-icon-wrap {
-        @apply bg-primary/12 text-primary;
+        @apply border-primary/20 bg-primary/10 text-primary;
     }
 
     .workspace-sidebar-footer {
         @apply border-t border-sidebar-border/75;
     }
 
-    .workspace-sidebar-shortcut {
-        @apply mb-2 flex items-center justify-between border border-sidebar-border/75 bg-background/58 px-3 py-2.5;
+    .workspace-sidebar-meta {
+        @apply mb-2 border border-border/75 bg-card/80 px-3 py-2.5;
+    }
+
+    .workspace-sidebar-meta-label {
+        @apply text-[0.64rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground;
+    }
+
+    .workspace-sidebar-meta-value {
+        @apply mt-1 truncate font-(--font-display) text-[1rem] font-semibold tracking-[-0.03em];
+    }
+
+    .workspace-sidebar-keycap {
+        @apply shrink-0 border border-border/80 bg-background px-1.5 py-0.5 text-[0.68rem] font-medium text-muted-foreground;
     }
 
     .workspace-sidebar-account-row {
-        @apply flex items-center justify-between border border-sidebar-border/75 bg-background/70 px-3 py-2.5;
+        @apply grid gap-2 border border-border/75 bg-card/80 px-3 py-2.5;
+    }
+
+    .workspace-sidebar-account-label {
+        @apply text-[0.64rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground;
     }
 
     .workspace-content {

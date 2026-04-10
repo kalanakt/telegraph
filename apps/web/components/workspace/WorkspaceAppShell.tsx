@@ -14,7 +14,6 @@ import {
 import { usePathname } from "next/navigation";
 import { clerkUserButtonAppearance } from "@/lib/clerk-appearance";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import {
   Sidebar,
   SidebarContent,
@@ -122,22 +121,30 @@ function WorkspaceNavGroup({
         <SidebarMenu className="gap-1">
           {items.map((item) => {
             const Icon = item.icon;
+            const isActive = itemIsActive(pathname, item.href);
 
             return (
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
                   asChild
-                  isActive={itemIsActive(pathname, item.href)}
+                  isActive={isActive}
                   tooltip={item.label}
-                  className="workspace-sidebar-menu-button h-10 px-2.5 font-medium"
+                  className="workspace-sidebar-menu-button h-11 px-3 font-medium"
                 >
                   <Link href={item.href}>
                     <span className="workspace-sidebar-icon-wrap">
                       <Icon />
                     </span>
                     <span className="grid flex-1 text-left leading-tight">
-                      <span>{item.label}</span>
-                      <span className="truncate text-[0.7rem] font-normal text-muted-foreground group-data-[collapsible=icon]:hidden">
+                      <span className="text-[0.92rem] font-medium tracking-[-0.02em]">
+                        {item.label}
+                      </span>
+                      <span
+                        className={cn(
+                          "truncate text-[0.74rem] font-normal group-data-[collapsible=icon]:hidden",
+                          isActive ? "text-foreground/70" : "text-muted-foreground",
+                        )}
+                      >
                         {item.detail}
                       </span>
                     </span>
@@ -166,60 +173,41 @@ export function WorkspaceAppShell({
           collapsible="icon"
           className="workspace-sidebar-shell border-r-0"
         >
-          <SidebarHeader className="workspace-sidebar-header gap-0 p-2.5">
+          <SidebarHeader className="workspace-sidebar-header gap-0 p-3">
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
                   size="lg"
                   tooltip="Telegraph"
-                  className="workspace-sidebar-brand h-auto px-2.5 py-2.5"
+                  className="workspace-sidebar-brand h-auto px-3 py-3"
                 >
                   <Link href="/dashboard">
                     <span className="workspace-sidebar-brand-mark">T</span>
-                    <span className="grid flex-1 text-left">
-                      <span className="flex items-center gap-2">
-                        <span className="truncate text-sm font-semibold">
-                          Telegraph
-                        </span>
-                        <Badge
-                          variant="secondary"
-                          className="h-5 px-1.5 text-[0.62rem] uppercase tracking-[0.14em] group-data-[collapsible=icon]:hidden"
-                        >
-                          Live
-                        </Badge>
-                      </span>
-                      <span className="truncate text-[0.72rem] text-muted-foreground">
+                    <span className="workspace-sidebar-brand-copy">
+                      <span className="workspace-sidebar-kicker">
                         Automation workspace
+                      </span>
+                      <span className="workspace-sidebar-brand-title">
+                        Telegraph
+                      </span>
+                      <span className="workspace-sidebar-brand-detail">
+                        {currentSection?.detail ?? "Telegram automation control"}
                       </span>
                     </span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
-
-            <div className="workspace-sidebar-header-panel group-data-[collapsible=icon]:hidden">
-              <div>
-                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                  Current section
-                </p>
-                <p className="mt-1 text-sm font-medium">
-                  {currentSection?.label ?? "Workspace"}
-                </p>
-                <p className="mt-1 text-[0.78rem] leading-5 text-muted-foreground">
-                  {currentSection?.detail ?? "Product surface"}
-                </p>
-              </div>
-            </div>
           </SidebarHeader>
 
-          <SidebarContent className="px-1 pb-2">
+          <SidebarContent className="px-2 pb-3 pt-2">
             <WorkspaceNavGroup
               label="Workspace"
               items={primaryNavItems}
               pathname={pathname}
             />
-            <SidebarSeparator />
+            <SidebarSeparator className="mx-3" />
             <WorkspaceNavGroup
               label="Settings"
               items={secondaryNavItems}
@@ -227,20 +215,19 @@ export function WorkspaceAppShell({
             />
           </SidebarContent>
 
-          <SidebarFooter className="workspace-sidebar-footer p-2.5">
-            <div className="workspace-sidebar-shortcut group-data-[collapsible=icon]:hidden">
-              <span className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                Shortcut
-              </span>
-              <span className="rounded-none border border-sidebar-border/80 bg-background px-1.5 py-0.5 text-[0.72rem] font-medium">
-                Cmd/Ctrl + B
-              </span>
+          <SidebarFooter className="workspace-sidebar-footer p-3">
+            <div className="workspace-sidebar-meta group-data-[collapsible=icon]:hidden">
+              <p className="workspace-sidebar-meta-label">Current section</p>
+              <div className="flex items-center justify-between gap-3">
+                <p className="workspace-sidebar-meta-value">
+                  {currentSection?.label ?? "Workspace"}
+                </p>
+                <span className="workspace-sidebar-keycap">Cmd/Ctrl + B</span>
+              </div>
             </div>
             <div className="grid gap-2 group-data-[collapsible=icon]:hidden">
               <div className="workspace-sidebar-account-row">
-                <span className="text-xs font-medium text-muted-foreground">
-                  Workspace
-                </span>
+                <span className="workspace-sidebar-account-label">Workspace</span>
                 <OrganizationSwitcher
                   appearance={clerkUserButtonAppearance}
                   afterSelectOrganizationUrl="/dashboard"
@@ -250,9 +237,7 @@ export function WorkspaceAppShell({
                 />
               </div>
               <div className="workspace-sidebar-account-row">
-                <span className="text-xs font-medium text-muted-foreground">
-                  Account
-                </span>
+                <span className="workspace-sidebar-account-label">Account</span>
                 <UserButton
                   afterSignOutUrl="/"
                   appearance={clerkUserButtonAppearance}
