@@ -24,7 +24,7 @@
     "db:seed:templates": "pnpm exec tsx scripts/seed-workflow-templates.ts"
   },
   "devDependencies": {
-    "@prisma/client": "^6.19.2",
+    "@prisma/client": "^7.7.0",
     "@types/node": "^24.0.0",
     "prisma": "^6.6.0",
     "tsx": "^4.19.4",
