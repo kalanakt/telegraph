@@ -300,192 +300,188 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <div className="min-w-0 space-y-6 bg-green-600">
-      <section className="grid gap-6 xl:items-start bg-yellow-400 xl:grid-cols-[minmax(0,1.5fr)_360px]">
-        <article className="border border-border/80 bg-card">
-          <div className="grid gap-6 p-5 lg:p-6">
-            <div className="grid gap-5 lg:items-start lg:grid-cols-[minmax(0,1fr)_220px]">
-              <div className="space-y-4">
-                <Badge variant="secondary" className="w-fit">
-                  {status.label}
-                </Badge>
-                <div className="space-y-2">
-                  <h2 className="text-[2rem] font-semibold leading-[0.98] tracking-[-0.055em] text-balance">
-                    {status.title}
-                  </h2>
-                  <p className="max-w-[58ch] text-sm leading-6 text-muted-foreground text-pretty">
-                    {status.description}
-                  </p>
+    <div className="min-w-0 grid gap-6 xl:grid-cols-[minmax(0,1.7fr)_360px] xl:items-start">
+      <article className="border border-border/80 bg-card">
+        <div className="grid gap-6 p-5 lg:p-6">
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_240px] xl:items-start">
+            <div className="space-y-4">
+              <Badge variant="secondary" className="w-fit">
+                {status.label}
+              </Badge>
+              <div className="space-y-2">
+                <h2 className="text-[2rem] font-semibold leading-[0.98] tracking-[-0.055em] text-balance">
+                  {status.title}
+                </h2>
+                <p className="max-w-[58ch] text-sm leading-6 text-muted-foreground text-pretty">
+                  {status.description}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button asChild variant="outline" size="sm">
+                  <Link href={status.ctaHref}>
+                    {status.ctaLabel}
+                    <MoveRight data-icon="inline-end" />
+                  </Link>
+                </Button>
+                <Button asChild variant="ghost" size="sm">
+                  <Link href="/runs">See recent runs</Link>
+                </Button>
+              </div>
+            </div>
+
+            <aside className="border border-border/80 bg-background px-4 py-4">
+              <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Activity window
+              </p>
+              <p className="mt-2 text-[1.65rem] font-semibold leading-none tracking-[-0.05em] tabular-nums">
+                {numberFormatter.format(runActivityTotal)}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Runs recorded over the last {RUN_ACTIVITY_WINDOW_DAYS} days.
+              </p>
+              <div className="mt-4 space-y-3 border-t border-border/70 pt-4 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Today</span>
+                  <span className="font-semibold tabular-nums">
+                    {numberFormatter.format(todayRuns)}
+                  </span>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button asChild variant="outline" size="sm">
-                    <Link href={status.ctaHref}>
-                      {status.ctaLabel}
-                      <MoveRight data-icon="inline-end" />
-                    </Link>
-                  </Button>
-                  <Button asChild variant="ghost" size="sm">
-                    <Link href="/runs">See recent runs</Link>
-                  </Button>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Peak day</span>
+                  <span className="font-semibold">
+                    {peakDay.value === 0 ? "None yet" : peakDay.label}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Average pace</span>
+                  <span className="font-semibold tabular-nums">
+                    {averageRuns}
+                  </span>
                 </div>
               </div>
-
-              <aside className="h-fit border border-border/80 bg-background px-4 py-4">
-                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                  Activity window
-                </p>
-                <p className="mt-2 text-[1.65rem] font-semibold leading-none tracking-[-0.05em] tabular-nums">
-                  {numberFormatter.format(runActivityTotal)}
-                </p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Runs recorded over the last {RUN_ACTIVITY_WINDOW_DAYS} days.
-                </p>
-                <div className="mt-4 space-y-3 border-t border-border/70 pt-4 text-sm">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-muted-foreground">Today</span>
-                    <span className="font-semibold tabular-nums">
-                      {numberFormatter.format(todayRuns)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-muted-foreground">Peak day</span>
-                    <span className="font-semibold">
-                      {peakDay.value === 0 ? "None yet" : peakDay.label}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-muted-foreground">Average pace</span>
-                    <span className="font-semibold tabular-nums">
-                      {averageRuns}
-                    </span>
-                  </div>
-                </div>
-              </aside>
-            </div>
-
-            <div className="grid gap-px border border-border/80 bg-border/80 md:grid-cols-3">
-              <OverviewMetric
-                icon={Bot}
-                label="Connected bots"
-                value={botCount}
-                detail="Bots with stored credentials and webhook connectivity available to the workspace."
-              />
-              <OverviewMetric
-                icon={Sparkles}
-                label="Saved flows"
-                value={flowCount}
-                detail="Workflow definitions available to receive events, branch on conditions, and dispatch actions."
-              />
-              <OverviewMetric
-                icon={Activity}
-                label="Historical runs"
-                value={runCount}
-                detail="Total execution history currently available for review, debugging, and operations follow-up."
-              />
-            </div>
-          </div>
-        </article>
-
-        <div className="grid content-start gap-6 self-start">
-          <RailSection
-            badge="Next steps"
-            title="Operator checklist"
-            description="The dashboard should make the next useful move obvious, especially when a workspace is still getting configured."
-          >
-            <div className="space-y-3">
-              {checklist.map((item) => (
-                <ChecklistItem
-                  key={item.title}
-                  done={item.done}
-                  title={item.title}
-                  detail={item.detail}
-                />
-              ))}
-            </div>
-          </RailSection>
-
-          <RailSection
-            badge="Shortcuts"
-            title="Fast navigation"
-            description="Jump directly into the surfaces that most often follow a dashboard review."
-          >
-            <div className="grid gap-2">
-              <Button asChild variant="outline" className="justify-between">
-                <Link href="/bots">
-                  Manage bots
-                  <MoveRight data-icon="inline-end" />
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="justify-between">
-                <Link href="/flows">
-                  Edit flows
-                  <MoveRight data-icon="inline-end" />
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="justify-between">
-                <Link href="/runs">
-                  Audit run logs
-                  <MoveRight data-icon="inline-end" />
-                </Link>
-              </Button>
-            </div>
-          </RailSection>
-        </div>
-      </section>
-
-      <section className="grid gap-6 xl:items-start xl:grid-cols-[minmax(0,1.5fr)_360px]">
-        <article className="border border-border/80 bg-card">
-          <div className="flex flex-col gap-4 border-b border-border/70 px-5 py-5 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-1">
-              <Badge variant="secondary" className="w-fit">
-                Activity
-              </Badge>
-              <h2 className="text-[1.12rem] font-semibold tracking-[-0.03em]">
-                Runs over time
-              </h2>
-              <p className="max-w-[52ch] text-sm leading-6 text-muted-foreground">
-                Daily workflow executions across the current{" "}
-                {RUN_ACTIVITY_WINDOW_DAYS}-day window.
-              </p>
-            </div>
-            <div className="border border-border/80 bg-background px-3 py-2 text-right">
-              <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                Window range
-              </p>
-              <p className="mt-1 text-sm font-semibold">{windowRange}</p>
-            </div>
+            </aside>
           </div>
 
-          <div className="px-5 py-5">
-            <RunsOverTimeChartClient points={runActivity} />
-          </div>
-
-          <div className="grid gap-px border-t border-border/80 bg-border/80 md:grid-cols-3">
-            <ActivityStat
-              icon={CalendarCheck2}
-              label="Window total"
-              value={runActivityTotal}
-              detail={`Recorded from ${runActivity[0]?.label} to ${runActivity[runActivity.length - 1]?.label}.`}
+          <div className="grid gap-px border border-border/80 bg-border/80 md:grid-cols-3">
+            <OverviewMetric
+              icon={Bot}
+              label="Connected bots"
+              value={botCount}
+              detail="Bots with stored credentials and webhook connectivity available to the workspace."
             />
-            <ActivityStat
+            <OverviewMetric
+              icon={Sparkles}
+              label="Saved flows"
+              value={flowCount}
+              detail="Workflow definitions available to receive events, branch on conditions, and dispatch actions."
+            />
+            <OverviewMetric
               icon={Activity}
-              label="Peak day"
-              value={peakDay.value}
-              detail={
-                peakDay.value === 0
-                  ? "No completed workflow activity has landed in this window yet."
-                  : `${peakDay.label} carried the highest run volume.`
-              }
-            />
-            <ActivityStat
-              icon={Clock3}
-              label="Daily pace"
-              value={averageRuns}
-              detail={`Today has logged ${numberFormatter.format(todayRuns)} run${todayRuns === 1 ? "" : "s"} so far.`}
+              label="Historical runs"
+              value={runCount}
+              detail="Total execution history currently available for review, debugging, and operations follow-up."
             />
           </div>
-        </article>
-      </section>
+        </div>
+      </article>
+
+      <div className="grid content-start gap-6 self-start xl:row-span-2 xl:sticky xl:top-16">
+        <RailSection
+          badge="Next steps"
+          title="Operator checklist"
+          description="The dashboard should make the next useful move obvious, especially when a workspace is still getting configured."
+        >
+          <div className="space-y-3">
+            {checklist.map((item) => (
+              <ChecklistItem
+                key={item.title}
+                done={item.done}
+                title={item.title}
+                detail={item.detail}
+              />
+            ))}
+          </div>
+        </RailSection>
+
+        <RailSection
+          badge="Shortcuts"
+          title="Fast navigation"
+          description="Jump directly into the surfaces that most often follow a dashboard review."
+        >
+          <div className="grid gap-2">
+            <Button asChild variant="outline" className="justify-between">
+              <Link href="/bots">
+                Manage bots
+                <MoveRight data-icon="inline-end" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="justify-between">
+              <Link href="/flows">
+                Edit flows
+                <MoveRight data-icon="inline-end" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="justify-between">
+              <Link href="/runs">
+                Audit run logs
+                <MoveRight data-icon="inline-end" />
+              </Link>
+            </Button>
+          </div>
+        </RailSection>
+      </div>
+
+      <article className="border border-border/80 bg-card xl:col-start-1">
+        <div className="flex flex-col gap-4 border-b border-border/70 px-5 py-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-1">
+            <Badge variant="secondary" className="w-fit">
+              Activity
+            </Badge>
+            <h2 className="text-[1.12rem] font-semibold tracking-[-0.03em]">
+              Runs over time
+            </h2>
+            <p className="max-w-[52ch] text-sm leading-6 text-muted-foreground">
+              Daily workflow executions across the current{" "}
+              {RUN_ACTIVITY_WINDOW_DAYS}-day window.
+            </p>
+          </div>
+          <div className="border border-border/80 bg-background px-3 py-2 text-right">
+            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              Window range
+            </p>
+            <p className="mt-1 text-sm font-semibold">{windowRange}</p>
+          </div>
+        </div>
+
+        <div className="px-5 py-5">
+          <RunsOverTimeChartClient points={runActivity} />
+        </div>
+
+        <div className="grid gap-px border-t border-border/80 bg-border/80 md:grid-cols-3">
+          <ActivityStat
+            icon={CalendarCheck2}
+            label="Window total"
+            value={runActivityTotal}
+            detail={`Recorded from ${runActivity[0]?.label} to ${runActivity[runActivity.length - 1]?.label}.`}
+          />
+          <ActivityStat
+            icon={Activity}
+            label="Peak day"
+            value={peakDay.value}
+            detail={
+              peakDay.value === 0
+                ? "No completed workflow activity has landed in this window yet."
+                : `${peakDay.label} carried the highest run volume.`
+            }
+          />
+          <ActivityStat
+            icon={Clock3}
+            label="Daily pace"
+            value={averageRuns}
+            detail={`Today has logged ${numberFormatter.format(todayRuns)} run${todayRuns === 1 ? "" : "s"} so far.`}
+          />
+        </div>
+      </article>
     </div>
   );
 }
