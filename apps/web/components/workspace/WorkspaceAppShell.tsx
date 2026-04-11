@@ -113,7 +113,7 @@ function WorkspaceNavGroup({
   pathname: string;
 }) {
   return (
-    <SidebarGroup className="px-2 py-2">
+    <SidebarGroup className="py-2 group-data-[collapsible=icon]:px-1">
       <SidebarGroupLabel className="workspace-sidebar-group-label group-data-[collapsible=icon]:hidden">
         {label}
       </SidebarGroupLabel>
@@ -129,20 +129,22 @@ function WorkspaceNavGroup({
                   asChild
                   isActive={isActive}
                   tooltip={item.label}
-                  className="workspace-sidebar-menu-button h-11 px-3 font-medium"
+                  className="workspace-sidebar-menu-button h-12 font-medium"
                 >
                   <Link href={item.href}>
                     <span className="workspace-sidebar-icon-wrap">
                       <Icon />
                     </span>
-                    <span className="grid flex-1 text-left leading-tight">
+                    <span className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
                       <span className="text-[0.92rem] font-medium tracking-[-0.02em]">
                         {item.label}
                       </span>
                       <span
                         className={cn(
                           "truncate text-[0.74rem] font-normal group-data-[collapsible=icon]:hidden",
-                          isActive ? "text-foreground/70" : "text-muted-foreground",
+                          isActive
+                            ? "text-foreground/70"
+                            : "text-muted-foreground",
                         )}
                       >
                         {item.detail}
@@ -173,14 +175,14 @@ export function WorkspaceAppShell({
           collapsible="icon"
           className="workspace-sidebar-shell border-r-0"
         >
-          <SidebarHeader className="workspace-sidebar-header gap-0 p-3">
+          <SidebarHeader className="workspace-sidebar-header gap-0 p-2 group-data-[collapsible=icon]:p-1">
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
                   size="lg"
                   tooltip="Telegraph"
-                  className="workspace-sidebar-brand h-auto px-3 py-3"
+                  className="workspace-sidebar-brand h-auto px-2 py-2"
                 >
                   <Link href="/dashboard">
                     <span className="workspace-sidebar-brand-mark">T</span>
@@ -192,25 +194,17 @@ export function WorkspaceAppShell({
                         Telegraph
                       </span>
                       <span className="workspace-sidebar-brand-detail">
-                        {currentSection?.detail ?? "Telegram automation control"}
+                        {currentSection?.detail ??
+                          "Telegram automation control"}
                       </span>
                     </span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
-            <div className="workspace-sidebar-context-card group-data-[collapsible=icon]:hidden">
-              <p className="workspace-sidebar-context-label">Current section</p>
-              <p className="workspace-sidebar-context-title">
-                {currentSection?.label ?? "Workspace"}
-              </p>
-              <p className="workspace-sidebar-context-detail">
-                {currentSection?.detail ?? "Telegram automation control"}
-              </p>
-            </div>
           </SidebarHeader>
 
-          <SidebarContent className="px-2 pb-3 pt-2">
+          <SidebarContent className="pb-3 pt-2 group-data-[collapsible=icon]:px-1">
             <WorkspaceNavGroup
               label="Workspace"
               items={primaryNavItems}
@@ -225,21 +219,11 @@ export function WorkspaceAppShell({
           </SidebarContent>
 
           <SidebarFooter className="workspace-sidebar-footer p-3">
-            <div className="workspace-sidebar-meta group-data-[collapsible=icon]:hidden">
-              <div className="flex items-center justify-between gap-3">
-                <p className="workspace-sidebar-meta-label">Sidebar toggle</p>
-                <span className="workspace-sidebar-keycap">Cmd/Ctrl + B</span>
-              </div>
-              <p className="workspace-sidebar-meta-note">
-                Collapse the rail when you want more canvas space for editing flows and reviewing runs.
-              </p>
-            </div>
             <div className="grid gap-2 group-data-[collapsible=icon]:hidden">
               <div className="workspace-sidebar-account-row">
                 <div className="workspace-sidebar-account-copy">
-                  <span className="workspace-sidebar-account-label">Workspace</span>
-                  <span className="workspace-sidebar-account-detail">
-                    Switch organizations and open workspace settings.
+                  <span className="workspace-sidebar-account-label pb-2">
+                    Workspace
                   </span>
                 </div>
                 <OrganizationSwitcher
@@ -251,10 +235,9 @@ export function WorkspaceAppShell({
                 />
               </div>
               <div className="workspace-sidebar-account-row">
-                <div className="workspace-sidebar-account-copy">
-                  <span className="workspace-sidebar-account-label">Account</span>
-                  <span className="workspace-sidebar-account-detail">
-                    Manage profile access, session state, and billing pages.
+                <div className="workspace-sidebar-account-copy pb-2">
+                  <span className="workspace-sidebar-account-label">
+                    Account
                   </span>
                 </div>
                 <UserButton
@@ -264,6 +247,14 @@ export function WorkspaceAppShell({
                   userProfileUrl="/account"
                 />
               </div>
+            </div>
+            <div className="hidden items-center justify-center group-data-[collapsible=icon]:flex">
+              <UserButton
+                afterSignOutUrl="/"
+                appearance={clerkUserButtonAppearance}
+                userProfileMode="navigation"
+                userProfileUrl="/account"
+              />
             </div>
           </SidebarFooter>
 

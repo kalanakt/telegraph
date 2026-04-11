@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { PageHeading } from "@/components/PageHeading";
 import { CreateTemplateButton } from "@/components/templates/CreateTemplateButton";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,11 +26,9 @@ export default async function TemplatesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeading
-        title="Templates"
-        subtitle="Bundle multiple flows into reusable templates, publish them, and install them into bots."
-        action={<CreateTemplateButton />}
-      />
+      <div className="flex justify-end">
+        <CreateTemplateButton />
+      </div>
 
       <Card className="interactive-lift">
         <CardHeader>

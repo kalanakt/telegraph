@@ -12,7 +12,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import { redirect } from "next/navigation";
-import { PageHeading } from "@/components/PageHeading";
 import type { RunsOverTimePoint } from "@/components/dashboard/RunsOverTimeChart";
 import { RunsOverTimeChartClient } from "@/components/dashboard/RunsOverTimeChartClient";
 import { Badge } from "@/components/ui/badge";
@@ -301,8 +300,8 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <div className="min-w-0 space-y-6">
-      <section className="grid gap-6 xl:items-start xl:grid-cols-[minmax(0,1.5fr)_360px]">
+    <div className="min-w-0 space-y-6 bg-green-600">
+      <section className="grid gap-6 xl:items-start bg-yellow-400 xl:grid-cols-[minmax(0,1.5fr)_360px]">
         <article className="border border-border/80 bg-card">
           <div className="grid gap-6 p-5 lg:p-6">
             <div className="grid gap-5 lg:items-start lg:grid-cols-[minmax(0,1fr)_220px]">
@@ -486,58 +485,6 @@ export default async function DashboardPage() {
             />
           </div>
         </article>
-
-        <div className="grid content-start gap-6 self-start">
-          <RailSection
-            badge="Reliability"
-            title="What the platform is handling for you"
-            description="Support information should stay nearby, but it should not compete with the core working surface."
-          >
-            <div className="space-y-3">
-              <div className="flex items-start gap-3 border-t border-border/70 pt-3 first:border-t-0 first:pt-0">
-                <span className="flex size-8 shrink-0 items-center justify-center border border-border/80 bg-background text-primary">
-                  <ShieldCheck className="size-4" />
-                </span>
-                <div>
-                  <p className="text-sm font-semibold">
-                    Queue-backed execution
-                  </p>
-                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                    Action jobs move through background workers so workflow
-                    execution does not depend on a single request lifecycle.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3 border-t border-border/70 pt-3">
-                <span className="flex size-8 shrink-0 items-center justify-center border border-border/80 bg-background text-primary">
-                  <Activity className="size-4" />
-                </span>
-                <div>
-                  <p className="text-sm font-semibold">
-                    Inspectable audit trail
-                  </p>
-                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                    Workflow runs and action history stay visible so operators
-                    can trace failures and verify completed work.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3 border-t border-border/70 pt-3">
-                <span className="flex size-8 shrink-0 items-center justify-center border border-border/80 bg-background text-primary">
-                  <Sparkles className="size-4" />
-                </span>
-                <div>
-                  <p className="text-sm font-semibold">Pre-flight guardrails</p>
-                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                    Billing and plan checks run before new work is enqueued,
-                    which helps keep execution predictable as the workspace
-                    grows.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </RailSection>
-        </div>
       </section>
     </div>
   );

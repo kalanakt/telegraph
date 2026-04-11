@@ -149,19 +149,20 @@
     }
 
     .workspace-sidebar-brand {
-        @apply rounded-none border border-border/75 bg-card/80 shadow-none transition-colors duration-150;
+        @apply rounded-none border border-border/75 bg-card/80 shadow-none group-data-[collapsible=icon]:h-10! group-data-[collapsible=icon]:w-10! group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0!;
     }
 
     .workspace-sidebar-brand:hover {
-        @apply bg-card;
+        background: oklch(var(--card) / 0.8) !important;
+        color: inherit !important;
     }
 
     .workspace-sidebar-brand-mark {
-        @apply flex size-9 items-center justify-center border border-primary/20 bg-primary/10 text-sm font-semibold tracking-[0.02em] text-primary;
+        @apply flex size-9 items-center justify-center border border-primary/20 bg-primary/10 text-sm font-semibold tracking-[0.02em] text-primary group-data-[collapsible=icon]:size-7;
     }
 
     .workspace-sidebar-brand-copy {
-        @apply grid min-w-0 flex-1 gap-1 text-left group-data-[collapsible=icon]:hidden;
+        @apply grid min-w-0 flex-1 gap-0.5 text-left group-data-[collapsible=icon]:hidden;
     }
 
     .workspace-sidebar-kicker {
@@ -173,11 +174,11 @@
     }
 
     .workspace-sidebar-brand-detail {
-        @apply text-[0.76rem] leading-5 text-muted-foreground;
+        @apply text-[0.76rem] leading-[1.3] text-muted-foreground;
     }
 
     .workspace-sidebar-context-card {
-        @apply mt-3 border border-border/75 bg-background/82 px-3 py-3;
+        @apply mt-2 border border-border/75 bg-background/82 px-2 py-2;
     }
 
     .workspace-sidebar-context-label {
@@ -185,11 +186,11 @@
     }
 
     .workspace-sidebar-context-title {
-        @apply mt-2 font-(--font-display) text-[1rem] font-semibold tracking-[-0.03em] text-foreground;
+        @apply mt-1 font-(--font-display) text-[1rem] font-semibold tracking-[-0.03em] text-foreground;
     }
 
     .workspace-sidebar-context-detail {
-        @apply mt-1 text-[0.76rem] leading-5 text-muted-foreground;
+        @apply mt-0.5 text-[0.76rem] leading-[1.3] text-muted-foreground;
     }
 
     .workspace-sidebar-group-label {
@@ -197,7 +198,7 @@
     }
 
     .workspace-sidebar-menu-button {
-        @apply relative rounded-none border border-transparent bg-transparent text-sidebar-foreground/90 transition-all duration-150;
+        @apply relative rounded-none border border-border/65 bg-transparent text-sidebar-foreground/90 group-data-[collapsible=icon]:h-10! group-data-[collapsible=icon]:w-10! group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0!;
     }
 
     .workspace-sidebar-menu-button::before {
@@ -213,16 +214,21 @@
         background: oklch(var(--primary));
     }
 
-    .workspace-sidebar-menu-button:hover {
-        @apply border-border/55 bg-card/75 text-foreground;
+    .workspace-sidebar-menu-button:hover:not([data-active="true"]) {
+        border-color: oklch(var(--border) / 0.65) !important;
+        background: transparent !important;
+        color: oklch(var(--sidebar-foreground) / 0.9) !important;
+        box-shadow: none !important;
+        outline: none !important;
     }
 
     .workspace-sidebar-icon-wrap {
-        @apply flex size-9 shrink-0 items-center justify-center border border-transparent bg-transparent text-muted-foreground transition-colors duration-150;
+        @apply flex size-9 shrink-0 items-center justify-center border border-transparent bg-transparent text-muted-foreground group-data-[collapsible=icon]:size-7;
     }
 
-    .workspace-sidebar-menu-button:hover .workspace-sidebar-icon-wrap {
-        @apply bg-background/70 text-foreground;
+    .workspace-sidebar-menu-button:hover:not([data-active="true"]) .workspace-sidebar-icon-wrap {
+        background: transparent !important;
+        color: oklch(var(--muted-foreground)) !important;
     }
 
     .workspace-sidebar-menu-button[data-active="true"] .workspace-sidebar-icon-wrap {

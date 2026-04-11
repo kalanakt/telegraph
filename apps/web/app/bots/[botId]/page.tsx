@@ -2,7 +2,6 @@ import { notFound, redirect } from "next/navigation";
 import { BotActionsMenu } from "@/components/BotActionsMenu";
 import { BotStatusBadge } from "@/components/BotStatusBadge";
 import { BotUsersToggle } from "@/components/BotUsersToggle";
-import { PageHeading } from "@/components/PageHeading";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -70,12 +69,6 @@ export default async function BotDetailPage({
 
   return (
     <div className="space-y-6">
-      <PageHeading
-        title={bot.displayName ?? bot.username ?? "Bot"}
-        subtitle="Review bot health, manage saved-user capture, and inspect this bot's users."
-        action={<BotActionsMenu botId={bot.id} />}
-      />
-
       <Card className="interactive-lift">
         <CardHeader>
           <CardTitle className="font-(--font-display)">
@@ -85,7 +78,10 @@ export default async function BotDetailPage({
             Bot-specific settings and saved-user capture for this connection.
           </CardDescription>
           <CardAction>
-            <BotStatusBadge status={bot.status} />
+            <div className="flex items-center gap-2">
+              <BotStatusBadge status={bot.status} />
+              <BotActionsMenu botId={bot.id} />
+            </div>
           </CardAction>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

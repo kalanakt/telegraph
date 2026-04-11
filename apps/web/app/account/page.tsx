@@ -1,7 +1,6 @@
 import { UserProfile } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 import { BillingOverviewCard } from "@/components/billing/BillingPanels";
-import { PageHeading } from "@/components/PageHeading";
 import { clerkProfileAppearance } from "@/lib/clerk-appearance";
 import {
   getBillingReturnState,
@@ -57,11 +56,6 @@ export default async function AccountProfilePage({
 
   return (
     <div className="space-y-6">
-      <PageHeading
-        title="Account"
-        subtitle="Manage your Telegraph billing state and Clerk account settings from one place."
-      />
-
       {redirectState ? (
         <p className="border border-border/80 bg-muted px-4 py-3 text-sm text-muted-foreground">
           {redirectState.message}

@@ -1,5 +1,4 @@
 import { notFound, redirect } from "next/navigation";
-import { PageHeading } from "@/components/PageHeading";
 import { TemplateBuilderStudio } from "@/components/templates/TemplateBuilderStudio";
 import { getAuthUserId } from "@/lib/clerk-auth";
 import { prisma } from "@/lib/prisma";
@@ -33,11 +32,6 @@ export default async function TemplateEditorPage({
 
   return (
     <div className="space-y-6">
-      <PageHeading
-        title={template.title}
-        subtitle="Step 2 of 2: build the included flows, save the draft bundle, then publish when it is ready."
-      />
-
       <TemplateBuilderStudio
         template={{
           id: template.id,

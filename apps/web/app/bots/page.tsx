@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { AddBotForm } from "@/components/AddBotForm";
 import { BotActionsMenu } from "@/components/BotActionsMenu";
 import { BotStatusBadge } from "@/components/BotStatusBadge";
-import { PageHeading } from "@/components/PageHeading";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -39,10 +38,6 @@ export default async function BotsPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeading
-        title="Bots"
-        subtitle="Connect bots, manage webhook health, and open each bot's saved users section."
-      />
       <AddBotForm />
 
       <Card>
