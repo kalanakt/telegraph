@@ -3,13 +3,13 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Bot, Gauge, LayoutTemplate, ListChecks, Menu, ReceiptText, Sparkles, X } from "lucide-react";
+import { Bot, FolderOpen, Gauge, LayoutTemplate, ListChecks, Menu, ReceiptText, Sparkles, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-type IconName = "gauge" | "bot" | "sparkles" | "templates" | "list-checks" | "receipt";
+type IconName = "gauge" | "bot" | "sparkles" | "templates" | "list-checks" | "receipt" | "folder-open";
 type SignedInNavItem = { href: string; label: string; icon: IconName };
 type SignedOutNavItem = { href: string; label: string };
 
@@ -19,7 +19,8 @@ const iconMap: Record<IconName, LucideIcon> = {
   sparkles: Sparkles,
   templates: LayoutTemplate,
   "list-checks": ListChecks,
-  receipt: ReceiptText
+  receipt: ReceiptText,
+  "folder-open": FolderOpen
 };
 
 function itemIsActive(pathname: string, href: string) {

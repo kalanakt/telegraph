@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useRef, useState, type ChangeEvent } from "react";
-import { AlertTriangle, LoaderCircle, Upload, X } from "lucide-react";
+import { AlertTriangle, FolderOpen, LoaderCircle, Upload, X } from "lucide-react";
 import { isActionAllowedForTrigger, type ActionPayload, type TriggerType } from "@telegram-builder/shared";
+import { MediaLibraryBrowser } from "@/components/media/MediaLibraryBrowser";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -91,6 +92,7 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [uploadState, setUploadState] = useState<UploadState>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [libraryOpen, setLibraryOpen] = useState(false);
 
   async function handleUploadFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -287,6 +289,15 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
                     )}
                     Upload to S3
                   </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setLibraryOpen((current) => !current)}
+                  >
+                    <FolderOpen className="h-4 w-4" />
+                    {libraryOpen ? "Hide library" : "Choose from library"}
+                  </Button>
                   {asString(params[uploadConfig.field]) ? (
                     <Button
                       type="button"
@@ -307,6 +318,22 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
                 ) : null}
                 {uploadError ? (
                   <p className="text-xs text-destructive">{uploadError}</p>
+                ) : null}
+                {libraryOpen ? (
+                  <MediaLibraryBrowser
+                    compact
+                    kind={
+                      uploadConfig.field === "photo"
+                        ? "image"
+                        : uploadConfig.field === "video"
+                          ? "video"
+                          : "document"
+                    }
+                    onSelect={(url) => {
+                      onUpdateParams({ [uploadConfig.field]: url });
+                      setLibraryOpen(false);
+                    }}
+                  />
                 ) : null}
               </div>
             ) : null}

@@ -28,6 +28,10 @@ function isWorkspaceRoute(pathname: string) {
     return true;
   }
 
+  if (pathname === "/library" || pathname.startsWith("/library/")) {
+    return true;
+  }
+
   if (pathname === "/builder" || pathname.startsWith("/builder/")) {
     return true;
   }

@@ -56,6 +56,63 @@ describe("orchestrator adapters", () => {
     });
   });
 
+  it("queue adapter includes delay only for delayed jobs", async () => {
+    const calls: Array<{ name: string; payload: unknown; options: unknown }> = [];
+
+    const adapter = createBullMqActionQueueAdapter({
+      async add(name: string, payload: unknown, options: unknown) {
+        calls.push({ name, payload, options });
+      }
+    } as { add: (name: string, payload: unknown, options: unknown) => Promise<void> });
+
+    await adapter.enqueueAction({
+      runId: "run_1",
+      ruleId: "rule_1",
+      actionNodeId: "node_delay",
+      actionRunId: "action_run_delay",
+      botToken: "token",
+      actionType: "workflow.delay",
+      executionPolicy: {
+        retryClass: "permanent",
+        timeoutMs: 2000,
+        idempotencyKeyStrategy: "action_run",
+        rateLimitBucket: "workflow.internal"
+      },
+      idempotencyKey: "1:action_run_delay:workflow.delay",
+      action: { type: "workflow.delay", params: { delay_ms: 1500 } },
+      queueDelayMs: 1500,
+      event: {
+        trigger: "message_received",
+        updateId: 1,
+        chatId: "123",
+        chatType: "private",
+        messageSource: "user",
+        text: "hello",
+        variables: {}
+      },
+      flowDefinition: {
+        nodes: [{ id: "start_1", type: "start", position: { x: 0, y: 0 }, data: {} }],
+        edges: []
+      },
+      context: {
+        trigger: "message_received",
+        variables: {},
+        createdAt: new Date().toISOString()
+      }
+    });
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0].name).toBe("action:workflow.delay");
+    expect(calls[0].options).toEqual({
+      jobId: "1:action_run_delay:workflow.delay",
+      attempts: 5,
+      delay: 1500,
+      backoff: { type: "exponential", delay: 2000 },
+      removeOnComplete: 100,
+      removeOnFail: false
+    });
+  });
+
   it("event repository returns duplicate on unique-constraint error", async () => {
     const repository = createPrismaEventRepository({
       incomingEvent: {

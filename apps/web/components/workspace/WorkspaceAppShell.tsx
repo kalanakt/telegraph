@@ -5,6 +5,7 @@ import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
 import {
   Bot,
   Building2,
+  FolderOpen,
   Gauge,
   LayoutTemplate,
   ListChecks,
@@ -69,6 +70,12 @@ const primaryNavItems: NavItem[] = [
     label: "Runs",
     icon: ListChecks,
     detail: "Execution history",
+  },
+  {
+    href: "/library",
+    label: "Library",
+    icon: FolderOpen,
+    detail: "Uploaded files",
   },
   {
     href: "/templates",

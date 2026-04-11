@@ -298,12 +298,15 @@ export function createBullMqActionQueueAdapter(queue?: QueueWriter | null): Acti
   return {
     async enqueueAction(job: ActionJob) {
       const jobName: ActionJobName = `action:${job.actionType}`;
+      const delay = typeof job.queueDelayMs === "number" && job.queueDelayMs > 0
+        ? { delay: job.queueDelayMs }
+        : {};
 
       try {
         await queueWriter.add(jobName, job, {
           jobId: job.idempotencyKey,
           attempts: 5,
-          delay: job.queueDelayMs ?? 0,
+          ...delay,
           backoff: {
             type: "exponential",
             delay: 2000

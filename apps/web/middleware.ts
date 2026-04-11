@@ -7,6 +7,7 @@ const isProtectedRoute = createRouteMatcher([
   "/orgs(.*)",
   "/bots(.*)",
   "/flows(.*)",
+  "/library(.*)",
   "/builder(.*)",
   "/templates(.*)",
   "/runs(.*)",
@@ -15,12 +16,14 @@ const isProtectedRoute = createRouteMatcher([
   "/api/builder(.*)",
   "/api/templates(.*)",
   "/api/runs(.*)",
+  "/api/media(.*)",
 ]);
 
 const isOrgRequiredRoute = createRouteMatcher([
   "/dashboard(.*)",
   "/bots(.*)",
   "/flows(.*)",
+  "/library(.*)",
   "/builder(.*)",
   "/templates(.*)",
   "/runs(.*)",
