@@ -203,6 +203,18 @@ export function normalizeConditionNodeData(data: Record<string, unknown>) {
     return { type, key: String(data.key ?? "flag") };
   }
 
+  if (type === "event_path_exists") {
+    return { type, key: String(data.key ?? "text") };
+  }
+
+  if (type === "event_path_equals" || type === "event_path_contains" || type === "event_path_matches_regex") {
+    return {
+      type,
+      key: String(data.key ?? "text"),
+      value: String(data.value ?? ""),
+    };
+  }
+
   if (type === "from_user_id") {
     return { type, value: Number(data.value ?? 0) };
   }

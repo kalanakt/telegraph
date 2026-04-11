@@ -9,11 +9,13 @@ const {
     workflowTemplate: {
       findFirst: vi.fn(),
       findUnique: vi.fn(),
+      findMany: vi.fn(),
       update: vi.fn()
     },
     workflowTemplateVersion: {
       create: vi.fn(),
-      findUnique: vi.fn()
+      findUnique: vi.fn(),
+      findMany: vi.fn()
     },
     workflowTemplateVersionFlow: {
       createMany: vi.fn()
@@ -36,7 +38,7 @@ vi.mock("@/lib/billing", () => ({
   getUserPlan: (...args: unknown[]) => getUserPlanMock(...args)
 }));
 
-import { installTemplateForUser, publishTemplate } from "@/lib/templates";
+import { getPublicTemplateBySlug, installTemplateForUser, listPublicTemplates, publishTemplate } from "@/lib/templates";
 
 function starterFlow(name = "Flow 1") {
   return {
@@ -178,5 +180,51 @@ describe("template service", () => {
         enabled: false
       })
     });
+  });
+
+  it("includes built-in templates in the public marketplace listing", async () => {
+    prismaMock.workflowTemplate.findMany.mockResolvedValue([]);
+
+    const templates = await listPublicTemplates();
+
+    expect(templates.some((template) => template.id === "builtin:starter-commands-pack")).toBe(true);
+    expect(templates.some((template) => template.source === "builtin" && template.featured)).toBe(true);
+  });
+
+  it("resolves built-in template detail without hitting the database", async () => {
+    const template = await getPublicTemplateBySlug("support-triage-buttons");
+
+    expect(template?.id).toBe("builtin:support-triage-buttons");
+    expect(template?.source).toBe("builtin");
+    expect(template?.flows.length).toBeGreaterThan(0);
+    expect(prismaMock.workflowTemplate.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("installs built-in templates into disabled workflow rules", async () => {
+    getUserPlanMock.mockResolvedValue("PRO");
+    getRemainingRuleCapacityMock.mockResolvedValue(10);
+    prismaMock.workflowRule.create
+      .mockResolvedValueOnce({ id: "rule_1" })
+      .mockResolvedValueOnce({ id: "rule_2" });
+    prismaMock.$transaction.mockImplementation(async (callback: (tx: typeof prismaMock) => Promise<unknown>) =>
+      callback(prismaMock as unknown as typeof prismaMock)
+    );
+
+    const result = await installTemplateForUser(
+      { id: "user_1", clerkUserId: "clerk_1", subscription: { plan: "PRO", status: "active" } },
+      "builtin:starter-commands-pack",
+      { botId: "bot_1" }
+    );
+
+    expect(result).toEqual({
+      status: "installed",
+      upgradeRequired: false,
+      templateFlowCount: 2,
+      remainingRuleCapacity: 8,
+      firstRuleId: "rule_1",
+      rulesCreated: 2
+    });
+    expect(prismaMock.workflowTemplate.findUnique).not.toHaveBeenCalled();
+    expect(prismaMock.workflowRule.create).toHaveBeenCalledTimes(2);
   });
 });

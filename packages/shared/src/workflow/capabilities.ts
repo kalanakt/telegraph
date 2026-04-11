@@ -79,6 +79,10 @@ const TELEGRAM_CONDITION_TYPES: WorkflowConditionManifestItem[] = [
 const SHARED_CONDITION_TYPES: WorkflowConditionManifestItem[] = [
   { type: "variable_equals", label: "Variable equals", source: "shared", description: "Match a runtime variable." },
   { type: "variable_exists", label: "Variable exists", source: "shared", description: "Check a runtime variable path." },
+  { type: "event_path_exists", label: "Event path exists", source: "shared", description: "Check any normalized event field." },
+  { type: "event_path_equals", label: "Event path equals", source: "shared", description: "Match any normalized event field exactly." },
+  { type: "event_path_contains", label: "Event path contains", source: "shared", description: "Partially match any normalized event field." },
+  { type: "event_path_matches_regex", label: "Event path regex", source: "shared", description: "Match any normalized event field with regex." },
   { type: "all", label: "All conditions", source: "shared", description: "Nested AND condition." },
   { type: "any", label: "Any condition", source: "shared", description: "Nested OR condition." }
 ];

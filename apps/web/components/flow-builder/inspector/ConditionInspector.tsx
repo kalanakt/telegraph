@@ -33,10 +33,14 @@ export function ConditionInspector({ data, trigger, onUpdate }: Props) {
   const requiresNoValue = conditionType.startsWith("message_has_");
   const usesKeyOnly =
     conditionType === "variable_exists" ||
+    conditionType === "event_path_exists" ||
     conditionType === "webhook_header_exists" ||
     conditionType === "webhook_body_path_exists";
   const usesKeyAndValue =
     conditionType === "variable_equals" ||
+    conditionType === "event_path_equals" ||
+    conditionType === "event_path_contains" ||
+    conditionType === "event_path_matches_regex" ||
     conditionType === "webhook_header_equals" ||
     conditionType === "webhook_query_equals" ||
     conditionType === "webhook_query_contains" ||
@@ -91,7 +95,13 @@ export function ConditionInspector({ data, trigger, onUpdate }: Props) {
           <span>Key / path</span>
           <Input
             value={asString(data.key ?? data.value ?? "")}
-            placeholder={conditionType.includes("body_path") ? "payload.customer.email" : "x-source"}
+            placeholder={
+              conditionType.startsWith("event_path_")
+                ? "joinRequestBio"
+                : conditionType.includes("body_path")
+                ? "payload.customer.email"
+                : "x-source"
+            }
             onChange={(e) => onUpdate({ key: e.target.value })}
           />
         </label>
@@ -118,6 +128,10 @@ export function ConditionInspector({ data, trigger, onUpdate }: Props) {
               placeholder={
                 conditionType === "text_matches_regex"
                   ? "^hello"
+                  : conditionType === "event_path_matches_regex"
+                  ? ".*promo.*"
+                  : conditionType.startsWith("event_path_")
+                  ? "joinRequestBio"
                   : conditionType.includes("body_path")
                   ? "payload.customer.email"
                   : conditionType.includes("header")

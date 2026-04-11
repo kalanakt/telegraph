@@ -8,6 +8,36 @@ import {
 } from "@telegram-builder/shared";
 import { getRemainingRuleCapacity, getUserPlan } from "@/lib/billing";
 import { prisma } from "@/lib/prisma";
+import {
+  getBuiltInWorkflowTemplateById,
+  getBuiltInWorkflowTemplateBySlug,
+  getBuiltInWorkflowTemplates,
+  type BuiltInTemplateAudience,
+  type BuiltInTemplateCategory,
+  type BuiltInTemplateSetupLevel,
+} from "@/lib/template-library";
+
+export type TemplateSource = "builtin" | "user";
+
+type TemplateFlowSource = Array<{
+  name: string;
+  trigger: string;
+  flowDefinition: unknown;
+  sortOrder: number;
+}>;
+
+type PublicTemplateMetadata = {
+  source: TemplateSource;
+  category: BuiltInTemplateCategory | null;
+  audience: BuiltInTemplateAudience | null;
+  featured: boolean;
+  setupLevel: BuiltInTemplateSetupLevel | null;
+  requiresExternalIntegration: boolean;
+  featuredOrder: number | null;
+};
+
+const BUILTIN_TEMPLATE_AUTHOR_LABEL = "Telegraph";
+const BUILTIN_TEMPLATE_PUBLISHED_AT = new Date("2026-04-11T00:00:00.000Z");
 
 function normalizeDescription(description?: string | null) {
   const value = description?.trim();
@@ -113,6 +143,94 @@ function buildAuthorLabel(user: { email: string | null }) {
   }
 
   return user.email;
+}
+
+function mapBuiltInMetadata(template: ReturnType<typeof getBuiltInWorkflowTemplates>[number]): PublicTemplateMetadata {
+  return {
+    source: "builtin",
+    category: template.category,
+    audience: template.audience,
+    featured: template.featured,
+    setupLevel: template.setupLevel,
+    requiresExternalIntegration: template.requiresExternalIntegration,
+    featuredOrder: template.featuredOrder ?? null,
+  };
+}
+
+function userTemplateMetadata(): PublicTemplateMetadata {
+  return {
+    source: "user",
+    category: null,
+    audience: null,
+    featured: false,
+    setupLevel: null,
+    requiresExternalIntegration: false,
+    featuredOrder: null,
+  };
+}
+
+function mapBuiltInTemplateSummary(template: ReturnType<typeof getBuiltInWorkflowTemplates>[number]) {
+  return {
+    id: template.id,
+    slug: template.slug,
+    title: template.title,
+    description: template.description ?? null,
+    authorLabel: BUILTIN_TEMPLATE_AUTHOR_LABEL,
+    flowCount: template.flows.length,
+    triggers: [...new Set(template.flows.map((flow) => flow.trigger))],
+    publishedAt: BUILTIN_TEMPLATE_PUBLISHED_AT,
+    version: 1,
+    ...mapBuiltInMetadata(template),
+  };
+}
+
+function mapBuiltInTemplateDetail(template: ReturnType<typeof getBuiltInWorkflowTemplates>[number]) {
+  return {
+    id: template.id,
+    slug: template.slug,
+    title: template.title,
+    description: template.description ?? null,
+    authorLabel: BUILTIN_TEMPLATE_AUTHOR_LABEL,
+    publishedAt: BUILTIN_TEMPLATE_PUBLISHED_AT,
+    version: 1,
+    flows: template.flows.map((flow, index) => ({
+      id: `${template.id}:flow:${index + 1}`,
+      name: flow.name,
+      trigger: flow.trigger,
+      flowDefinition: parseFlowDefinition(flow.flowDefinition),
+      sortOrder: index,
+    })),
+    ...mapBuiltInMetadata(template),
+  };
+}
+
+function sortPublicTemplates<T extends { source: TemplateSource; featured: boolean; featuredOrder: number | null; title: string; publishedAt: Date }>(
+  templates: T[]
+) {
+  return [...templates].sort((left, right) => {
+    if (left.source !== right.source) {
+      return left.source === "builtin" ? -1 : 1;
+    }
+
+    if (left.source === "builtin" && right.source === "builtin") {
+      if (left.featured !== right.featured) {
+        return left.featured ? -1 : 1;
+      }
+
+      const leftOrder = left.featuredOrder ?? Number.MAX_SAFE_INTEGER;
+      const rightOrder = right.featuredOrder ?? Number.MAX_SAFE_INTEGER;
+      if (leftOrder !== rightOrder) {
+        return leftOrder - rightOrder;
+      }
+    }
+
+    const publishedDelta = right.publishedAt.getTime() - left.publishedAt.getTime();
+    if (publishedDelta !== 0) {
+      return publishedDelta;
+    }
+
+    return left.title.localeCompare(right.title);
+  });
 }
 
 function normalizeTemplateInput(input: WorkflowTemplateDraft) {
@@ -440,6 +558,8 @@ export async function unpublishTemplate(userId: string, templateId: string) {
 }
 
 export async function listPublicTemplates() {
+  const builtInTemplates = getBuiltInWorkflowTemplates().map(mapBuiltInTemplateSummary);
+
   const templates = await prisma.workflowTemplate.findMany({
     where: {
       publishedVersionId: {
@@ -477,7 +597,7 @@ export async function listPublicTemplates() {
 
   const versionMap = new Map(versions.map((version) => [version.id, version]));
 
-  return templates
+  const userTemplates = templates
     .map((template) => {
       const version = template.publishedVersionId
         ? versionMap.get(template.publishedVersionId)
@@ -496,13 +616,21 @@ export async function listPublicTemplates() {
         flowCount: version.flows.length,
         triggers: [...new Set(version.flows.map((flow) => flow.trigger as TriggerType))],
         publishedAt: version.createdAt,
-        version: version.version
+        version: version.version,
+        ...userTemplateMetadata()
       };
     })
     .filter((template): template is NonNullable<typeof template> => Boolean(template));
+
+  return sortPublicTemplates([...builtInTemplates, ...userTemplates]);
 }
 
 export async function getPublicTemplateBySlug(slug: string) {
+  const builtInTemplate = getBuiltInWorkflowTemplateBySlug(slug);
+  if (builtInTemplate) {
+    return mapBuiltInTemplateDetail(builtInTemplate);
+  }
+
   const template = await prisma.workflowTemplate.findFirst({
     where: {
       slug,
@@ -546,6 +674,7 @@ export async function getPublicTemplateBySlug(slug: string) {
     authorLabel: buildAuthorLabel(template.user),
     publishedAt: version.createdAt,
     version: version.version,
+    ...userTemplateMetadata(),
     flows: version.flows.map((flow) => ({
       id: flow.id,
       name: flow.name,
@@ -561,45 +690,49 @@ export async function installTemplateForUser(user: Pick<User, "id" | "clerkUserI
 }, templateId: string, input: unknown) {
   const data = installTemplateSchema.parse(input);
 
-  const template = await prisma.workflowTemplate.findUnique({
-    where: { id: templateId },
-    include: {
-      draftFlows: {
-        orderBy: { sortOrder: "asc" }
-      }
-    }
-  });
+  let sourceFlows: TemplateFlowSource | null = null;
 
-  if (!template) {
-    return { status: "not_found" as const };
-  }
-
-  const isOwner = template.userId === user.id;
-  let sourceFlows:
-    | Array<{
-        name: string;
-        trigger: string;
-        flowDefinition: unknown;
-        sortOrder: number;
-      }>
-    | null = null;
-
-  if (isOwner) {
-    sourceFlows = template.draftFlows;
-  } else if (template.publishedVersionId) {
-    const version = await prisma.workflowTemplateVersion.findUnique({
-      where: { id: template.publishedVersionId },
+  const builtInTemplate = getBuiltInWorkflowTemplateById(templateId);
+  if (builtInTemplate) {
+    sourceFlows = builtInTemplate.flows.map((flow, index) => ({
+      name: flow.name,
+      trigger: flow.trigger,
+      flowDefinition: flow.flowDefinition,
+      sortOrder: index,
+    }));
+  } else {
+    const template = await prisma.workflowTemplate.findUnique({
+      where: { id: templateId },
       include: {
-        flows: {
+        draftFlows: {
           orderBy: { sortOrder: "asc" }
         }
       }
     });
-    sourceFlows = version?.flows ?? null;
-  }
 
-  if (!sourceFlows) {
-    return { status: "forbidden" as const };
+    if (!template) {
+      return { status: "not_found" as const };
+    }
+
+    const isOwner = template.userId === user.id;
+
+    if (isOwner) {
+      sourceFlows = template.draftFlows;
+    } else if (template.publishedVersionId) {
+      const version = await prisma.workflowTemplateVersion.findUnique({
+        where: { id: template.publishedVersionId },
+        include: {
+          flows: {
+            orderBy: { sortOrder: "asc" }
+          }
+        }
+      });
+      sourceFlows = version?.flows ?? null;
+    }
+
+    if (!sourceFlows) {
+      return { status: "forbidden" as const };
+    }
   }
 
   const plan = await getUserPlan(user);

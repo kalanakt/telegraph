@@ -37,6 +37,10 @@ export type ConditionType =
   | "message_source_equals"
   | "variable_equals"
   | "variable_exists"
+  | "event_path_exists"
+  | "event_path_equals"
+  | "event_path_contains"
+  | "event_path_matches_regex"
   | "callback_data_equals"
   | "callback_data_contains"
   | "command_equals"
@@ -91,6 +95,10 @@ export type ConditionPayload =
   | { type: "message_source_equals"; value: "user" | "channel" | "group" }
   | { type: "variable_equals"; key: string; value: string }
   | { type: "variable_exists"; key: string }
+  | { type: "event_path_exists"; key: string }
+  | { type: "event_path_equals"; key: string; value: string }
+  | { type: "event_path_contains"; key: string; value: string }
+  | { type: "event_path_matches_regex"; key: string; value: string }
   | { type: "callback_data_equals"; value: string }
   | { type: "callback_data_contains"; value: string }
   | { type: "command_equals"; value: string }
@@ -292,12 +300,25 @@ export type NormalizedEventBase = {
   inlineQuery?: string;
   shippingQueryId?: string;
   preCheckoutQueryId?: string;
+  invoicePayload?: string;
+  currency?: string;
+  totalAmount?: number;
+  shippingOptionId?: string;
+  shippingAddress?: JsonValue;
+  orderInfo?: JsonValue;
   command?: string;
   commandArgs?: string;
   variables?: Record<string, JsonValue>;
   targetUserId?: number;
   oldStatus?: string;
   newStatus?: string;
+  joinRequestBio?: string;
+  joinRequestInviteLink?: string;
+  pollId?: string;
+  pollOptionIds?: number[];
+  oldReaction?: JsonValue;
+  newReaction?: JsonValue;
+  reactionCount?: JsonValue;
   hasPhoto?: boolean;
   hasVideo?: boolean;
   hasDocument?: boolean;
@@ -336,18 +357,33 @@ export type ShippingQueryReceivedEvent = NormalizedEventBase & {
   source: "telegram";
   trigger: "shipping_query_received";
   shippingQueryId: string;
+  invoicePayload: string;
 };
 export type PreCheckoutQueryReceivedEvent = NormalizedEventBase & {
   source: "telegram";
   trigger: "pre_checkout_query_received";
   preCheckoutQueryId: string;
+  invoicePayload: string;
+  currency: string;
+  totalAmount: number;
 };
 export type PollReceivedEvent = NormalizedEventBase & { source: "telegram"; trigger: "poll_received" };
-export type PollAnswerReceivedEvent = NormalizedEventBase & { source: "telegram"; trigger: "poll_answer_received" };
+export type PollAnswerReceivedEvent = NormalizedEventBase & {
+  source: "telegram";
+  trigger: "poll_answer_received";
+  pollId: string;
+  pollOptionIds: number[];
+};
 export type ChatMemberUpdatedEvent = NormalizedEventBase & { source: "telegram"; trigger: "chat_member_updated" };
 export type MyChatMemberUpdatedEvent = NormalizedEventBase & { source: "telegram"; trigger: "my_chat_member_updated" };
-export type ChatJoinRequestReceivedEvent = NormalizedEventBase & { source: "telegram"; trigger: "chat_join_request_received" };
-export type MessageReactionUpdatedEvent = NormalizedEventBase & { source: "telegram"; trigger: "message_reaction_updated" };
+export type ChatJoinRequestReceivedEvent = NormalizedEventBase & {
+  source: "telegram";
+  trigger: "chat_join_request_received";
+};
+export type MessageReactionUpdatedEvent = NormalizedEventBase & {
+  source: "telegram";
+  trigger: "message_reaction_updated";
+};
 export type MessageReactionCountUpdatedEvent = NormalizedEventBase & {
   source: "telegram";
   trigger: "message_reaction_count_updated";

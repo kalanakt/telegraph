@@ -1,5 +1,5 @@
 import type { TelegramUpdate } from "../types/telegram.js";
-import type { NormalizedEvent } from "../types/workflow.js";
+import type { JsonValue, NormalizedEvent } from "../types/workflow.js";
 
 function extractCommand(text: string): { command: string; commandArgs: string } | null {
   const trimmed = text.trim();
@@ -205,6 +205,8 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
       eventId: String(update.update_id),
       updateId: update.update_id,
       shippingQueryId: update.shipping_query.id,
+      invoicePayload: update.shipping_query.invoice_payload,
+      shippingAddress: update.shipping_query.shipping_address as JsonValue | undefined,
       fromUserId: update.shipping_query.from.id,
       fromUsername: update.shipping_query.from.username,
       messageSource: "user",
@@ -220,6 +222,11 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
       eventId: String(update.update_id),
       updateId: update.update_id,
       preCheckoutQueryId: update.pre_checkout_query.id,
+      invoicePayload: update.pre_checkout_query.invoice_payload,
+      currency: update.pre_checkout_query.currency,
+      totalAmount: update.pre_checkout_query.total_amount,
+      shippingOptionId: update.pre_checkout_query.shipping_option_id,
+      orderInfo: update.pre_checkout_query.order_info as JsonValue | undefined,
       fromUserId: update.pre_checkout_query.from.id,
       fromUsername: update.pre_checkout_query.from.username,
       messageSource: "user",
@@ -245,6 +252,8 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
       trigger: "poll_answer_received",
       eventId: String(update.update_id),
       updateId: update.update_id,
+      pollId: update.poll_answer.poll_id,
+      pollOptionIds: update.poll_answer.option_ids,
       fromUserId: update.poll_answer.user.id,
       fromUsername: update.poll_answer.user.username,
       messageSource: "user",
@@ -301,6 +310,8 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
       chatType: update.chat_join_request.chat.type,
       fromUserId: update.chat_join_request.from.id,
       fromUsername: update.chat_join_request.from.username,
+      joinRequestBio: update.chat_join_request.bio,
+      joinRequestInviteLink: update.chat_join_request.invite_link?.name ?? update.chat_join_request.invite_link?.invite_link,
       messageSource: mapMessageSource(update.chat_join_request.chat.type),
       text: "",
       variables: {}
@@ -320,6 +331,8 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
       messageSource: mapMessageSource(update.message_reaction.chat.type),
       text: "",
       messageId: update.message_reaction.message_id,
+      oldReaction: update.message_reaction.old_reaction as JsonValue | undefined,
+      newReaction: update.message_reaction.new_reaction as JsonValue | undefined,
       variables: {}
     };
   }
@@ -335,6 +348,7 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
       messageSource: mapMessageSource(update.message_reaction_count.chat.type),
       text: "",
       messageId: update.message_reaction_count.message_id,
+      reactionCount: update.message_reaction_count.reactions as JsonValue | undefined,
       variables: {}
     };
   }

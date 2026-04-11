@@ -40,6 +40,19 @@ export function evaluateCondition(
       return valueToComparable(getPathValue(context.variables, condition.key)) === condition.value.toLowerCase();
     case "variable_exists":
       return typeof getPathValue(context.variables, condition.key) !== "undefined";
+    case "event_path_exists":
+      return typeof getPathValue(event, condition.key) !== "undefined";
+    case "event_path_equals":
+      return valueToComparable(getPathValue(event, condition.key)) === condition.value.toLowerCase();
+    case "event_path_contains":
+      return valueToComparable(getPathValue(event, condition.key)).includes(condition.value.toLowerCase());
+    case "event_path_matches_regex": {
+      try {
+        return new RegExp(condition.value, "i").test(toTemplateString(getPathValue(event, condition.key)));
+      } catch {
+        return false;
+      }
+    }
     case "callback_data_equals":
       return (event.callbackData ?? "") === condition.value;
     case "callback_data_contains":

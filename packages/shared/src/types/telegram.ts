@@ -69,6 +69,7 @@ export type TelegramShippingQuery = {
   id: string;
   from: TelegramUser;
   invoice_payload: string;
+  shipping_address?: Record<string, unknown>;
   [key: string]: unknown;
 };
 
@@ -78,6 +79,8 @@ export type TelegramPreCheckoutQuery = {
   currency: string;
   total_amount: number;
   invoice_payload: string;
+  shipping_option_id?: string;
+  order_info?: Record<string, unknown>;
   [key: string]: unknown;
 };
 
@@ -113,6 +116,12 @@ export type TelegramChatJoinRequest = {
   from: TelegramUser;
   user_chat_id: number;
   date: number;
+  bio?: string;
+  invite_link?: {
+    invite_link: string;
+    name?: string;
+    [key: string]: unknown;
+  };
   [key: string]: unknown;
 };
 
@@ -122,6 +131,8 @@ export type TelegramMessageReactionUpdated = {
   user?: TelegramUser;
   actor_chat?: TelegramChat;
   date: number;
+  old_reaction?: unknown[];
+  new_reaction?: unknown[];
   [key: string]: unknown;
 };
 
@@ -129,6 +140,7 @@ export type TelegramMessageReactionCountUpdated = {
   chat: TelegramChat;
   message_id: number;
   date: number;
+  reactions?: unknown[];
   [key: string]: unknown;
 };
 

@@ -3,6 +3,8 @@ import { evaluateAllConditions } from "@telegram-builder/shared";
 import type { NormalizedEvent } from "@telegram-builder/shared";
 
 const event: NormalizedEvent = {
+  source: "telegram",
+  eventId: "evt_1",
   trigger: "message_received",
   updateId: 1,
   chatId: "1001",
@@ -74,6 +76,25 @@ describe("evaluateAllConditions", () => {
         { type: "old_status_equals", value: "left" },
         { type: "new_status_equals", value: "member" },
         { type: "message_has_photo" }
+      ]
+    );
+
+    expect(ok).toBe(true);
+  });
+
+  it("supports shared event path conditions", () => {
+    const ok = evaluateAllConditions(
+      {
+        ...event,
+        joinRequestBio: "crypto promo account",
+        currency: "USD",
+        reactionCount: [{ type: "emoji", total_count: 3 }],
+      },
+      [
+        { type: "event_path_exists", key: "joinRequestBio" },
+        { type: "event_path_contains", key: "joinRequestBio", value: "promo" },
+        { type: "event_path_equals", key: "currency", value: "usd" },
+        { type: "event_path_matches_regex", key: "joinRequestBio", value: "crypto\\s+promo" },
       ]
     );
 

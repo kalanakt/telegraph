@@ -8,6 +8,14 @@ import { prisma } from "@/lib/prisma";
 import { getPublicTemplateBySlug } from "@/lib/templates";
 import { requireAppUser } from "@/lib/user";
 
+function formatSetupLevel(setupLevel: string | null) {
+  if (!setupLevel) {
+    return null;
+  }
+
+  return setupLevel.charAt(0).toUpperCase() + setupLevel.slice(1);
+}
+
 export default async function PublicTemplatePage({
   params
 }: {
@@ -39,7 +47,7 @@ export default async function PublicTemplatePage({
     <div className="space-y-6">
       <PageHeading
         title={template.title}
-        subtitle={`Published by ${template.authorLabel}`}
+        subtitle={template.source === "builtin" ? "Built by Telegraph" : `Published by ${template.authorLabel}`}
       />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
@@ -52,14 +60,29 @@ export default async function PublicTemplatePage({
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary">Version {template.version}</Badge>
+              <Badge variant="secondary">{template.source === "builtin" ? "Built-in" : "Published"}</Badge>
+              <Badge variant="outline">Version {template.version}</Badge>
               <Badge variant="outline">{template.flows.length} flows</Badge>
-              <Badge variant="outline">{new Date(template.publishedAt).toLocaleString()}</Badge>
+              {template.category ? <Badge variant="outline">{template.category}</Badge> : null}
+              {template.audience ? <Badge variant="outline">{template.audience}</Badge> : null}
+              {template.setupLevel ? <Badge variant="outline">{formatSetupLevel(template.setupLevel)}</Badge> : null}
+              {template.featured ? <Badge variant="outline">Featured</Badge> : null}
+              {template.source === "user" ? (
+                <Badge variant="outline">{new Date(template.publishedAt).toLocaleString()}</Badge>
+              ) : null}
             </div>
 
             <p className="text-sm text-muted-foreground">
               {template.description ?? "No description provided for this template."}
             </p>
+
+            {template.source === "builtin" ? (
+              <div className="rounded-sm border border-border/80 bg-background/70 px-4 py-3 text-sm text-muted-foreground">
+                {template.featured
+                  ? "This built-in template is meant to work immediately after install. Review the copy, then enable each imported flow intentionally."
+                  : "This built-in template is more specialized. Review every action and message before enabling it in a live bot."}
+              </div>
+            ) : null}
 
             <div className="space-y-3">
               {template.flows.map((flow, index) => (
