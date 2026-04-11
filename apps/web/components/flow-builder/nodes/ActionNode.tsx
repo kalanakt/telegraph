@@ -54,7 +54,7 @@ export function ActionNode({ data }: { data: ActionEditorData & { __meta?: Build
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
-              <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Action</div>
+              <div className="text-[10px] uppercase text-muted-foreground">Action</div>
               <Badge
                 variant="secondary"
                 className="h-4 rounded-sm border border-border/80 bg-secondary/75 px-1 text-[9px] font-mono text-foreground/72"
@@ -126,7 +126,7 @@ export function ActionNode({ data }: { data: ActionEditorData & { __meta?: Build
         {inlineButtons.length > 0 ? (
           <div className="mt-3 space-y-2 border-t border-border/80 pt-3">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+              <p className="text-[10px] font-semibold uppercase text-muted-foreground">
                 Inline buttons
               </p>
               <Badge variant="outline" className="h-5 rounded-sm border-border/80 bg-background/80 px-1.5 text-[9px] text-foreground/72">
@@ -191,7 +191,7 @@ export function ActionNode({ data }: { data: ActionEditorData & { __meta?: Build
       </div>
 
       <div className="relative border-t border-border/80 px-3 py-2">
-        <span className="text-[9px] uppercase tracking-[0.12em] text-muted-foreground">Next</span>
+        <span className="text-[9px] uppercase text-muted-foreground">Next</span>
         <Handle id="default" type="source" position={Position.Right} className="!h-3 !w-3 !border-white !bg-primary" />
       </div>
     </div>

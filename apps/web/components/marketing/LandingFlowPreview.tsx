@@ -8,6 +8,7 @@ import {
   type Node,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { BuilderEdge } from "@/components/flow-builder/edges/BuilderEdge";
 import { ActionNode } from "@/components/flow-builder/nodes/ActionNode";
 import { ConditionNode } from "@/components/flow-builder/nodes/ConditionNode";
 import { StartNode } from "@/components/flow-builder/nodes/StartNode";
@@ -20,11 +21,15 @@ const nodeTypes = {
   start: StartNode,
 };
 
+const edgeTypes = {
+  "builder-edge": BuilderEdge,
+};
+
 const previewNodes: Node[] = [
   {
     id: "start",
     type: "start",
-    position: { x: 300, y: 200 },
+    position: { x: 300, y: 0 },
     data: {
       trigger: "message_received",
     },
@@ -32,7 +37,7 @@ const previewNodes: Node[] = [
   {
     id: "condition",
     type: "condition",
-    position: { x: 400, y: 368 },
+    position: { x: 400, y: 200 },
     data: {
       type: "text_contains",
       value: "pricing",
@@ -41,7 +46,7 @@ const previewNodes: Node[] = [
   {
     id: "plans",
     type: "action",
-    position: { x: 744, y: 256 },
+    position: { x: 744, y: 0 },
     data: {
       type: "telegram.sendMessage",
       params: {
@@ -53,7 +58,7 @@ const previewNodes: Node[] = [
   {
     id: "notify",
     type: "action",
-    position: { x: 1060, y: 256 },
+    position: { x: 900, y: 300 },
     data: {
       type: "telegram.sendMessage",
       params: {
@@ -65,7 +70,7 @@ const previewNodes: Node[] = [
   {
     id: "faq",
     type: "action",
-    position: { x: 744, y: 468 },
+    position: { x: 744, y: 550 },
     data: {
       type: "telegram.sendMessage",
       params: {
@@ -123,6 +128,7 @@ export function LandingFlowPreview({ className }: { className?: string }) {
           nodes={previewNodes}
           edges={previewEdges}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           defaultEdgeOptions={defaultEdgeOptions}
           defaultViewport={{ x: 380, y: 48, zoom: 0.74 }}
           minZoom={0.6}

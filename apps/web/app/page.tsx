@@ -237,7 +237,7 @@ export default async function HomePage() {
               <div className="flex w-full max-w-md flex-col gap-4 sm:max-w-2xl md:max-w-6xl md:flex-1 md:gap-5">
                 <Badge
                   variant="secondary"
-                  className="w-fit text-wrap hidden sm:flex"
+                  className="hidden w-fit text-wrap sm:flex"
                 >
                   Telegram bot builder for support, lead routing, and ops
                 </Badge>

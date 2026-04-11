@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { PageHeading } from "@/components/PageHeading";
 import { Badge } from "@/components/ui/badge";
 
 type LegalDocumentProps = {
@@ -25,13 +24,25 @@ export function LegalDocument({
   children,
 }: LegalDocumentProps) {
   return (
-    <div className="space-y-6">
-      <PageHeading title={title} subtitle={subtitle} />
+    <div className="public-page">
+      <section className="public-hero-surface">
+        <div className="grid gap-4">
+          <Badge variant="secondary" className="w-fit rounded-lg">
+            Telegraph legal
+          </Badge>
+          <h1 className="public-display max-w-[12ch]">{title}</h1>
+          <p className="public-body">{subtitle}</p>
+        </div>
+      </section>
 
-      <section className="surface-panel flex flex-col gap-4 p-6">
+      <section className="public-band flex flex-col gap-4">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">Effective {effectiveDate}</Badge>
-          <Badge variant="outline">Telegraph legal</Badge>
+          <Badge variant="secondary" className="rounded-lg">
+            Effective {effectiveDate}
+          </Badge>
+          <Badge variant="outline" className="rounded-lg">
+            Public policy
+          </Badge>
         </div>
 
         <div className="max-w-[78ch] text-sm leading-6 text-muted-foreground">
@@ -45,7 +56,7 @@ export function LegalDocument({
           {legalLinks.map((link) => (
             <Link
               key={link.href}
-              className="focus-ring border-b border-border/70 pb-0.5 transition-colors hover:text-foreground"
+              className="focus-ring rounded-md border border-border/65 bg-background/70 px-3 py-1.5 transition-colors hover:text-foreground"
               href={link.href}
             >
               {link.label}
@@ -67,12 +78,9 @@ export function LegalSection({
   children: ReactNode;
 }) {
   return (
-    <section className="surface-panel p-6 md:p-8">
+    <section className="public-card md:p-8">
       <div className="max-w-[82ch] space-y-4">
-        <h2
-          className="text-2xl font-semibold leading-tight tracking-[-0.03em] text-foreground"
-          style={{ fontFamily: "var(--font-display)" }}
-        >
+        <h2 className="font-display text-2xl font-semibold leading-tight text-foreground">
           {title}
         </h2>
         <div className="space-y-4 text-sm leading-7 text-muted-foreground">

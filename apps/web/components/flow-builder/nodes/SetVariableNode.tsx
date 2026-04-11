@@ -20,7 +20,7 @@ export function SetVariableNode({ data }: { data: SetVariableEditorData & { __me
             <Variable className="h-4 w-4" />
           </span>
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Variable</div>
+            <div className="text-[10px] uppercase text-muted-foreground">Variable</div>
             <div className="font-semibold leading-tight text-foreground">{label}</div>
             <div className="mt-2 rounded-sm border border-border/80 bg-secondary/55 px-2 py-1.5 font-mono text-[10px] text-muted-foreground">
               {data.path}
@@ -61,7 +61,7 @@ export function SetVariableNode({ data }: { data: SetVariableEditorData & { __me
       </div>
 
       <div className="relative border-t border-border/80 px-3 py-2">
-        <span className="text-[9px] uppercase tracking-[0.12em] text-muted-foreground">Next</span>
+        <span className="text-[9px] uppercase text-muted-foreground">Next</span>
         <Handle id="default" type="source" position={Position.Right} className="!h-3 !w-3 !border-white !bg-primary" />
       </div>
     </div>

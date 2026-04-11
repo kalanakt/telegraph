@@ -24,7 +24,7 @@ export function AnalyticsConsentBanner() {
     <div className="fixed inset-x-0 bottom-4 z-50 px-4">
       <Card className="mx-auto max-w-3xl border-border/80 shadow-2xl">
         <CardHeader>
-          <CardTitle className="font-(--font-display)">Analytics preferences</CardTitle>
+          <CardTitle className="font-display">Analytics preferences</CardTitle>
           <CardDescription>
             Telegraph keeps analytics disabled by default. If you opt in, we will load Contentsquare only after
             consent so we can study product usage and improve the app.

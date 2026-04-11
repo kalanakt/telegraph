@@ -72,7 +72,7 @@ export function NewTemplateForm() {
             <Badge variant="secondary">Step 1 of 2</Badge>
             <Badge variant="outline">Add template details</Badge>
           </div>
-          <CardTitle className="font-(--font-display)">Start with the template details</CardTitle>
+          <CardTitle className="font-display">Start with the template details</CardTitle>
           <CardDescription>
             Name the bundle, describe what it does, and decide whether the draft starts private or public-ready.
           </CardDescription>
@@ -135,14 +135,14 @@ export function NewTemplateForm() {
             <Badge variant="outline">Preview</Badge>
             <Badge variant="outline">{visibility === "PRIVATE" ? "Private" : "Public"}</Badge>
           </div>
-          <CardTitle className="font-(--font-display)">{titlePreview}</CardTitle>
+          <CardTitle className="font-display">{titlePreview}</CardTitle>
           <CardDescription>
             After this step, Telegraph opens a dedicated builder with one starter flow already prepared.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="rounded-sm border border-border/80 bg-background/70 p-4">
-            <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">What happens next</p>
+            <p className="text-xs uppercase text-muted-foreground">What happens next</p>
             <div className="mt-3 space-y-3">
               <div className="rounded-sm border border-border/70 bg-background/80 px-3 py-3">
                 <p className="font-medium text-foreground">Step 2</p>

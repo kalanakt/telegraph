@@ -78,7 +78,7 @@ export function QuickAddPopover({
           <div className="space-y-4">
             {filtered.map((section) => (
               <section key={section.id} className="space-y-2">
-                <h3 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                <h3 className="text-[10px] font-semibold uppercase text-muted-foreground">
                   {section.title}
                 </h3>
                 <div className="space-y-2">

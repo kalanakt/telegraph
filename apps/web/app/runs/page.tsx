@@ -48,7 +48,7 @@ export default async function RunsPage() {
     <div className="space-y-5">
       <Card>
         <CardHeader>
-          <CardTitle className="font-(--font-display)">
+          <CardTitle className="font-display">
             Recent Executions
           </CardTitle>
         </CardHeader>

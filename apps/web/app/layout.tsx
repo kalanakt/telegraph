@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Script from "next/script";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Oxanium, Source_Code_Pro } from "next/font/google";
+import { Geist, Oxanium, Source_Code_Pro } from "next/font/google";
 import { AnalyticsConsentBanner } from "@/components/analytics/AnalyticsConsentBanner";
-import { AppChrome } from "@/components/AppChrome";
 import { Nav } from "@/components/Nav";
 import { getContentsquareScriptUrl, isContentsquareEnabled } from "@/lib/analytics";
 import { getServerAnalyticsConsent } from "@/lib/analytics.server";
@@ -12,6 +11,12 @@ import { clerkAppearance } from "@/lib/clerk-appearance";
 import { cn } from "@/lib/utils";
 import { getSiteUrl, toAbsoluteUrl } from "@/lib/site-url";
 import "./globals.css";
+
+const geist = Geist({
+  subsets: ["latin"],
+  variable: "--font-geist",
+  display: "swap",
+});
 
 const oxanium = Oxanium({
   subsets: ["latin"],
@@ -63,29 +68,6 @@ export default async function RootLayout({
   const analyticsConsent = await getServerAnalyticsConsent();
   const contentsquareEnabled = isContentsquareEnabled();
   const contentsquareScriptUrl = contentsquareEnabled && analyticsConsent === "granted" ? getContentsquareScriptUrl() : null;
-  const footer = (
-    <footer className="mt-10 border-t border-border/70 pt-5 text-sm text-muted-foreground md:mt-12">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <p className="max-w-[42ch]">
-          Telegraph, the Telegram bot builder with a visual flow editor.
-        </p>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <Link className="focus-ring" href="/blog">
-            Blog
-          </Link>
-          <Link className="focus-ring" href="/privacy">
-            Privacy policy
-          </Link>
-          <Link className="focus-ring" href="/terms">
-            Terms of service
-          </Link>
-          <Link className="focus-ring" href="/cookies">
-            Cookie policy
-          </Link>
-        </div>
-      </div>
-    </footer>
-  );
   const analyticsBanner =
     contentsquareEnabled && analyticsConsent === "unknown" ? (
       <AnalyticsConsentBanner />
@@ -95,16 +77,39 @@ export default async function RootLayout({
       <a className="skip-link focus-ring" href="#main-content">
         Skip to content
       </a>
-      <AppChrome nav={<Nav />} footer={footer} analyticsBanner={analyticsBanner}>
-        {children}
-      </AppChrome>
+      <div className="app-shell">
+        <Nav />
+        <main id="main-content">{children}</main>
+        <footer className="mt-10 border-t border-border/70 pt-5 text-sm text-muted-foreground md:mt-12">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <p className="max-w-[42ch]">
+              Telegraph, the Telegram bot builder with a visual flow editor.
+            </p>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <Link className="focus-ring" href="/blog">
+                Blog
+              </Link>
+              <Link className="focus-ring" href="/privacy">
+                Privacy policy
+              </Link>
+              <Link className="focus-ring" href="/terms">
+                Terms of service
+              </Link>
+              <Link className="focus-ring" href="/cookies">
+                Cookie policy
+              </Link>
+            </div>
+          </div>
+        </footer>
+      </div>
+      {analyticsBanner}
     </>
   );
 
   return (
     <html
       lang="en"
-      className={cn("font-sans", oxanium.variable, sourceCodePro.variable)}
+      className={cn("font-sans", geist.variable, oxanium.variable, sourceCodePro.variable)}
     >
       <head>
         {contentsquareScriptUrl ? <Script src={contentsquareScriptUrl} strategy="afterInteractive" /> : null}

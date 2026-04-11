@@ -39,7 +39,7 @@ export function AddBotForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 font-(--font-display) text-xl">
+        <CardTitle className="flex items-center gap-2 font-display text-xl">
           <ShieldCheck className="h-5 w-5 text-primary" />
           Connect Telegram Bot
         </CardTitle>

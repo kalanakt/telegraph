@@ -27,7 +27,7 @@ export function DelayNode({ data }: { data: DelayEditorData & { __meta?: Builder
             <TimerReset className="h-4 w-4" />
           </span>
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Delay</div>
+            <div className="text-[10px] uppercase text-muted-foreground">Delay</div>
             <div className="font-semibold leading-tight text-foreground">{label}</div>
             <div className="mt-2 text-[11px] leading-5 text-foreground/76">Wait {formatDelay(data.delay_ms)} before continuing to the next node.</div>
             <div className="mt-2 flex flex-wrap gap-1.5">
@@ -65,7 +65,7 @@ export function DelayNode({ data }: { data: DelayEditorData & { __meta?: Builder
       </div>
 
       <div className="relative border-t border-border/80 px-3 py-2">
-        <span className="text-[9px] uppercase tracking-[0.12em] text-muted-foreground">Next</span>
+        <span className="text-[9px] uppercase text-muted-foreground">Next</span>
         <Handle id="default" type="source" position={Position.Right} className="!h-3 !w-3 !border-white !bg-primary" />
       </div>
     </div>

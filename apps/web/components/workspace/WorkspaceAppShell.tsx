@@ -143,7 +143,7 @@ function WorkspaceNavGroup({
                       <Icon />
                     </span>
                     <span className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
-                      <span className="text-[0.92rem] font-medium tracking-[-0.02em]">
+                      <span className="text-[0.92rem] font-medium">
                         {item.label}
                       </span>
                       <span
@@ -248,7 +248,6 @@ export function WorkspaceAppShell({
                   </span>
                 </div>
                 <UserButton
-                  afterSignOutUrl="/"
                   appearance={clerkUserButtonAppearance}
                   userProfileMode="navigation"
                   userProfileUrl="/account"
@@ -257,7 +256,6 @@ export function WorkspaceAppShell({
             </div>
             <div className="hidden items-center justify-center group-data-[collapsible=icon]:flex">
               <UserButton
-                afterSignOutUrl="/"
                 appearance={clerkUserButtonAppearance}
                 userProfileMode="navigation"
                 userProfileUrl="/account"
@@ -275,7 +273,7 @@ export function WorkspaceAppShell({
               <p className="truncate text-sm font-medium">
                 {currentSection?.label ?? "Workspace"}
               </p>
-              <p className="truncate text-[0.68rem] uppercase tracking-[0.16em] text-muted-foreground">
+              <p className="truncate text-[0.68rem] uppercase text-muted-foreground">
                 {currentSection?.detail ?? "Product surface"}
               </p>
             </div>

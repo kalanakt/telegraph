@@ -71,7 +71,7 @@ export default async function BotDetailPage({
     <div className="space-y-6">
       <Card className="interactive-lift">
         <CardHeader>
-          <CardTitle className="font-(--font-display)">
+          <CardTitle className="font-display">
             Bot overview
           </CardTitle>
           <CardDescription>
@@ -86,26 +86,26 @@ export default async function BotDetailPage({
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div className="space-y-1">
-            <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+            <p className="text-xs uppercase text-muted-foreground">
               Username
             </p>
             <p className="text-sm">{bot.username ? `@${bot.username}` : "-"}</p>
           </div>
           <div className="space-y-1">
-            <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+            <p className="text-xs uppercase text-muted-foreground">
               Created
             </p>
             <p className="text-sm">{new Date(bot.createdAt).toLocaleString()}</p>
           </div>
           <div className="space-y-1">
-            <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+            <p className="text-xs uppercase text-muted-foreground">
               Saved users
             </p>
             <p className="text-sm">{bot._count.botUsers}</p>
           </div>
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+              <p className="text-xs uppercase text-muted-foreground">
                 Save users
               </p>
               <Badge variant={bot.captureUsersEnabled ? "secondary" : "outline"}>
@@ -122,7 +122,7 @@ export default async function BotDetailPage({
 
       <Card className="interactive-lift">
         <CardHeader>
-          <CardTitle className="font-(--font-display)">Users</CardTitle>
+          <CardTitle className="font-display">Users</CardTitle>
           <CardDescription>
             Saved users are unique to this bot and start collecting only after
             save-users is turned on.

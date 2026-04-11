@@ -24,7 +24,7 @@ export function SwitchNode({ data }: { data: SwitchEditorData & { __meta?: Build
           <GitBranch className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Switch</div>
+          <div className="text-[10px] uppercase text-muted-foreground">Switch</div>
           <div className="font-semibold leading-tight text-foreground">{label}</div>
           <div className="mt-1 truncate rounded-sm border border-border/80 bg-secondary/55 px-1.5 py-1 font-mono text-[9px] text-muted-foreground">
             {path}
@@ -51,7 +51,7 @@ export function SwitchNode({ data }: { data: SwitchEditorData & { __meta?: Build
           <div key={item.id} className="relative rounded-sm border border-border/80 bg-background/60 px-2 py-2">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Branch</div>
+                <div className="text-[10px] font-semibold uppercase text-muted-foreground">Branch</div>
                 <div className="text-[11px] font-semibold text-foreground">{item.label || `Case ${index + 1}`}</div>
                 <div className="font-mono text-[9px] text-muted-foreground">{item.value || "(empty)"}</div>
               </div>
@@ -84,7 +84,7 @@ export function SwitchNode({ data }: { data: SwitchEditorData & { __meta?: Build
         <div className="relative rounded-sm border border-dashed border-border/80 bg-background/45 px-2 py-2">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Fallback</div>
+              <div className="text-[10px] font-semibold uppercase text-muted-foreground">Fallback</div>
               <div className="text-[11px] font-semibold text-foreground">Default branch</div>
               <div className="font-mono text-[9px] text-muted-foreground">fallback branch</div>
             </div>

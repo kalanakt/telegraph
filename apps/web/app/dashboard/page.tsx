@@ -132,11 +132,11 @@ function OverviewMetric({
         <span className="flex size-9 items-center justify-center border border-primary/20 bg-primary/10 text-primary">
           <Icon className="size-4" />
         </span>
-        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em]">
+        <p className="text-[0.7rem] font-semibold uppercase">
           {label}
         </p>
       </div>
-      <p className="mt-3 text-[2rem] font-semibold leading-none tracking-[-0.05em] tabular-nums">
+      <p className="mt-3 text-[2rem] font-semibold leading-none tabular-nums">
         {typeof value === "number" ? numberFormatter.format(value) : value}
       </p>
       <p className="mt-2 max-w-[30ch] text-sm leading-6 text-muted-foreground">
@@ -161,11 +161,11 @@ function ActivityStat({
     <div className="bg-background p-4">
       <div className="flex items-center gap-2 text-muted-foreground">
         <Icon className="size-4" />
-        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em]">
+        <p className="text-[0.7rem] font-semibold uppercase">
           {label}
         </p>
       </div>
-      <p className="mt-3 text-[1.65rem] font-semibold leading-none tracking-[-0.05em] tabular-nums">
+      <p className="mt-3 text-[1.65rem] font-semibold leading-none tabular-nums">
         {typeof value === "number" ? numberFormatter.format(value) : value}
       </p>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">{detail}</p>
@@ -217,7 +217,7 @@ function RailSection({
           {badge}
         </Badge>
         <div className="mt-3 space-y-1">
-          <h2 className="text-[1.08rem] font-semibold tracking-[-0.03em]">
+          <h2 className="text-[1.08rem] font-semibold">
             {title}
           </h2>
           <p className="text-sm leading-6 text-muted-foreground">
@@ -309,7 +309,7 @@ export default async function DashboardPage() {
                 {status.label}
               </Badge>
               <div className="space-y-2">
-                <h2 className="text-[2rem] font-semibold leading-[0.98] tracking-[-0.055em] text-balance">
+                <h2 className="text-[2rem] font-semibold text-balance">
                   {status.title}
                 </h2>
                 <p className="max-w-[58ch] text-sm leading-6 text-muted-foreground text-pretty">
@@ -330,10 +330,10 @@ export default async function DashboardPage() {
             </div>
 
             <aside className="border border-border/80 bg-background px-4 py-4">
-              <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              <p className="text-[0.68rem] font-semibold uppercase text-muted-foreground">
                 Activity window
               </p>
-              <p className="mt-2 text-[1.65rem] font-semibold leading-none tracking-[-0.05em] tabular-nums">
+              <p className="mt-2 text-[1.65rem] font-semibold leading-none tabular-nums">
                 {numberFormatter.format(runActivityTotal)}
               </p>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -437,7 +437,7 @@ export default async function DashboardPage() {
             <Badge variant="secondary" className="w-fit">
               Activity
             </Badge>
-            <h2 className="text-[1.12rem] font-semibold tracking-[-0.03em]">
+            <h2 className="text-[1.12rem] font-semibold">
               Runs over time
             </h2>
             <p className="max-w-[52ch] text-sm leading-6 text-muted-foreground">
@@ -446,7 +446,7 @@ export default async function DashboardPage() {
             </p>
           </div>
           <div className="border border-border/80 bg-background px-3 py-2 text-right">
-            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            <p className="text-[0.68rem] font-semibold uppercase text-muted-foreground">
               Window range
             </p>
             <p className="mt-1 text-sm font-semibold">{windowRange}</p>

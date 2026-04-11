@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 export default function NotFound() {
   return (
     <div className="surface-panel mx-auto mt-10 max-w-2xl space-y-3 p-8 text-center">
-      <p className="text-sm tracking-[0.08em] text-muted-foreground">404</p>
-      <h1 className="text-3xl font-semibold tracking-[-0.03em]" style={{ fontFamily: "var(--font-display)" }}>
+      <p className="text-sm text-muted-foreground">404</p>
+      <h1 className="font-display text-3xl font-semibold">
         Page not found
       </h1>
       <p className="mx-auto max-w-[55ch] text-sm text-muted-foreground">

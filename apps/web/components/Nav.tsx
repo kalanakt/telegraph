@@ -47,7 +47,6 @@ export async function Nav() {
       <div className="flex items-center justify-between gap-3 rounded-sm border border-border/70 bg-background/80 p-2">
         <span className="text-xs font-medium text-muted-foreground">Account</span>
         <UserButton
-          afterSignOutUrl="/"
           appearance={clerkUserButtonAppearance}
           userProfileMode="navigation"
           userProfileUrl="/account"
@@ -86,7 +85,7 @@ export async function Nav() {
               </span>
             </Link>
 
-            <div className="-mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="-mx-1 flex items-center gap-1.5 overflow-x-auto px-1 py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <NavLinks
                 signedInNavItems={signedInNavItems}
                 signedOutNavItems={signedOutNavItems}
@@ -109,7 +108,6 @@ export async function Nav() {
                 </div>
                 <div className="flex items-center justify-center bg-background/80 p-1 backdrop-blur-sm">
                   <UserButton
-                    afterSignOutUrl="/"
                     appearance={clerkUserButtonAppearance}
                     userProfileMode="navigation"
                     userProfileUrl="/account"
@@ -118,7 +116,12 @@ export async function Nav() {
               </>
             ) : (
               <>
-                <Button asChild type="button" variant="ghost" className="w-full sm:w-auto">
+                <Button
+                  asChild
+                  type="button"
+                  variant="ghost"
+                  className="w-full sm:w-auto"
+                >
                   <Link href="/sign-in">Sign in</Link>
                 </Button>
                 <Button asChild type="button" className="w-full sm:w-auto">

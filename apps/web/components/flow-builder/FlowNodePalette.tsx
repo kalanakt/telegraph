@@ -65,7 +65,7 @@ function PaletteBody({
         <div className="space-y-4">
           {filtered.map((section) => (
             <section key={section.id} className="space-y-2">
-              <h3 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              <h3 className="text-[10px] font-semibold uppercase text-muted-foreground">
                 {section.title}
               </h3>
               <div className="space-y-2">
@@ -85,7 +85,7 @@ function PaletteBody({
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center justify-between gap-2">
                           <span className="text-sm font-semibold text-foreground">{item.title}</span>
-                          <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                          <span className="text-[10px] uppercase text-muted-foreground">
                             {item.group}
                           </span>
                         </span>

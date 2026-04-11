@@ -158,7 +158,7 @@ export function MediaLibraryBrowser({
       <CardHeader className={compact ? "border-b border-border/60" : undefined}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-1">
-            <CardTitle className="font-(--font-display)">{heading}</CardTitle>
+            <CardTitle className="font-display">{heading}</CardTitle>
             <CardDescription>
               Reuse uploaded assets in message actions instead of pasting fresh URLs every time.
             </CardDescription>

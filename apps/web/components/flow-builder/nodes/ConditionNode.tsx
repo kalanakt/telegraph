@@ -94,7 +94,7 @@ export function ConditionNode({ data }: { data: ConditionEditorData & { __meta?:
           <Icon className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Condition</div>
+          <div className="text-[10px] uppercase text-muted-foreground">Condition</div>
           <div className="font-semibold leading-tight text-foreground">{label}</div>
           <div className="mt-0.5 text-[10px] text-foreground/80">{formatConditionLabel(type)}</div>
           <div className="mt-2 rounded-sm border border-border/80 bg-secondary/55 px-2 py-1.5 font-mono text-[10px] text-muted-foreground">

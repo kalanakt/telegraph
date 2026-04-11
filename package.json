@@ -36,11 +36,15 @@
       "ioredis": "^5.10.0"
     },
     "onlyBuiltDependencies": [
+      "@clerk/shared",
       "@prisma/client",
       "@prisma/engines",
-      "prisma",
       "esbuild",
+      "prisma",
       "sharp"
+    ],
+    "ignoredBuiltDependencies": [
+      "msw"
     ]
   }
 }

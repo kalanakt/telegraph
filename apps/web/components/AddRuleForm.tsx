@@ -193,7 +193,7 @@ function AddButtons({
 function StartNode({ data }: { data: NodeCallbacks }) {
   return (
     <div className="builder-node builder-node-start relative min-w-[180px] rounded-xl px-3 py-2.5 text-xs text-slate-900">
-      <div className="text-[10px] uppercase tracking-[0.08em] text-slate-500">
+      <div className="text-[10px] uppercase text-slate-500">
         Entry
       </div>
       <div className="font-semibold">Start</div>
@@ -221,7 +221,7 @@ function ConditionNode({
         position={Position.Left}
         className="!h-2.5 !w-2.5 !border-white !bg-amber-500"
       />
-      <div className="text-[10px] uppercase tracking-[0.08em] text-amber-700/80">
+      <div className="text-[10px] uppercase text-amber-700/80">
         Condition
       </div>
       <div className="font-semibold">{data.type}</div>
@@ -264,7 +264,7 @@ function ActionNode({ data }: { data: ActionEditorData & NodeCallbacks }) {
         position={Position.Left}
         className="!h-2.5 !w-2.5 !border-white !bg-sky-500"
       />
-      <div className="text-[10px] uppercase tracking-[0.08em] text-sky-700/80">
+      <div className="text-[10px] uppercase text-sky-700/80">
         Action
       </div>
       <div className="flex items-center justify-between gap-2">

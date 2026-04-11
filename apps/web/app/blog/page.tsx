@@ -78,7 +78,7 @@ export default async function BlogIndexPage({
     <div className="space-y-8 pb-4 pt-2">
       <section className="surface-panel p-4 md:p-6">
         <div className="mb-6 space-y-2">
-          <h1 className="page-title font-(--font-display)">
+          <h1 className="page-title font-[var(--font-display)]">
             Telegram bot automation blog
           </h1>
           <p className="page-subtitle">
@@ -134,14 +134,14 @@ export default async function BlogIndexPage({
 
       <section className="grid gap-4">
         {filteredPosts.length === 0 ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>No posts found</CardTitle>
-                <CardDescription>
-                  Try another keyword or remove the current filter.
-                </CardDescription>
-              </CardHeader>
-            </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>No posts found</CardTitle>
+              <CardDescription>
+                Try another keyword or remove the current filter.
+              </CardDescription>
+            </CardHeader>
+          </Card>
         ) : (
           filteredPosts.map((post) => (
             <Card key={post.slug} className="interactive-lift">
@@ -150,7 +150,7 @@ export default async function BlogIndexPage({
                   <span>{formatDate(post.publishedAt)}</span>
                   {post.author ? <span>By {post.author}</span> : null}
                 </div>
-                <CardTitle className="font-(--font-display) text-[1.4rem] tracking-[-0.02em]">
+                <CardTitle className="font-[var(--font-display)] text-[1.4rem] tracking-[-0.02em]">
                   <Link
                     className="focus-ring underline-offset-4"
                     href={getBlogBasePath(post.slug)}

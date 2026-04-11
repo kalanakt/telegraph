@@ -118,7 +118,7 @@ export default async function FlowsPage({
 
       <Card className="interactive-lift">
         <CardHeader>
-          <CardTitle className="font-(--font-display)">Active Flows</CardTitle>
+          <CardTitle className="font-display">Active Flows</CardTitle>
           <CardDescription>
             Recent saved flows for your connected bots.
           </CardDescription>

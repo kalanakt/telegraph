@@ -42,7 +42,7 @@ export default async function TemplatesPage() {
 
       <Card className="interactive-lift">
         <CardHeader>
-          <CardTitle className="font-(--font-display)">My Templates</CardTitle>
+          <CardTitle className="font-display">My Templates</CardTitle>
           <CardDescription>Draft and published templates owned by your account.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -93,7 +93,7 @@ export default async function TemplatesPage() {
 
       <Card className="interactive-lift">
         <CardHeader>
-          <CardTitle className="font-(--font-display)">Featured Built-Ins</CardTitle>
+          <CardTitle className="font-display">Featured Built-Ins</CardTitle>
           <CardDescription>Production-ready templates that install cleanly and only need copy edits or review.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -144,7 +144,7 @@ export default async function TemplatesPage() {
 
       <Card className="interactive-lift">
         <CardHeader>
-          <CardTitle className="font-(--font-display)">Advanced Built-Ins</CardTitle>
+          <CardTitle className="font-display">Advanced Built-Ins</CardTitle>
           <CardDescription>Niche or more opinionated starter templates that usually need deeper edits before going live.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -195,7 +195,7 @@ export default async function TemplatesPage() {
 
       <Card className="interactive-lift">
         <CardHeader>
-          <CardTitle className="font-(--font-display)">Community Templates</CardTitle>
+          <CardTitle className="font-display">Community Templates</CardTitle>
           <CardDescription>Published templates created by users in your workspace community.</CardDescription>
         </CardHeader>
         <CardContent>

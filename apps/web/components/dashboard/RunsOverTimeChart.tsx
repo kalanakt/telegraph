@@ -194,7 +194,7 @@ export function RunsOverTimeChart({
       {!hasData ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6 text-center">
           <div className="max-w-xs border border-border bg-background px-4 py-3">
-            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            <p className="text-[0.72rem] font-semibold uppercase text-muted-foreground">
               Waiting for activity
             </p>
             <p className="mt-2 text-sm text-muted-foreground">

@@ -15,7 +15,7 @@ export function PageHeading({
   return (
     <div className={cn("page-heading md:flex-row md:items-end md:justify-between", className)}>
       <div className="flex flex-col gap-2">
-        <h1 className="page-title font-(--font-display)">{title}</h1>
+        <h1 className="page-title font-display">{title}</h1>
         <p className="page-subtitle">{subtitle}</p>
       </div>
       {action ? (
