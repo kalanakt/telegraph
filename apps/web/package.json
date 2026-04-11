@@ -16,7 +16,7 @@
     "@hugeicons/react": "^1.1.6",
     "@mdx-js/react": "^3.1.1",
     "@next/mdx": "^16.2.3",
-    "@prisma/client": "^7.7.0",
+    "@prisma/client": "^6.19.2",
     "@radix-ui/react-slot": "^1.2.4",
     "@sentry/nextjs": "^10.48.0",
     "@telegram-builder/shared": "workspace:*",

@@ -12,13 +12,13 @@ importers:
   .:
     devDependencies:
       '@prisma/client':
-        specifier: ^7.7.0
-        version: 7.7.0(prisma@6.19.2(typescript@5.9.3))(typescript@5.9.3)
+        specifier: ^6.19.2
+        version: 6.19.3(prisma@6.19.2(typescript@5.9.3))(typescript@5.9.3)
       '@types/node':
         specifier: ^24.0.0
         version: 24.12.0
       prisma:
-        specifier: ^6.6.0
+        specifier: ^6.19.2
         version: 6.19.2(typescript@5.9.3)
       tsx:
         specifier: ^4.19.4
@@ -54,8 +54,8 @@ importers:
         specifier: ^16.2.3
         version: 16.2.3(@mdx-js/react@3.1.1(@types/react@19.2.14)(react@19.2.5))
       '@prisma/client':
-        specifier: ^7.7.0
-        version: 7.7.0(prisma@6.19.2(typescript@5.9.3))(typescript@5.9.3)
+        specifier: ^6.19.2
+        version: 6.19.3(prisma@6.19.2(typescript@5.9.3))(typescript@5.9.3)
       '@radix-ui/react-slot':
         specifier: ^1.2.4
         version: 1.2.4(@types/react@19.2.14)(react@19.2.5)
@@ -142,8 +142,8 @@ importers:
   apps/worker:
     dependencies:
       '@prisma/client':
-        specifier: ^7.7.0
-        version: 7.7.0(prisma@6.19.2(typescript@5.9.3))(typescript@5.9.3)
+        specifier: ^6.19.2
+        version: 6.19.3(prisma@6.19.2(typescript@5.9.3))(typescript@5.9.3)
       '@sentry/node':
         specifier: ^10.48.0
         version: 10.48.0
@@ -1261,15 +1261,12 @@ packages:
     peerDependencies:
       '@opentelemetry/api': ^1.1.0
 
-  '@prisma/client-runtime-utils@7.7.0':
-    resolution: {integrity: sha512-BLyd0UpFYOtyJFTHm7jS9vesHW7P83abibodQMiIofqjBKzDHQ1VAsQkdfvXyYDkPlONPfOTz7/rv3x/+CQqvQ==}
-
-  '@prisma/client@7.7.0':
-    resolution: {integrity: sha512-5Ar4OsZpJ54s21sy5oDNNW9gQtd4NuxCaiM7+JDTOU07D6VvlpLjYzAVCMB1+JzokN+08dAVomlx+b7bhJd3ww==}
-    engines: {node: ^20.19 || ^22.12 || >=24.0}
+  '@prisma/client@6.19.3':
+    resolution: {integrity: sha512-mKq3jQFhjvko5LTJFHGilsuQs+W+T3Gm451NzuTDGQxwCzwXHYnIu2zGkRoW+Exq3Rob7yp2MfzSrdIiZVhrBg==}
+    engines: {node: '>=18.18'}
     peerDependencies:
       prisma: '*'
-      typescript: '>=5.4.0'
+      typescript: '>=5.1.0'
     peerDependenciesMeta:
       prisma:
         optional: true
@@ -6725,11 +6722,7 @@ snapshots:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 2.6.1(@opentelemetry/api@1.9.1)
 
-  '@prisma/client-runtime-utils@7.7.0': {}
-
-  '@prisma/client@7.7.0(prisma@6.19.2(typescript@5.9.3))(typescript@5.9.3)':
-    dependencies:
-      '@prisma/client-runtime-utils': 7.7.0
+  '@prisma/client@6.19.3(prisma@6.19.2(typescript@5.9.3))(typescript@5.9.3)':
     optionalDependencies:
       prisma: 6.19.2(typescript@5.9.3)
       typescript: 5.9.3
