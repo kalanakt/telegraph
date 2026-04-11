@@ -757,13 +757,8 @@ export function getTelegramExecutionPolicy(actionType: TelegramActionType): Tele
 }
 
 function extractObjectShape(schema: z.ZodTypeAny): Record<string, z.ZodTypeAny> {
-  let current: z.ZodTypeAny = schema;
-  while (current instanceof z.ZodEffects) {
-    current = current.innerType();
-  }
-
-  if (current instanceof z.ZodObject) {
-    return current.shape;
+  if (schema instanceof z.ZodObject) {
+    return schema.shape;
   }
 
   return {};

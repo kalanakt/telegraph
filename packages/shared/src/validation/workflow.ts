@@ -145,7 +145,10 @@ export const actionSchema: z.ZodType<ActionPayload> = z
       const parsed = webhookSendSchema.safeParse(input);
       if (!parsed.success) {
         for (const issue of parsed.error.issues) {
-          ctx.addIssue(issue);
+          ctx.addIssue({
+            ...issue,
+            path: issue.path
+          });
         }
       }
       return;
@@ -155,7 +158,10 @@ export const actionSchema: z.ZodType<ActionPayload> = z
       const parsed = httpRequestSchema.safeParse(input);
       if (!parsed.success) {
         for (const issue of parsed.error.issues) {
-          ctx.addIssue(issue);
+          ctx.addIssue({
+            ...issue,
+            path: issue.path
+          });
         }
       }
       return;
