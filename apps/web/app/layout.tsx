@@ -107,6 +107,7 @@ export default async function RootLayout({
               <Link
                 className="focus-ring"
                 href="https://github.com/kalanakt/telegraph"
+                target="_blank"
               >
                 GitHub
               </Link>
