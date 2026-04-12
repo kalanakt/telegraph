@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { PageHeading } from "@/components/PageHeading";
 import { PricingPanels } from "@/components/billing/BillingPanels";
 import { getAuthUserId } from "@/lib/clerk-auth";
 import { toAbsoluteUrl } from "@/lib/site-url";
@@ -26,13 +25,11 @@ export default async function PricingPage() {
   const user = authUserId ? await requireAppUser() : null;
 
   return (
-    <div className="space-y-6">
-      <PageHeading
-        title="Pricing"
-        subtitle="Choose the plan that fits your bots, workflow volume, and team operations."
+    <div>
+      <PricingPanels
+        isSignedIn={Boolean(user)}
+        subscription={user?.subscription}
       />
-
-      <PricingPanels isSignedIn={Boolean(user)} subscription={user?.subscription} />
     </div>
   );
 }
