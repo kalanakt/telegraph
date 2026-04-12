@@ -228,12 +228,12 @@ export default async function HomePage() {
 
       <div className="flex flex-col gap-12 pb-16 pt-2 md:gap-20 md:pt-4">
         <section className="surface-panel overflow-hidden p-0">
-          <div className="landing-grid-surface relative isolate flex border border-border/0 md:min-h-[620px]">
+          <div className="landing-grid-surface relative isolate flex border border-border/0 md:min-h-155">
             <div className="absolute inset-0 hidden md:block">
               <LandingFlowPreviewClient />
             </div>
 
-            <div className="relative z-10 flex min-h-[420px] w-full flex-1 items-center px-4 py-8 sm:px-6 sm:py-10 md:min-h-[620px] md:items-end md:px-10 md:py-10">
+            <div className="relative z-10 flex min-h-105 w-full flex-1 items-center px-4 py-8 sm:px-6 sm:py-10 md:min-h-155 md:items-end md:px-10 md:py-10">
               <div className="flex w-full max-w-md flex-col gap-4 sm:max-w-2xl md:max-w-6xl md:flex-1 md:gap-5">
                 <Badge
                   variant="secondary"

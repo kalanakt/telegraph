@@ -132,9 +132,7 @@ function OverviewMetric({
         <span className="flex size-9 items-center justify-center border border-primary/20 bg-primary/10 text-primary">
           <Icon className="size-4" />
         </span>
-        <p className="text-[0.7rem] font-semibold uppercase">
-          {label}
-        </p>
+        <p className="text-[0.7rem] font-semibold uppercase">{label}</p>
       </div>
       <p className="mt-3 text-[2rem] font-semibold leading-none tabular-nums">
         {typeof value === "number" ? numberFormatter.format(value) : value}
@@ -161,9 +159,7 @@ function ActivityStat({
     <div className="bg-background p-4">
       <div className="flex items-center gap-2 text-muted-foreground">
         <Icon className="size-4" />
-        <p className="text-[0.7rem] font-semibold uppercase">
-          {label}
-        </p>
+        <p className="text-[0.7rem] font-semibold uppercase">{label}</p>
       </div>
       <p className="mt-3 text-[1.65rem] font-semibold leading-none tabular-nums">
         {typeof value === "number" ? numberFormatter.format(value) : value}
@@ -217,9 +213,7 @@ function RailSection({
           {badge}
         </Badge>
         <div className="mt-3 space-y-1">
-          <h2 className="text-[1.08rem] font-semibold">
-            {title}
-          </h2>
+          <h2 className="text-[1.08rem] font-semibold">{title}</h2>
           <p className="text-sm leading-6 text-muted-foreground">
             {description}
           </p>
@@ -437,9 +431,7 @@ export default async function DashboardPage() {
             <Badge variant="secondary" className="w-fit">
               Activity
             </Badge>
-            <h2 className="text-[1.12rem] font-semibold">
-              Runs over time
-            </h2>
+            <h2 className="text-[1.12rem] font-semibold">Runs over time</h2>
             <p className="max-w-[52ch] text-sm leading-6 text-muted-foreground">
               Daily workflow executions across the current{" "}
               {RUN_ACTIVITY_WINDOW_DAYS}-day window.

@@ -5,7 +5,10 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Oxanium, Source_Code_Pro } from "next/font/google";
 import { AnalyticsConsentBanner } from "@/components/analytics/AnalyticsConsentBanner";
 import { Nav } from "@/components/Nav";
-import { getContentsquareScriptUrl, isContentsquareEnabled } from "@/lib/analytics";
+import {
+  getContentsquareScriptUrl,
+  isContentsquareEnabled,
+} from "@/lib/analytics";
 import { getServerAnalyticsConsent } from "@/lib/analytics.server";
 import { clerkAppearance } from "@/lib/clerk-appearance";
 import { cn } from "@/lib/utils";
@@ -67,7 +70,10 @@ export default async function RootLayout({
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
   const analyticsConsent = await getServerAnalyticsConsent();
   const contentsquareEnabled = isContentsquareEnabled();
-  const contentsquareScriptUrl = contentsquareEnabled && analyticsConsent === "granted" ? getContentsquareScriptUrl() : null;
+  const contentsquareScriptUrl =
+    contentsquareEnabled && analyticsConsent === "granted"
+      ? getContentsquareScriptUrl()
+      : null;
   const analyticsBanner =
     contentsquareEnabled && analyticsConsent === "unknown" ? (
       <AnalyticsConsentBanner />
@@ -98,6 +104,12 @@ export default async function RootLayout({
               <Link className="focus-ring" href="/cookies">
                 Cookie policy
               </Link>
+              <Link
+                className="focus-ring"
+                href="https://github.com/kalanakt/telegraph"
+              >
+                GitHub
+              </Link>
             </div>
           </div>
         </footer>
@@ -109,14 +121,24 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("font-sans", geist.variable, oxanium.variable, sourceCodePro.variable)}
+      className={cn(
+        "font-sans",
+        geist.variable,
+        oxanium.variable,
+        sourceCodePro.variable,
+      )}
     >
       <head>
-        {contentsquareScriptUrl ? <Script src={contentsquareScriptUrl} strategy="afterInteractive" /> : null}
+        {contentsquareScriptUrl ? (
+          <Script src={contentsquareScriptUrl} strategy="afterInteractive" />
+        ) : null}
       </head>
       <body>
         {publishableKey ? (
-          <ClerkProvider appearance={clerkAppearance} publishableKey={publishableKey}>
+          <ClerkProvider
+            appearance={clerkAppearance}
+            publishableKey={publishableKey}
+          >
             {appShell}
           </ClerkProvider>
         ) : (
