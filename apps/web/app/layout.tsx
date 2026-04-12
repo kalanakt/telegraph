@@ -104,13 +104,6 @@ export default async function RootLayout({
               <Link className="focus-ring" href="/cookies">
                 Cookie policy
               </Link>
-              <Link
-                className="focus-ring"
-                href="https://github.com/kalanakt/telegraph"
-                target="_blank"
-              >
-                GitHub
-              </Link>
             </div>
           </div>
         </footer>
