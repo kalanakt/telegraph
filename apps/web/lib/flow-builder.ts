@@ -450,6 +450,14 @@ export function createActionTemplate(actionType: ActionPayload["type"]): ActionT
           ok: true
         }
       };
+    case "telegram.sendChatAction":
+      return {
+        type: actionType,
+        params: {
+          chat_id: "{{event.chatId}}",
+          action: "typing"
+        }
+      };
     case "telegram.approveChatJoinRequest":
     case "telegram.declineChatJoinRequest":
     case "telegram.banChatMember":

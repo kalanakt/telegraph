@@ -98,6 +98,67 @@ describe("worker processor", () => {
     expect(runUpdates).toEqual([{ runId: "run_1", status: "succeeded" }]);
   });
 
+  it("keeps bot token when an internal step enqueues a downstream telegram action", async () => {
+    const enqueued: ActionJob[] = [];
+
+    const deps = createDeps({
+      async countActionRunsByStatus(_runId, status) {
+        return status === "pending" ? 1 : 0;
+      },
+      async enqueueAction(job) {
+        enqueued.push(job);
+      }
+    });
+
+    await processActionJob(
+      deps,
+      {
+        ...makeJob(),
+        actionNodeId: "delay_1",
+        actionRunId: "action_run_delay",
+        actionType: "workflow.delay",
+        botToken: "token",
+        executionPolicy: {
+          retryClass: "permanent",
+          timeoutMs: 2000,
+          idempotencyKeyStrategy: "action_run",
+          rateLimitBucket: "workflow.internal"
+        },
+        idempotencyKey: "1:action_run_delay:workflow.delay",
+        action: { type: "workflow.delay", params: { delay_ms: 1500 } },
+        flowDefinition: {
+          nodes: [
+            { id: "start_1", type: "start", position: { x: 0, y: 0 }, data: {} },
+            {
+              id: "delay_1",
+              type: "delay",
+              position: { x: 200, y: 0 },
+              data: { delay_ms: 1500 }
+            },
+            {
+              id: "action_2",
+              type: "action",
+              position: { x: 400, y: 0 },
+              data: { type: "telegram.sendMessage", params: { chat_id: "42", text: "after delay" } }
+            }
+          ],
+          edges: [
+            { id: "e1", source: "start_1", target: "delay_1" },
+            { id: "e2", source: "delay_1", target: "action_2" }
+          ]
+        }
+      },
+      1
+    );
+
+    expect(enqueued).toHaveLength(1);
+    expect(enqueued[0]).toMatchObject({
+      actionNodeId: "action_2",
+      actionType: "telegram.sendMessage",
+      botToken: "token"
+    });
+  });
+
   it("updates failure + dead-letter on exhausted retries", async () => {
     const actionRunUpdates: unknown[] = [];
     const runUpdates: unknown[] = [];

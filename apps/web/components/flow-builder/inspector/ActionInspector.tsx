@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState, type ChangeEvent } from "react";
 import { AlertTriangle, FolderOpen, LoaderCircle, Upload, X } from "lucide-react";
-import { isActionAllowedForTrigger, type ActionPayload, type TriggerType } from "@telegram-builder/shared";
+import { TELEGRAM_CHAT_ACTIONS, isActionAllowedForTrigger, type ActionPayload, type TriggerType } from "@telegram-builder/shared";
 import { MediaLibraryBrowser } from "@/components/media/MediaLibraryBrowser";
 import { Input } from "@/components/ui/input";
 import {
@@ -849,7 +849,7 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {["typing","upload_photo","record_video","upload_video","record_voice","upload_voice","upload_document","choose_sticker","find_location"].map((item) => (
+                {TELEGRAM_CHAT_ACTIONS.map((item) => (
                   <SelectItem key={item} value={item}>{item}</SelectItem>
                 ))}
               </SelectContent>

@@ -141,6 +141,19 @@ describe("flow-builder composer payloads", () => {
     expect(actionSchema.safeParse(createActionTemplate("telegram.approveChatJoinRequest")).success).toBe(true);
     expect(actionSchema.safeParse(createActionTemplate("telegram.declineChatJoinRequest")).success).toBe(true);
   });
+
+  it("builds a valid default template for chat actions", () => {
+    const payload = createActionTemplate("telegram.sendChatAction");
+
+    expect(payload).toEqual({
+      type: "telegram.sendChatAction",
+      params: {
+        chat_id: "{{event.chatId}}",
+        action: "typing"
+      }
+    });
+    expect(actionSchema.safeParse(payload).success).toBe(true);
+  });
 });
 
 describe("flow-builder legacy flow coercion", () => {

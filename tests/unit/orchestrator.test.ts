@@ -58,6 +58,30 @@ function flowThatRepliesIfEqualsBye() {
   };
 }
 
+function flowThatDelaysThenReplies() {
+  return {
+    nodes: [
+      { id: "start_1", type: "start", position: { x: 0, y: 0 }, data: {} },
+      {
+        id: "delay_1",
+        type: "delay",
+        position: { x: 200, y: 0 },
+        data: { delay_ms: 1500 }
+      },
+      {
+        id: "action_1",
+        type: "action",
+        position: { x: 400, y: 0 },
+        data: { type: "telegram.sendMessage", params: { chat_id: "333", text: "After delay" } }
+      }
+    ],
+    edges: [
+      { id: "e1", source: "start_1", target: "delay_1" },
+      { id: "e2", source: "delay_1", target: "action_1" }
+    ]
+  };
+}
+
 function makeUpdate(text = "hello") {
   return {
     update_id: 10,
@@ -344,6 +368,69 @@ describe("AutomationOrchestrator", () => {
     expect(result.runIds).toEqual(["run_for_rule_match"]);
     expect(result.queuedActions).toBe(1);
     expect(enqueued).toHaveLength(1);
+    expect(enqueued[0].botToken).toBe("decrypted-token");
+  });
+
+  it("preserves bot token on internal steps when downstream telegram actions exist", async () => {
+    const enqueued: ActionJob[] = [];
+
+    const orchestrator = createAutomationOrchestrator({
+      botRepository: {
+        async findBotContext() {
+          return makeActiveBotContext();
+        }
+      },
+      botUserRepository: createNoopBotUserRepository(),
+      eventRepository: {
+        async createIncomingEvent() {
+          return { status: "created", eventId: "evt_1" };
+        }
+      },
+      ruleRepository: {
+        async listActiveRules() {
+          return [
+            {
+              ruleId: "rule_delay",
+              botId: "bot_1",
+              trigger: "message_received",
+              flowDefinition: flowThatDelaysThenReplies()
+            }
+          ];
+        }
+      },
+      runRepository: {
+        async createRunWithActions(input) {
+          return {
+            runId: `run_for_${input.rule.ruleId}`,
+            actionRuns: input.actions.map((action) => ({
+              actionRunId: `action_run_${action.actionId}`,
+              action: action.payload
+            }))
+          };
+        }
+      },
+      actionQueue: {
+        async enqueueAction(job) {
+          enqueued.push(job);
+        }
+      },
+      entitlementPolicy: {
+        async isMonthlyExecutionExceeded() {
+          return false;
+        }
+      },
+      decryptToken: () => "decrypted-token"
+    });
+
+    const result = await orchestrator.handleIncomingUpdate({
+      botId: "bot_1",
+      telegramUpdate: makeUpdate("hello there"),
+      receivedAt: new Date()
+    });
+
+    expect(result.reason).toBe("processed");
+    expect(enqueued).toHaveLength(1);
+    expect(enqueued[0].actionType).toBe("workflow.delay");
     expect(enqueued[0].botToken).toBe("decrypted-token");
   });
 

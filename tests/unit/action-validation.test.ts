@@ -70,4 +70,27 @@ describe("actionSchema v2", () => {
       }).success
     ).toBe(true);
   });
+
+  it("accepts the full sendChatAction set used by the builder", () => {
+    expect(
+      actionSchema.safeParse({
+        type: "telegram.sendChatAction",
+        params: { chat_id: "{{event.chatId}}", action: "typing" }
+      }).success
+    ).toBe(true);
+
+    expect(
+      actionSchema.safeParse({
+        type: "telegram.sendChatAction",
+        params: { chat_id: "{{event.chatId}}", action: "record_video_note" }
+      }).success
+    ).toBe(true);
+
+    expect(
+      actionSchema.safeParse({
+        type: "telegram.sendChatAction",
+        params: { chat_id: "{{event.chatId}}", action: "upload_video_note" }
+      }).success
+    ).toBe(true);
+  });
 });

@@ -476,7 +476,7 @@ export async function processActionJob(
       actionType: nextAction.payload.type,
       action: nextAction.payload,
       executionPolicy: getExecutionPolicy(nextAction.payload.type),
-      botToken: nextAction.payload.type.startsWith("telegram.") ? job.botToken : null,
+      botToken: job.botToken ?? null,
       idempotencyKey: `${job.event.eventId}:${nextRun.actionRunId}:${nextAction.payload.type}`,
       queueDelayMs: nextAction.payload.type === "workflow.delay" ? nextAction.payload.params.delay_ms : undefined,
       context: {

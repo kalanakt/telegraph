@@ -1,6 +1,6 @@
 import { getExecutionPolicy } from "../domain/actions.js";
 import { buildIdempotencyKey } from "../domain/idempotency.js";
-import { deriveActionsFromFlow } from "../domain/flow.js";
+import { deriveActionsFromFlow, listFlowActions } from "../domain/flow.js";
 import { logWarn } from "../logging.js";
 import { normalizeTelegramUpdate } from "./normalize.js";
 import { extractTelegramActor } from "./actors.js";
@@ -88,6 +88,11 @@ async function processRules(
       continue;
     }
 
+    const flowNeedsBotToken = listFlowActions(rule.flowDefinition).some((flowAction) => flowAction.payload.type.startsWith("telegram."));
+    if (flowNeedsBotToken && !botToken) {
+      botToken = deps.decryptToken(bot.encryptedToken);
+    }
+
     const run = await deps.runRepository.createRunWithActions({
       userId: bot.userId,
       botId: bot.botId,
@@ -101,17 +106,12 @@ async function processRules(
     runIds.push(run.runId);
 
     for (const actionRun of run.actionRuns) {
-      const needsBotToken = actionRun.action.type.startsWith("telegram.");
-      if (needsBotToken && !botToken) {
-        botToken = deps.decryptToken(bot.encryptedToken);
-      }
-
       await deps.actionQueue.enqueueAction({
         runId: run.runId,
         ruleId: rule.ruleId,
         actionNodeId: actionRun.actionId,
         actionRunId: actionRun.actionRunId,
-        botToken: needsBotToken ? botToken : null,
+        botToken: flowNeedsBotToken ? botToken : null,
         actionType: actionRun.action.type,
         executionPolicy: getExecutionPolicy(actionRun.action.type),
         idempotencyKey: `${event.eventId}:${actionRun.actionRunId}:${actionRun.action.type}`,

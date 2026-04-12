@@ -1,6 +1,19 @@
 import { z } from "zod";
 
 export const telegramParseModeSchema = z.enum(["Markdown", "MarkdownV2", "HTML"]);
+export const TELEGRAM_CHAT_ACTIONS = [
+  "typing",
+  "upload_photo",
+  "record_video",
+  "upload_video",
+  "record_voice",
+  "upload_voice",
+  "upload_document",
+  "choose_sticker",
+  "find_location",
+  "record_video_note",
+  "upload_video_note"
+] as const;
 
 const messageEntityTypeSchema = z.enum([
   "mention",
@@ -349,7 +362,7 @@ const sendMediaGroupSchema = z
 const sendChatActionSchema = z
   .object({
     chat_id: chatIdSchema,
-    action: z.enum(["typing", "upload_photo", "record_video", "upload_video", "record_voice", "upload_voice", "upload_document", "choose_sticker", "find_location", "record_video_note", "upload_video_note"]),
+    action: z.enum(TELEGRAM_CHAT_ACTIONS),
     message_thread_id: z.number().int().positive().optional()
   })
   .strict();
