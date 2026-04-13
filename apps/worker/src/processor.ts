@@ -154,18 +154,94 @@ function classifyThrown(error: unknown): ActionExecutionError {
   return { message: "Unknown worker error", classification: "transient" };
 }
 
-function renderTemplate(value: string, job: ActionJob, context: WorkflowContext): string {
-  return value.replace(/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g, (_full, path) => {
-    if (path.startsWith("event.")) {
-      return toTemplateString(getPathValue(job.event, path.replace(/^event\./, "")));
+function resolveNowTemplate(path: string, createdAt: Date): JsonValue | undefined {
+  if (path === "now") {
+    return createdAt.toISOString();
+  }
+
+  const parts = path.split(".");
+  if (parts[0] !== "now") {
+    return undefined;
+  }
+
+  let current = new Date(createdAt);
+  let index = 1;
+
+  while (index < parts.length) {
+    const part = parts[index];
+    if (!part) {
+      return undefined;
     }
 
-    return toTemplateString(getContextScopeValue(context, path));
-  });
+    if (part === "iso") {
+      return current.toISOString();
+    }
+
+    if (part === "unix") {
+      return Math.floor(current.getTime() / 1000);
+    }
+
+    if (!part.startsWith("plus_")) {
+      return undefined;
+    }
+
+    const unit = part.replace(/^plus_/, "");
+    const amountRaw = parts[index + 1];
+    const amount = amountRaw ? Number(amountRaw) : NaN;
+    if (!Number.isFinite(amount)) {
+      return undefined;
+    }
+
+    const unitMs =
+      unit === "days"
+        ? 24 * 60 * 60 * 1000
+        : unit === "hours"
+        ? 60 * 60 * 1000
+        : unit === "minutes"
+        ? 60 * 1000
+        : unit === "seconds"
+        ? 1000
+        : unit === "ms"
+        ? 1
+        : null;
+    if (unitMs === null) {
+      return undefined;
+    }
+
+    current = new Date(current.getTime() + amount * unitMs);
+    index += 2;
+  }
+
+  return current.toISOString();
+}
+
+function resolveTemplateValue(path: string, job: ActionJob, context: WorkflowContext): JsonValue | undefined {
+  if (path.startsWith("event.")) {
+    const value = getPathValue(job.event, path.replace(/^event\./, ""));
+    return typeof value === "undefined" ? undefined : asJsonValue(value);
+  }
+
+  if (path === "now" || path.startsWith("now.")) {
+    return resolveNowTemplate(path, new Date(job.context.createdAt));
+  }
+
+  const value = getContextScopeValue(context, path);
+  return typeof value === "undefined" ? undefined : asJsonValue(value);
+}
+
+function renderTemplate(value: string, job: ActionJob, context: WorkflowContext): string {
+  return value.replace(/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g, (_full, path) => toTemplateString(resolveTemplateValue(path, job, context)));
 }
 
 function renderTemplatesDeep(value: unknown, job: ActionJob, context: WorkflowContext): unknown {
   if (typeof value === "string") {
+    const directToken = value.match(/^\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}$/);
+    if (directToken?.[1]) {
+      const resolved = resolveTemplateValue(directToken[1], job, context);
+      if (typeof resolved !== "undefined") {
+        return resolved;
+      }
+    }
     return renderTemplate(value, job, context);
   }
 
@@ -662,11 +738,18 @@ export async function processActionJob(
       typeof result.body === "object" && result.body !== null
         ? (result.body as Record<string, JsonValue>)
         : {};
+    const attributes =
+      "attributes" in orderPatch
+        ? orderPatch.attributes
+        : "data" in orderPatch
+        ? orderPatch.data
+        : undefined;
     mergedContext = {
       ...mergedContext,
       order: {
         ...mergedContext.order,
-        ...(orderPatch as WorkflowContext["order"])
+        ...(orderPatch as WorkflowContext["order"]),
+        ...(typeof attributes !== "undefined" ? { attributes: asJsonValue(attributes) as WorkflowContext["order"]["attributes"] } : {})
       }
     };
   }

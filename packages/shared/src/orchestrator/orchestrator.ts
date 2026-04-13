@@ -7,6 +7,7 @@ import { normalizeTelegramUpdate } from "./normalize.js";
 import { extractTelegramActor } from "./actors.js";
 import type {
   AutomationOrchestrator,
+  HandleIncomingEventInput,
   HandleIncomingUpdateInput,
   HandleIncomingWebhookInput,
   OrchestratorDeps,
@@ -313,6 +314,12 @@ export function createAutomationOrchestrator(deps: OrchestratorDeps): Automation
       const captureActor = bot?.captureUsersEnabled ? extractTelegramActor(input.telegramUpdate) : null;
       const rules = bot ? await deps.ruleRepository.listActiveRules(bot.botId, event.trigger) : [];
       return processRules(deps, bot, event, input.receivedAt, rules, captureActor);
+    },
+
+    async handleIncomingEvent(input: HandleIncomingEventInput): Promise<OrchestrationResult> {
+      const bot = await deps.botRepository.findBotContext(input.botId);
+      const rules = bot ? await deps.ruleRepository.listActiveRules(bot.botId, input.event.trigger) : [];
+      return processRules(deps, bot, input.event, input.receivedAt, rules);
     },
 
     async handleIncomingWebhook(input: HandleIncomingWebhookInput): Promise<OrchestrationResult> {

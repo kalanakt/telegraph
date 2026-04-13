@@ -1,7 +1,9 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
+import type { NormalizedEvent } from "@telegram-builder/shared";
 import { decrypt } from "@telegram-builder/shared";
 import { Prisma } from "@prisma/client";
+import { getAutomationOrchestrator } from "@/lib/orchestrator/service";
 import { prisma } from "@/lib/prisma";
 
 function matchesSecret(expected: string, actual: string) {
@@ -116,13 +118,29 @@ export async function POST(req: Request, context: { params: Promise<{ botId: str
     },
     select: {
       id: true,
-      attributes: true
+      attributes: true,
+      session: {
+        select: {
+          id: true,
+          chatId: true
+        }
+      },
+      customerProfile: {
+        select: {
+          id: true,
+          telegramUserId: true,
+          chatId: true,
+          username: true
+        }
+      }
     }
   });
 
+  const orchestrator = getAutomationOrchestrator();
+
   await Promise.all(
-    orders.map((order) =>
-      prisma.commerceOrder.update({
+    orders.map(async (order, index) => {
+      await prisma.commerceOrder.update({
         where: { id: order.id },
         data: {
           status: "paid",
@@ -137,8 +155,35 @@ export async function POST(req: Request, context: { params: Promise<{ botId: str
             cryptoPayInvoice: invoice
           })
         }
-      })
-    )
+      });
+
+      const chatId = order.customerProfile?.chatId ?? order.session?.chatId ?? undefined;
+      const fromUserId = order.customerProfile?.telegramUserId ? Number(order.customerProfile.telegramUserId) : undefined;
+      const event: NormalizedEvent = {
+        source: "cryptopay",
+        trigger: "cryptopay.invoice_paid",
+        eventId: `cryptopay:${invoice.invoice_id ?? invoice.hash ?? invoicePayload}:${order.id}`,
+        updateId: invoice.invoice_id ?? index,
+        chatId,
+        fromUserId,
+        fromUsername: order.customerProfile?.username ?? undefined,
+        messageSource: "user",
+        text: "",
+        invoicePayload,
+        cryptoPayInvoiceId: invoice.invoice_id ?? undefined,
+        cryptoPayInvoiceHash: invoice.hash ?? undefined,
+        cryptoPayStatus: invoice.status ?? "paid",
+        cryptoPayPaidAmount: invoice.paid_amount ?? undefined,
+        cryptoPayPaidAsset: invoice.paid_asset ?? undefined,
+        variables: {}
+      };
+
+      await orchestrator.handleIncomingEvent({
+        botId,
+        event,
+        receivedAt: invoice.paid_at ? new Date(invoice.paid_at) : new Date()
+      });
+    })
   );
 
   return NextResponse.json({ ok: true });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TELEGRAM_TRIGGER_TYPES, actionSchema, flowDefinitionSchema } from "@telegram-builder/shared";
+import { TELEGRAM_TRIGGER_TYPES, WORKFLOW_TRIGGER_TYPES, actionSchema, flowDefinitionSchema } from "@telegram-builder/shared";
 import {
   coerceFlowDefinition,
   createActionTemplate,
@@ -22,7 +22,7 @@ describe("flow-builder trigger groups", () => {
     const grouped = getTriggerGroups();
     const fromGroups = new Set(grouped.flatMap((group) => group.triggers));
 
-    for (const trigger of TELEGRAM_TRIGGER_TYPES) {
+    for (const trigger of WORKFLOW_TRIGGER_TYPES) {
       expect(fromGroups.has(trigger)).toBe(true);
     }
   });
@@ -140,6 +140,7 @@ describe("flow-builder composer payloads", () => {
     expect(actionSchema.safeParse(createActionTemplate("telegram.answerPreCheckoutQuery")).success).toBe(true);
     expect(actionSchema.safeParse(createActionTemplate("telegram.approveChatJoinRequest")).success).toBe(true);
     expect(actionSchema.safeParse(createActionTemplate("telegram.declineChatJoinRequest")).success).toBe(true);
+    expect(actionSchema.safeParse(createActionTemplate("telegram.sendInvoice")).success).toBe(true);
     expect(actionSchema.safeParse(createActionTemplate("cryptopay.createInvoice")).success).toBe(true);
   });
 

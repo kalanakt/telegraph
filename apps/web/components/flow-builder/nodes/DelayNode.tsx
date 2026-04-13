@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import type { BuilderNodeMeta, BuilderRuntimeData, DelayEditorData } from "../types";
 
 function formatDelay(ms: number) {
+  if (ms % 86_400_000 === 0) return `${ms / 86_400_000}d`;
   if (ms % 3_600_000 === 0) return `${ms / 3_600_000}h`;
   if (ms % 60_000 === 0) return `${ms / 60_000}m`;
   if (ms % 1_000 === 0) return `${ms / 1_000}s`;

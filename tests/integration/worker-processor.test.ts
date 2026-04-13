@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { handleActionJobFailure, processActionJob, type WorkerProcessorDeps } from "../../apps/worker/src/processor";
 import { createEmptyWorkflowContext, type ActionJob } from "@telegram-builder/shared";
 
@@ -110,6 +110,73 @@ describe("worker processor", () => {
       { actionRunId: "action_run_1", status: "succeeded", attempt: 1, lastError: null }
     ]);
     expect(runUpdates).toEqual([{ runId: "run_1", status: "succeeded" }]);
+  });
+
+  it("executes telegram.sendInvoice jobs through the Telegram adapter", async () => {
+    const invokeTelegramMethod = vi.fn().mockResolvedValue({ ok: true });
+    const deps = createDeps({
+      invokeTelegramMethod
+    });
+
+    await processActionJob(
+      deps,
+      {
+        ...makeJob(),
+        actionNodeId: "invoice_1",
+        actionRunId: "action_run_invoice_1",
+        actionType: "telegram.sendInvoice",
+        executionPolicy: {
+          retryClass: "transient",
+          timeoutMs: 20_000,
+          idempotencyKeyStrategy: "event_and_action",
+          rateLimitBucket: "telegram.payments"
+        },
+        idempotencyKey: "1:action_run_invoice_1:telegram.sendInvoice",
+        action: {
+          type: "telegram.sendInvoice",
+          params: {
+            chat_id: "42",
+            title: "Premium",
+            description: "Unlock premium access",
+            payload: "premium:stars:monthly:42:1",
+            currency: "XTR",
+            prices: [{ label: "Premium access", amount: 1200 }]
+          }
+        },
+        flowDefinition: {
+          nodes: [
+            { id: "start_1", type: "start", position: { x: 0, y: 0 }, data: {} },
+            {
+              id: "invoice_1",
+              type: "action",
+              position: { x: 200, y: 0 },
+              data: {
+                type: "telegram.sendInvoice",
+                params: {
+                  chat_id: "42",
+                  title: "Premium",
+                  description: "Unlock premium access",
+                  payload: "premium:stars:monthly:42:1",
+                  currency: "XTR",
+                  prices: [{ label: "Premium access", amount: 1200 }]
+                }
+              }
+            }
+          ],
+          edges: [{ id: "e1", source: "start_1", target: "invoice_1" }]
+        }
+      },
+      1
+    );
+
+    expect(invokeTelegramMethod).toHaveBeenCalledWith("token", "sendInvoice", {
+      chat_id: "42",
+      title: "Premium",
+      description: "Unlock premium access",
+      payload: "premium:stars:monthly:42:1",
+      currency: "XTR",
+      prices: [{ label: "Premium access", amount: 1200 }]
+    });
   });
 
   it("keeps bot token when an internal step enqueues a downstream telegram action", async () => {

@@ -134,6 +134,37 @@ describe("flowDefinitionSchema", () => {
 
     expect(result.success).toBe(true);
   });
+
+  it("accepts delays up to 120 days and rejects anything longer", () => {
+    const valid = flowDefinitionSchema.safeParse({
+      nodes: [
+        { id: "start", type: "start", position: { x: 0, y: 0 }, data: {} },
+        {
+          id: "delay_120d",
+          type: "delay",
+          position: { x: 200, y: 0 },
+          data: { delay_ms: 120 * 24 * 60 * 60 * 1000 }
+        }
+      ],
+      edges: [{ id: "e1", source: "start", target: "delay_120d" }]
+    });
+
+    const invalid = flowDefinitionSchema.safeParse({
+      nodes: [
+        { id: "start", type: "start", position: { x: 0, y: 0 }, data: {} },
+        {
+          id: "delay_121d",
+          type: "delay",
+          position: { x: 200, y: 0 },
+          data: { delay_ms: 121 * 24 * 60 * 60 * 1000 }
+        }
+      ],
+      edges: [{ id: "e1", source: "start", target: "delay_121d" }]
+    });
+
+    expect(valid.success).toBe(true);
+    expect(invalid.success).toBe(false);
+  });
 });
 
 describe("deriveActionsFromFlow", () => {

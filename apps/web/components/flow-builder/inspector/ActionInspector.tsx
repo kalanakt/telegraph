@@ -856,6 +856,74 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
             </Select>
           </label>
         </div>
+      ) : action.type === "telegram.sendInvoice" ? (
+        <div className="builder-section">
+          <p className="builder-kicker">Invoice</p>
+          <label className="builder-label">
+            <span>Chat ID</span>
+            <Input value={asString(params.chat_id)} onChange={(e) => onUpdateParams({ chat_id: e.target.value })} />
+          </label>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            <label className="builder-label">
+              <span>Title</span>
+              <Input value={asString(params.title)} onChange={(e) => onUpdateParams({ title: e.target.value })} />
+            </label>
+            <label className="builder-label">
+              <span>Currency</span>
+              <Input value={asString(params.currency)} onChange={(e) => onUpdateParams({ currency: e.target.value })} />
+            </label>
+          </div>
+          <label className="builder-label mt-2">
+            <span>Description</span>
+            <Textarea rows={3} value={asString(params.description)} onChange={(e) => onUpdateParams({ description: e.target.value })} />
+          </label>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            <label className="builder-label">
+              <span>Payload</span>
+              <Input value={asString(params.payload)} onChange={(e) => onUpdateParams({ payload: e.target.value })} />
+            </label>
+            <label className="builder-label">
+              <span>Provider token</span>
+              <Input
+                value={asString(params.provider_token)}
+                placeholder='Leave empty for XTR'
+                onChange={(e) => onUpdateParams({ provider_token: e.target.value || undefined })}
+              />
+            </label>
+          </div>
+          <label className="builder-label mt-2">
+            <span>Prices JSON</span>
+            <Textarea
+              rows={5}
+              value={JSON.stringify(params.prices ?? [{ label: "Premium access", amount: 500 }], null, 2)}
+              onChange={(e) => {
+                try {
+                  onUpdateParams({ prices: JSON.parse(e.target.value) });
+                } catch {
+                  // noop
+                }
+              }}
+            />
+          </label>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            <label className="builder-label">
+              <span>Subscription period</span>
+              <Input
+                type="number"
+                min={1}
+                value={asString(params.subscription_period)}
+                onChange={(e) => onUpdateParams({ subscription_period: Number(e.target.value || 0) || undefined })}
+              />
+            </label>
+            <label className="builder-label">
+              <span>Start parameter</span>
+              <Input
+                value={asString(params.start_parameter)}
+                onChange={(e) => onUpdateParams({ start_parameter: e.target.value || undefined })}
+              />
+            </label>
+          </div>
+        </div>
       ) : CHAT_MEMBER_METHODS.has(action.type) ? (
         <div className="builder-section">
           <p className="builder-kicker">Chat member</p>

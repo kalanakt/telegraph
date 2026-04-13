@@ -227,4 +227,34 @@ describe("template service", () => {
     expect(prismaMock.workflowTemplate.findUnique).not.toHaveBeenCalled();
     expect(prismaMock.workflowRule.create).toHaveBeenCalledTimes(2);
   });
+
+  it("installs the premium membership built-in with all bundled flows", async () => {
+    getUserPlanMock.mockResolvedValue("PRO");
+    getRemainingRuleCapacityMock.mockResolvedValue(10);
+    prismaMock.workflowRule.create
+      .mockResolvedValueOnce({ id: "rule_1" })
+      .mockResolvedValueOnce({ id: "rule_2" })
+      .mockResolvedValueOnce({ id: "rule_3" })
+      .mockResolvedValueOnce({ id: "rule_4" })
+      .mockResolvedValueOnce({ id: "rule_5" });
+    prismaMock.$transaction.mockImplementation(async (callback: (tx: typeof prismaMock) => Promise<unknown>) =>
+      callback(prismaMock as unknown as typeof prismaMock)
+    );
+
+    const result = await installTemplateForUser(
+      { id: "user_1", clerkUserId: "clerk_1", subscription: { plan: "PRO", status: "active" } },
+      "builtin:premium-membership-bot",
+      { botId: "bot_1" }
+    );
+
+    expect(result).toEqual({
+      status: "installed",
+      upgradeRequired: false,
+      templateFlowCount: 5,
+      remainingRuleCapacity: 5,
+      firstRuleId: "rule_1",
+      rulesCreated: 5
+    });
+    expect(prismaMock.workflowRule.create).toHaveBeenCalledTimes(5);
+  });
 });

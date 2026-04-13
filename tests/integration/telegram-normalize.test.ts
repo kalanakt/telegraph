@@ -121,6 +121,32 @@ describe("normalizeTelegramUpdate", () => {
     expect((preCheckout as { shippingOptionId?: string }).shippingOptionId).toBe("standard");
   });
 
+  it("normalizes recurring Telegram Stars payment fields", () => {
+    const normalized = normalizeTelegramUpdate({
+      update_id: 6100,
+      message: {
+        message_id: 91,
+        chat: { id: 777, type: "private" },
+        from: { id: 222, username: "alice" },
+        successful_payment: {
+          invoice_payload: "premium:stars:monthly:222:6100",
+          currency: "XTR",
+          total_amount: 1200,
+          telegram_payment_charge_id: "charge_1",
+          provider_payment_charge_id: "provider_1",
+          subscription_expiration_date: 1_800_000_000,
+          is_recurring: true,
+          is_first_recurring: true
+        }
+      }
+    });
+
+    expect((normalized as { successfulPaymentChargeId?: string }).successfulPaymentChargeId).toBe("charge_1");
+    expect((normalized as { subscriptionExpirationDate?: number }).subscriptionExpirationDate).toBe(1_800_000_000);
+    expect((normalized as { isRecurring?: boolean }).isRecurring).toBe(true);
+    expect((normalized as { isFirstRecurring?: boolean }).isFirstRecurring).toBe(true);
+  });
+
   it("normalizes join request, poll answer, and reaction payload details", () => {
     const joinRequest = normalizeTelegramUpdate({
       update_id: 7000,

@@ -30,57 +30,57 @@ export type CuratedWorkflowTemplate = WorkflowTemplateDraft & {
   featuredOrder?: number;
 };
 
-function withLabel(label?: string) {
-  return label ? { meta: { label } } : {};
+function withMeta(label?: string, key?: string) {
+  return label || key ? { meta: { ...(label ? { label } : {}), ...(key ? { key } : {}) } } : {};
 }
 
-function startNode(id: string, x: number, y: number, trigger: TriggerType, label?: string) {
+function startNode(id: string, x: number, y: number, trigger: TriggerType, label?: string, key?: string) {
   return {
     id,
     type: "start" as const,
     position: { x, y },
     data: { trigger },
-    ...withLabel(label),
+    ...withMeta(label, key),
   };
 }
 
-function conditionNode(id: string, x: number, y: number, data: ConditionPayload, label?: string) {
+function conditionNode(id: string, x: number, y: number, data: ConditionPayload, label?: string, key?: string) {
   return {
     id,
     type: "condition" as const,
     position: { x, y },
     data,
-    ...withLabel(label),
+    ...withMeta(label, key),
   };
 }
 
-function actionNode(id: string, x: number, y: number, data: ActionPayload, label?: string) {
+function actionNode(id: string, x: number, y: number, data: ActionPayload, label?: string, key?: string) {
   return {
     id,
     type: "action" as const,
     position: { x, y },
     data,
-    ...withLabel(label),
+    ...withMeta(label, key),
   };
 }
 
-function delayNode(id: string, x: number, y: number, delayMs: number, label?: string) {
+function delayNode(id: string, x: number, y: number, delayMs: number, label?: string, key?: string) {
   return {
     id,
     type: "delay" as const,
     position: { x, y },
     data: { delay_ms: delayMs },
-    ...withLabel(label),
+    ...withMeta(label, key),
   };
 }
 
-function setVariableNode(id: string, x: number, y: number, path: string, value: JsonValue, label?: string) {
+function setVariableNode(id: string, x: number, y: number, path: string, value: JsonValue, label?: string, key?: string) {
   return {
     id,
     type: "set_variable" as const,
     position: { x, y },
     data: { path, value },
-    ...withLabel(label),
+    ...withMeta(label, key),
   };
 }
 
@@ -90,14 +90,49 @@ function switchNode(
   y: number,
   path: string,
   cases: Array<{ id: string; value: string; label?: string }>,
-  label?: string
+  label?: string,
+  key?: string
 ) {
   return {
     id,
     type: "switch" as const,
     position: { x, y },
     data: { path, cases },
-    ...withLabel(label),
+    ...withMeta(label, key),
+  };
+}
+
+function upsertCustomerNode(id: string, x: number, y: number, profile: JsonValue, label?: string, key?: string) {
+  return {
+    id,
+    type: "upsert_customer" as const,
+    position: { x, y },
+    data: { profile },
+    ...withMeta(label, key),
+  };
+}
+
+function upsertOrderNode(
+  id: string,
+  x: number,
+  y: number,
+  data: {
+    external_id?: string;
+    invoice_payload?: string;
+    currency?: string;
+    total_amount?: number;
+    status?: "draft" | "awaiting_shipping" | "awaiting_payment" | "paid" | "fulfilled" | "canceled";
+    data?: JsonValue;
+  },
+  label?: string,
+  key?: string
+) {
+  return {
+    id,
+    type: "upsert_order" as const,
+    position: { x, y },
+    data,
+    ...withMeta(label, key),
   };
 }
 
@@ -151,6 +186,632 @@ function defineTemplate(template: CuratedWorkflowTemplate): CuratedWorkflowTempl
     requiresExternalIntegration,
     ...(typeof featuredOrder === "number" ? { featuredOrder } : {}),
   };
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const PREMIUM_CHANNEL_CHAT_ID = "{{vars.secrets.premium_channel_chat_id}}";
+const PREMIUM_GROUP_CHAT_ID = "{{vars.secrets.premium_group_chat_id}}";
+
+const PREMIUM_PLANS = [
+  {
+    key: "weekly",
+    label: "1 Week",
+    starsAmount: 350,
+    cryptoAmount: "10",
+    durationDays: 7,
+    reminderDelayMs: 5 * DAY_MS,
+    expiryDelayMs: 2 * DAY_MS,
+  },
+  {
+    key: "monthly",
+    label: "1 Month",
+    starsAmount: 1200,
+    cryptoAmount: "25",
+    durationDays: 30,
+    reminderDelayMs: 28 * DAY_MS,
+    expiryDelayMs: 2 * DAY_MS,
+  },
+  {
+    key: "quarterly",
+    label: "3 Months",
+    starsAmount: 3000,
+    cryptoAmount: "60",
+    durationDays: 90,
+    reminderDelayMs: 88 * DAY_MS,
+    expiryDelayMs: 2 * DAY_MS,
+  },
+  {
+    key: "lifetime",
+    label: "Lifetime",
+    starsAmount: 9000,
+    cryptoAmount: "120",
+    durationDays: null,
+    reminderDelayMs: null,
+    expiryDelayMs: null,
+  },
+] as const;
+
+type PremiumPlan = (typeof PREMIUM_PLANS)[number];
+
+function subscriptionOrderData(plan: PremiumPlan, paymentMethod: "stars" | "crypto") {
+  return {
+    subscription: {
+      planKey: plan.key,
+      planLabel: plan.label,
+      paymentMethod,
+      durationDays: plan.durationDays,
+      reminderDelayMs: plan.reminderDelayMs,
+      expiryDelayMs: plan.expiryDelayMs,
+      channelChatId: PREMIUM_CHANNEL_CHAT_ID,
+      groupChatId: PREMIUM_GROUP_CHAT_ID,
+    },
+  } satisfies JsonValue;
+}
+
+function activeSubscriptionProfile(plan: PremiumPlan, paymentMethod: "stars" | "crypto") {
+  return {
+    attributes: {
+      subscription: {
+        planKey: plan.key,
+        planLabel: plan.label,
+        paymentMethod,
+        status: "active",
+        startsAt: "{{now.iso}}",
+        endsAt: plan.durationDays ? `{{now.plus_days.${plan.durationDays}.iso}}` : null,
+        reminderAt: plan.durationDays ? `{{now.plus_days.${plan.durationDays - 2}.iso}}` : null,
+        channelChatId: PREMIUM_CHANNEL_CHAT_ID,
+        groupChatId: PREMIUM_GROUP_CHAT_ID,
+      },
+    },
+  } satisfies JsonValue;
+}
+
+function expiredSubscriptionProfile(plan: PremiumPlan, paymentMethod: "stars" | "crypto") {
+  return {
+    attributes: {
+      subscription: {
+        planKey: plan.key,
+        planLabel: plan.label,
+        paymentMethod,
+        status: "expired",
+        startsAt: "{{customer.attributes.subscription.startsAt}}",
+        endsAt: "{{customer.attributes.subscription.endsAt}}",
+        reminderAt: "{{customer.attributes.subscription.reminderAt}}",
+        channelChatId: PREMIUM_CHANNEL_CHAT_ID,
+        groupChatId: PREMIUM_GROUP_CHAT_ID,
+      },
+    },
+  } satisfies JsonValue;
+}
+
+function buildPremiumStartFlow(): FlowDefinition {
+  return defineFlow(
+    [
+      startNode("premium_start", 0, 0, "command_received", "Start command"),
+      conditionNode("premium_is_start", 240, 0, { type: "command_equals", value: "/start" }, "Command is /start"),
+      actionNode(
+        "premium_welcome",
+        520,
+        0,
+        {
+          type: "telegram.sendMessage",
+          params: {
+            chat_id: "{{event.chatId}}",
+            text:
+              "Welcome. Subscribe to unlock the premium channel, VIP drops, and the private group. Choose a plan to continue.",
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: "1 Week", callback_data: "plan:weekly" }, { text: "1 Month", callback_data: "plan:monthly" }],
+                [{ text: "3 Months", callback_data: "plan:quarterly" }, { text: "Lifetime", callback_data: "plan:lifetime" }],
+              ],
+            },
+          },
+        },
+        "Show plans"
+      ),
+    ],
+    [edge("e_premium_start_1", "premium_start", "premium_is_start"), edge("e_premium_start_2", "premium_is_start", "premium_welcome", "true")]
+  );
+}
+
+function buildPremiumCallbackFlow(): FlowDefinition {
+  const nodes: FlowDefinition["nodes"] = [
+    startNode("premium_cb_start", 0, 0, "callback_query_received", "Callback received"),
+    actionNode(
+      "premium_cb_ack",
+      220,
+      0,
+      {
+        type: "telegram.answerCallbackQuery",
+        params: {
+          callback_query_id: "{{event.callbackQueryId}}",
+          text: "Got it",
+        },
+      },
+      "Acknowledge tap"
+    ),
+    switchNode(
+      "premium_cb_switch",
+      480,
+      0,
+      "event.callbackData",
+      [
+        ...PREMIUM_PLANS.flatMap((plan) => [
+          { id: `case_plan_${plan.key}`, value: `plan:${plan.key}`, label: `Plan ${plan.label}` },
+          { id: `case_renew_${plan.key}`, value: `renew:${plan.key}`, label: `Renew ${plan.label}` },
+          { id: `case_pay_stars_${plan.key}`, value: `pay:stars:${plan.key}`, label: `Stars ${plan.label}` },
+          { id: `case_pay_crypto_${plan.key}`, value: `pay:crypto:${plan.key}`, label: `Crypto ${plan.label}` },
+        ]),
+        { id: "case_cancel", value: "cancel", label: "Cancel" },
+      ],
+      "Route choice"
+    ),
+  ];
+  const edges: FlowDefinition["edges"] = [
+    edge("e_premium_cb_1", "premium_cb_start", "premium_cb_ack"),
+    edge("e_premium_cb_2", "premium_cb_ack", "premium_cb_switch"),
+  ];
+
+  for (const [index, plan] of PREMIUM_PLANS.entries()) {
+    const y = index * 260 - 360;
+    const choiceNodeId = `premium_choice_${plan.key}`;
+    const starsOrderNodeId = `premium_stars_order_${plan.key}`;
+    const starsInvoiceNodeId = `premium_stars_invoice_${plan.key}`;
+    const cryptoOrderNodeId = `premium_crypto_order_${plan.key}`;
+    const cryptoInvoiceNodeId = `premium_crypto_invoice_${plan.key}`;
+    const cryptoPendingNodeId = `premium_crypto_pending_${plan.key}`;
+
+    nodes.push(
+      actionNode(
+        choiceNodeId,
+        840,
+        y,
+        {
+          type: "telegram.sendMessage",
+          params: {
+            chat_id: "{{event.chatId}}",
+            text: `${plan.label} selected. Choose how you want to pay.`,
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: "Pay with Telegram Stars", callback_data: `pay:stars:${plan.key}` }],
+                [{ text: "Pay with Crypto", callback_data: `pay:crypto:${plan.key}` }],
+                [{ text: "Cancel", callback_data: "cancel" }],
+              ],
+            },
+          },
+        },
+        `Choose ${plan.label} payment`
+      ),
+      upsertOrderNode(
+        starsOrderNodeId,
+        840,
+        y + 80,
+        {
+          external_id: `subscription:stars:${plan.key}:{{event.fromUserId}}`,
+          invoice_payload: `premium:stars:${plan.key}:{{event.fromUserId}}:{{event.updateId}}`,
+          currency: "XTR",
+          total_amount: plan.starsAmount,
+          status: "awaiting_payment",
+          data: subscriptionOrderData(plan, "stars"),
+        },
+        `Store ${plan.label} Stars order`
+      ),
+      actionNode(
+        starsInvoiceNodeId,
+        1100,
+        y + 80,
+        {
+          type: "telegram.sendInvoice",
+          params: {
+            chat_id: "{{event.chatId}}",
+            title: `${plan.label} Premium Access`,
+            description: "Pay in Telegram Stars to unlock premium access instantly.",
+            payload: "{{order.invoicePayload}}",
+            currency: "XTR",
+            prices: [{ label: `${plan.label} premium access`, amount: plan.starsAmount }],
+          },
+        },
+        `Send ${plan.label} Stars invoice`,
+        `stars_invoice_${plan.key}`
+      ),
+      upsertOrderNode(
+        cryptoOrderNodeId,
+        840,
+        y + 160,
+        {
+          external_id: `subscription:crypto:${plan.key}:{{event.fromUserId}}`,
+          invoice_payload: `premium:crypto:${plan.key}:{{event.fromUserId}}:{{event.updateId}}`,
+          currency: "USDT",
+          total_amount: Number(plan.cryptoAmount),
+          status: "awaiting_payment",
+          data: subscriptionOrderData(plan, "crypto"),
+        },
+        `Store ${plan.label} Crypto order`
+      ),
+      actionNode(
+        cryptoInvoiceNodeId,
+        1100,
+        y + 160,
+        {
+          type: "cryptopay.createInvoice",
+          params: {
+            currency_type: "crypto",
+            asset: "USDT",
+            amount: plan.cryptoAmount,
+            description: `${plan.label} premium access`,
+            payload: "{{order.invoicePayload}}",
+          },
+        },
+        `Create ${plan.label} Crypto invoice`,
+        `crypto_invoice_${plan.key}`
+      ),
+      actionNode(
+        cryptoPendingNodeId,
+        1360,
+        y + 160,
+        {
+          type: "telegram.sendMessage",
+          params: {
+            chat_id: "{{event.chatId}}",
+            text: "Payment pending. Complete the invoice, then you will receive access automatically.",
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: "Pay invoice", url: `{{vars.crypto_invoice_${plan.key}.body.bot_invoice_url}}` }],
+                [{ text: "Cancel", callback_data: "cancel" }],
+              ],
+            },
+          },
+        },
+        `Send ${plan.label} Crypto link`
+      )
+    );
+
+    edges.push(
+      edge(`e_premium_choice_plan_${plan.key}`, "premium_cb_switch", choiceNodeId, `case_plan_${plan.key}`),
+      edge(`e_premium_choice_renew_${plan.key}`, "premium_cb_switch", choiceNodeId, `case_renew_${plan.key}`),
+      edge(`e_premium_stars_start_${plan.key}`, "premium_cb_switch", starsOrderNodeId, `case_pay_stars_${plan.key}`),
+      edge(`e_premium_stars_finish_${plan.key}`, starsOrderNodeId, starsInvoiceNodeId),
+      edge(`e_premium_crypto_start_${plan.key}`, "premium_cb_switch", cryptoOrderNodeId, `case_pay_crypto_${plan.key}`),
+      edge(`e_premium_crypto_mid_${plan.key}`, cryptoOrderNodeId, cryptoInvoiceNodeId),
+      edge(`e_premium_crypto_finish_${plan.key}`, cryptoInvoiceNodeId, cryptoPendingNodeId)
+    );
+  }
+
+  nodes.push(
+    actionNode(
+      "premium_cancel",
+      840,
+      520,
+      {
+        type: "telegram.sendMessage",
+        params: {
+          chat_id: "{{event.chatId}}",
+          text: "Payment canceled. Pick a plan again whenever you are ready.",
+        },
+      },
+      "Cancel purchase"
+    )
+  );
+  edges.push(edge("e_premium_cancel", "premium_cb_switch", "premium_cancel", "case_cancel"));
+
+  return defineFlow(nodes, edges);
+}
+
+function buildPremiumActivationFlow(trigger: "message_received" | "cryptopay.invoice_paid", paymentMethod: "stars" | "crypto"): FlowDefinition {
+  const nodes: FlowDefinition["nodes"] = [startNode(`premium_activate_start_${paymentMethod}`, 0, 0, trigger, "Activation trigger")];
+  const edges: FlowDefinition["edges"] = [];
+
+  let entryNodeId = `premium_activate_start_${paymentMethod}`;
+  if (trigger === "message_received") {
+    nodes.push(
+      conditionNode(
+        "premium_stars_paid_match",
+        220,
+        0,
+        { type: "event_path_exists", key: "successfulPaymentChargeId" },
+        "Has successful payment"
+      )
+    );
+    edges.push(edge("e_premium_stars_paid_1", entryNodeId, "premium_stars_paid_match"));
+    entryNodeId = "premium_stars_paid_match";
+  }
+
+  const planSwitchId = `premium_activation_switch_${paymentMethod}`;
+  nodes.push(
+    switchNode(
+      planSwitchId,
+      480,
+      0,
+      "order.attributes.subscription.planKey",
+      PREMIUM_PLANS.map((plan) => ({ id: `activate_${paymentMethod}_${plan.key}`, value: plan.key, label: plan.label })),
+      "Plan branch"
+    )
+  );
+  edges.push(edge(`e_premium_activate_entry_${paymentMethod}`, entryNodeId, planSwitchId, trigger === "message_received" ? "true" : undefined));
+
+  for (const [index, plan] of PREMIUM_PLANS.entries()) {
+    const y = index * 520 - 780;
+    const activeCustomerNodeId = `premium_active_customer_${paymentMethod}_${plan.key}`;
+    const successNodeId = `premium_success_${paymentMethod}_${plan.key}`;
+    const channelCondId = `premium_channel_enabled_${paymentMethod}_${plan.key}`;
+    const channelInviteId = `premium_channel_invite_${paymentMethod}_${plan.key}`;
+    const channelMessageId = `premium_channel_message_${paymentMethod}_${plan.key}`;
+    const groupCondId = `premium_group_enabled_${paymentMethod}_${plan.key}`;
+    const groupInviteId = `premium_group_invite_${paymentMethod}_${plan.key}`;
+    const groupMessageId = `premium_group_message_${paymentMethod}_${plan.key}`;
+
+    nodes.push(
+      upsertCustomerNode(activeCustomerNodeId, 760, y, activeSubscriptionProfile(plan, paymentMethod), `Activate ${plan.label} access`),
+      actionNode(
+        successNodeId,
+        1020,
+        y,
+        {
+          type: "telegram.sendMessage",
+          params: {
+            chat_id: "{{event.chatId}}",
+            text: plan.durationDays === null ? "Payment successful. Your lifetime access is active now." : `Payment successful. Your ${plan.label} access is active now.`,
+          },
+        },
+        `Confirm ${plan.label} payment`
+      ),
+      conditionNode(channelCondId, 1280, y - 60, { type: "variable_exists", key: "secrets.premium_channel_chat_id" }, "Channel configured"),
+      actionNode(
+        channelInviteId,
+        1540,
+        y - 120,
+        {
+          type: "telegram.createChatInviteLink",
+          params: {
+            chat_id: PREMIUM_CHANNEL_CHAT_ID,
+            name: `${plan.key} channel access`,
+            member_limit: 1,
+            expire_date: "{{now.plus_days.2.unix}}",
+          },
+        },
+        `Create ${plan.label} channel invite`,
+        `channel_invite_${paymentMethod}_${plan.key}`
+      ),
+      actionNode(
+        channelMessageId,
+        1800,
+        y - 120,
+        {
+          type: "telegram.sendMessage",
+          params: {
+            chat_id: "{{event.chatId}}",
+            text: "Join the premium channel with this one-time link.",
+            reply_markup: {
+              inline_keyboard: [[{ text: "Join premium channel", url: `{{vars.channel_invite_${paymentMethod}_${plan.key}.body.invite_link}}` }]],
+            },
+          },
+        },
+        `Send ${plan.label} channel link`
+      ),
+      conditionNode(groupCondId, 1280, y + 80, { type: "variable_exists", key: "secrets.premium_group_chat_id" }, "Group configured"),
+      actionNode(
+        groupInviteId,
+        1540,
+        y + 40,
+        {
+          type: "telegram.createChatInviteLink",
+          params: {
+            chat_id: PREMIUM_GROUP_CHAT_ID,
+            name: `${plan.key} group access`,
+            member_limit: 1,
+            expire_date: "{{now.plus_days.2.unix}}",
+          },
+        },
+        `Create ${plan.label} group invite`,
+        `group_invite_${paymentMethod}_${plan.key}`
+      ),
+      actionNode(
+        groupMessageId,
+        1800,
+        y + 40,
+        {
+          type: "telegram.sendMessage",
+          params: {
+            chat_id: "{{event.chatId}}",
+            text: "Join the private group with this one-time link.",
+            reply_markup: {
+              inline_keyboard: [[{ text: "Join premium group", url: `{{vars.group_invite_${paymentMethod}_${plan.key}.body.invite_link}}` }]],
+            },
+          },
+        },
+        `Send ${plan.label} group link`
+      )
+    );
+
+    edges.push(
+      edge(`e_premium_activate_${paymentMethod}_${plan.key}`, planSwitchId, activeCustomerNodeId, `activate_${paymentMethod}_${plan.key}`),
+      edge(`e_premium_activate_success_${paymentMethod}_${plan.key}`, activeCustomerNodeId, successNodeId),
+      edge(`e_premium_activate_channel_cond_${paymentMethod}_${plan.key}`, successNodeId, channelCondId),
+      edge(`e_premium_activate_channel_true_${paymentMethod}_${plan.key}`, channelCondId, channelInviteId, "true"),
+      edge(`e_premium_activate_channel_false_${paymentMethod}_${plan.key}`, channelCondId, groupCondId, "false"),
+      edge(`e_premium_activate_channel_send_${paymentMethod}_${plan.key}`, channelInviteId, channelMessageId),
+      edge(`e_premium_activate_channel_next_${paymentMethod}_${plan.key}`, channelMessageId, groupCondId),
+      edge(`e_premium_activate_group_true_${paymentMethod}_${plan.key}`, groupCondId, groupInviteId, "true"),
+      edge(`e_premium_activate_group_send_${paymentMethod}_${plan.key}`, groupInviteId, groupMessageId)
+    );
+
+    if (plan.durationDays === null || plan.reminderDelayMs === null || plan.expiryDelayMs === null) {
+      continue;
+    }
+
+    const reminderDelayId = `premium_reminder_delay_${paymentMethod}_${plan.key}`;
+    const reminderMessageId = `premium_reminder_message_${paymentMethod}_${plan.key}`;
+    const expiryDelayId = `premium_expiry_delay_${paymentMethod}_${plan.key}`;
+    const expiredCustomerNodeId = `premium_expired_customer_${paymentMethod}_${plan.key}`;
+    const removeChannelCondId = `premium_remove_channel_${paymentMethod}_${plan.key}`;
+    const banChannelId = `premium_ban_channel_${paymentMethod}_${plan.key}`;
+    const unbanChannelId = `premium_unban_channel_${paymentMethod}_${plan.key}`;
+    const removeGroupCondId = `premium_remove_group_${paymentMethod}_${plan.key}`;
+    const banGroupId = `premium_ban_group_${paymentMethod}_${plan.key}`;
+    const unbanGroupId = `premium_unban_group_${paymentMethod}_${plan.key}`;
+    const expiredMessageId = `premium_expired_message_${paymentMethod}_${plan.key}`;
+
+    nodes.push(
+      delayNode(reminderDelayId, 2060, y, plan.reminderDelayMs, `Wait before ${plan.label} reminder`),
+      actionNode(
+        reminderMessageId,
+        2300,
+        y,
+        {
+          type: "telegram.sendMessage",
+          params: {
+            chat_id: "{{event.chatId}}",
+            text: `Your ${plan.label} plan will expire in 2 days. Renew now to keep access.`,
+            reply_markup: {
+              inline_keyboard: [[{ text: "Renew now", callback_data: `renew:${plan.key}` }]],
+            },
+          },
+        },
+        `Remind ${plan.label} renewal`
+      ),
+      delayNode(expiryDelayId, 2540, y, plan.expiryDelayMs, `Wait until ${plan.label} expiry`),
+      upsertCustomerNode(expiredCustomerNodeId, 2780, y, expiredSubscriptionProfile(plan, paymentMethod), `Mark ${plan.label} expired`),
+      conditionNode(removeChannelCondId, 3020, y - 60, { type: "variable_exists", key: "secrets.premium_channel_chat_id" }, "Remove channel access"),
+      actionNode(
+        banChannelId,
+        3260,
+        y - 120,
+        {
+          type: "telegram.banChatMember",
+          params: {
+            chat_id: PREMIUM_CHANNEL_CHAT_ID,
+            user_id: "{{customer.telegramUserId}}",
+          },
+        },
+        `Ban ${plan.label} from channel`
+      ),
+      actionNode(
+        unbanChannelId,
+        3500,
+        y - 120,
+        {
+          type: "telegram.unbanChatMember",
+          params: {
+            chat_id: PREMIUM_CHANNEL_CHAT_ID,
+            user_id: "{{customer.telegramUserId}}",
+          },
+        },
+        `Unban ${plan.label} from channel`
+      ),
+      conditionNode(removeGroupCondId, 3020, y + 80, { type: "variable_exists", key: "secrets.premium_group_chat_id" }, "Remove group access"),
+      actionNode(
+        banGroupId,
+        3260,
+        y + 40,
+        {
+          type: "telegram.banChatMember",
+          params: {
+            chat_id: PREMIUM_GROUP_CHAT_ID,
+            user_id: "{{customer.telegramUserId}}",
+          },
+        },
+        `Ban ${plan.label} from group`
+      ),
+      actionNode(
+        unbanGroupId,
+        3500,
+        y + 40,
+        {
+          type: "telegram.unbanChatMember",
+          params: {
+            chat_id: PREMIUM_GROUP_CHAT_ID,
+            user_id: "{{customer.telegramUserId}}",
+          },
+        },
+        `Unban ${plan.label} from group`
+      ),
+      actionNode(
+        expiredMessageId,
+        3740,
+        y,
+        {
+          type: "telegram.sendMessage",
+          params: {
+            chat_id: "{{event.chatId}}",
+            text: "Your subscription has expired and access was removed. Pick a plan to buy again.",
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: "1 Week", callback_data: "plan:weekly" }, { text: "1 Month", callback_data: "plan:monthly" }],
+                [{ text: "3 Months", callback_data: "plan:quarterly" }, { text: "Lifetime", callback_data: "plan:lifetime" }],
+              ],
+            },
+          },
+        },
+        `Notify ${plan.label} expiry`
+      )
+    );
+
+    edges.push(
+      edge(`e_premium_activate_group_false_${paymentMethod}_${plan.key}`, groupCondId, reminderDelayId, "false"),
+      edge(`e_premium_activate_group_next_${paymentMethod}_${plan.key}`, groupMessageId, reminderDelayId),
+      edge(`e_premium_reminder_delay_${paymentMethod}_${plan.key}`, reminderDelayId, reminderMessageId),
+      edge(`e_premium_reminder_message_${paymentMethod}_${plan.key}`, reminderMessageId, expiryDelayId),
+      edge(`e_premium_expiry_delay_${paymentMethod}_${plan.key}`, expiryDelayId, expiredCustomerNodeId),
+      edge(`e_premium_remove_channel_start_${paymentMethod}_${plan.key}`, expiredCustomerNodeId, removeChannelCondId),
+      edge(`e_premium_remove_channel_true_${paymentMethod}_${plan.key}`, removeChannelCondId, banChannelId, "true"),
+      edge(`e_premium_remove_channel_false_${paymentMethod}_${plan.key}`, removeChannelCondId, removeGroupCondId, "false"),
+      edge(`e_premium_remove_channel_mid_${paymentMethod}_${plan.key}`, banChannelId, unbanChannelId),
+      edge(`e_premium_remove_channel_next_${paymentMethod}_${plan.key}`, unbanChannelId, removeGroupCondId),
+      edge(`e_premium_remove_group_true_${paymentMethod}_${plan.key}`, removeGroupCondId, banGroupId, "true"),
+      edge(`e_premium_remove_group_false_${paymentMethod}_${plan.key}`, removeGroupCondId, expiredMessageId, "false"),
+      edge(`e_premium_remove_group_mid_${paymentMethod}_${plan.key}`, banGroupId, unbanGroupId),
+      edge(`e_premium_remove_group_end_${paymentMethod}_${plan.key}`, unbanGroupId, expiredMessageId)
+    );
+  }
+
+  return defineFlow(nodes, edges);
+}
+
+function buildPremiumMemberFlow(): FlowDefinition {
+  return defineFlow(
+    [
+      startNode("premium_member_start", 0, 0, "chat_member_updated", "Member update received"),
+      conditionNode(
+        "premium_member_joined",
+        240,
+        0,
+        {
+          type: "all",
+          conditions: [
+            { type: "old_status_equals", value: "left" },
+            { type: "new_status_equals", value: "member" },
+          ],
+        },
+        "Joined premium area"
+      ),
+      switchNode(
+        "premium_member_status",
+        520,
+        0,
+        "customer.attributes.subscription.status",
+        [{ id: "member_status_active", value: "active", label: "Active" }],
+        "Subscription status"
+      ),
+      actionNode(
+        "premium_member_confirm",
+        800,
+        0,
+        {
+          type: "telegram.sendMessage",
+          params: {
+            chat_id: "{{event.targetUserId}}",
+            text: "Your premium access is active. Enjoy the channel and group.",
+          },
+        },
+        "Confirm membership"
+      ),
+    ],
+    [
+      edge("e_premium_member_1", "premium_member_start", "premium_member_joined"),
+      edge("e_premium_member_2", "premium_member_joined", "premium_member_status", "true"),
+      edge("e_premium_member_3", "premium_member_status", "premium_member_confirm", "member_status_active"),
+    ]
+  );
 }
 
 export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
@@ -1205,6 +1866,47 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
           ],
           [edge("e_media_1", "media_start", "media_match"), edge("e_media_2", "media_match", "media_ack", "true")]
         ),
+      },
+    ],
+  }),
+  defineTemplate({
+    id: "builtin:premium-membership-bot",
+    slug: "premium-membership-bot",
+    title: "Premium Membership Bot",
+    description:
+      "Sell access to a private channel and/or group with plan selection, Telegram Stars or Crypto Pay checkout, reminder nudges, and automatic expiry handling.",
+    visibility: "PUBLIC",
+    category: "commerce",
+    audience: "business",
+    featured: true,
+    setupLevel: "guided",
+    requiresExternalIntegration: false,
+    featuredOrder: 9,
+    flows: [
+      {
+        name: "Welcome and show plans",
+        trigger: "command_received",
+        flowDefinition: buildPremiumStartFlow(),
+      },
+      {
+        name: "Handle plan and payment callbacks",
+        trigger: "callback_query_received",
+        flowDefinition: buildPremiumCallbackFlow(),
+      },
+      {
+        name: "Activate access after Telegram Stars payment",
+        trigger: "message_received",
+        flowDefinition: buildPremiumActivationFlow("message_received", "stars"),
+      },
+      {
+        name: "Activate access after Crypto Pay invoice is paid",
+        trigger: "cryptopay.invoice_paid",
+        flowDefinition: buildPremiumActivationFlow("cryptopay.invoice_paid", "crypto"),
+      },
+      {
+        name: "Confirm when a paid member joins",
+        trigger: "chat_member_updated",
+        flowDefinition: buildPremiumMemberFlow(),
       },
     ],
   }),

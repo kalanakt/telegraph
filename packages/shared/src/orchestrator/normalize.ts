@@ -66,6 +66,9 @@ function extractMessageCommerceFields(
     | "totalAmount"
     | "successfulPaymentChargeId"
     | "successfulPaymentProviderChargeId"
+    | "subscriptionExpirationDate"
+    | "isRecurring"
+    | "isFirstRecurring"
     | "shippingOptionId"
     | "orderInfo"
   >
@@ -90,6 +93,10 @@ function extractMessageCommerceFields(
     successfulPaymentChargeId: typeof payment?.telegram_payment_charge_id === "string" ? payment.telegram_payment_charge_id : undefined,
     successfulPaymentProviderChargeId:
       typeof payment?.provider_payment_charge_id === "string" ? payment.provider_payment_charge_id : undefined,
+    subscriptionExpirationDate:
+      typeof payment?.subscription_expiration_date === "number" ? payment.subscription_expiration_date : undefined,
+    isRecurring: payment?.is_recurring === true ? true : undefined,
+    isFirstRecurring: payment?.is_first_recurring === true ? true : undefined,
     shippingOptionId: typeof payment?.shipping_option_id === "string" ? payment.shipping_option_id : undefined,
     orderInfo: typeof payment?.order_info === "object" && payment.order_info !== null ? (payment.order_info as JsonValue) : undefined
   };

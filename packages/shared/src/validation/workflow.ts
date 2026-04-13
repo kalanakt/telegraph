@@ -5,7 +5,7 @@ import { TELEGRAM_CAPABILITIES, TELEGRAM_METHODS } from "../telegram/capabilitie
 import type { ActionPayload, ConditionPayload, FlowDefinition, TriggerType } from "../types/workflow.js";
 
 const TEMPLATE_FIELD_REGEX = /\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g;
-const ALLOWED_TEMPLATE_PREFIXES = new Set(["event", "vars", "session", "customer", "order"]);
+const ALLOWED_TEMPLATE_PREFIXES = new Set(["event", "vars", "session", "customer", "order", "now"]);
 const NODE_KEY_REGEX = /^[a-z][a-z0-9_]*$/;
 const VAR_PATH_REGEX = /^[a-z][a-z0-9_]*(?:\.[a-zA-Z0-9_]+)*$/;
 const VALUE_PATH_REGEX = /^(event|vars|session|customer|order)(?:\.[a-zA-Z0-9_]+)*$/;
@@ -292,7 +292,7 @@ const delayNodeSchema = flowNodeBaseSchema.extend({
   type: z.literal("delay"),
   data: z
     .object({
-      delay_ms: z.number().int().positive().max(7 * 24 * 60 * 60 * 1000)
+      delay_ms: z.number().int().positive().max(120 * 24 * 60 * 60 * 1000)
     })
     .strict()
 });

@@ -1,13 +1,13 @@
 import { TELEGRAM_CAPABILITIES_MANIFEST, TELEGRAM_TRIGGER_TYPES } from "../telegram/capabilities.js";
 import type { ActionPayload, ConditionType, ExecutionPolicy, TriggerType } from "../types/workflow.js";
 
-export const WORKFLOW_TRIGGER_TYPES = [...TELEGRAM_TRIGGER_TYPES, "webhook.received"] as const satisfies readonly TriggerType[];
+export const WORKFLOW_TRIGGER_TYPES = [...TELEGRAM_TRIGGER_TYPES, "cryptopay.invoice_paid", "webhook.received"] as const satisfies readonly TriggerType[];
 
 export type WorkflowTriggerManifestItem = {
   trigger: TriggerType;
   label: string;
   group: string;
-  source: "telegram" | "webhook";
+  source: "telegram" | "cryptopay" | "webhook";
   description: string;
 };
 
@@ -36,10 +36,17 @@ export const WORKFLOW_TRIGGER_MANIFEST: WorkflowTriggerManifestItem[] = [
         ? "Telegram conversations"
         : trigger.includes("shipping") || trigger.includes("checkout")
         ? "Telegram commerce"
-        : "Telegram events",
+      : "Telegram events",
     source: "telegram" as const,
     description: `Run when Telegram emits ${trigger.replaceAll("_", " ")}.`
   })),
+  {
+    trigger: "cryptopay.invoice_paid",
+    label: "Crypto Pay invoice paid",
+    group: "Crypto Pay",
+    source: "cryptopay",
+    description: "Run when a Crypto Pay invoice is marked paid and linked back to a workflow order."
+  },
   {
     trigger: "webhook.received",
     label: "Webhook received",

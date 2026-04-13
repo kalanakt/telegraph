@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { TriggerType } from "../types/workflow.js";
 
 export const telegramParseModeSchema = z.enum(["Markdown", "MarkdownV2", "HTML"]);
 export const TELEGRAM_CHAT_ACTIONS = [
@@ -37,15 +38,17 @@ const messageEntityTypeSchema = z.enum([
   "custom_emoji"
 ]);
 
+const templateTokenSchema = z.string().regex(/^\{\{\s*[a-zA-Z0-9_.]+\s*\}\}$/);
+
 const inlineKeyboardButtonSchema = z
   .object({
     text: z.string().min(1).max(128),
-    url: z.string().url().optional(),
+    url: z.union([z.string().url(), templateTokenSchema]).optional(),
     callback_data: z.string().max(64).optional(),
-    web_app: z.object({ url: z.string().url() }).optional(),
+    web_app: z.object({ url: z.union([z.string().url(), templateTokenSchema]) }).optional(),
     login_url: z
       .object({
-        url: z.string().url(),
+        url: z.union([z.string().url(), templateTokenSchema]),
         forward_text: z.string().optional(),
         bot_username: z.string().optional(),
         request_write_access: z.boolean().optional()
@@ -138,7 +141,6 @@ export const telegramReplyMarkupSchema = z.union([
   forceReplySchema
 ]);
 
-const templateTokenSchema = z.string().regex(/^\{\{\s*[a-zA-Z0-9_.]+\s*\}\}$/);
 const numericStringSchema = z.string().regex(/^-?\d+$/);
 
 const templateableIntSchema = z.union([z.number().int(), numericStringSchema.transform(Number), templateTokenSchema]);
@@ -327,6 +329,77 @@ const answerPreCheckoutQuerySchema = z
     }
   });
 
+const providerTokenSchema = z.string().max(256);
+
+const sendInvoiceSchema = z
+  .object({
+    chat_id: chatIdSchema,
+    title: z.string().min(1).max(32),
+    description: z.string().min(1).max(255),
+    payload: z.string().min(1).max(128),
+    provider_token: providerTokenSchema.optional(),
+    currency: z.string().min(1).max(16),
+    prices: z.array(labeledPriceSchema).min(1).max(100),
+    max_tip_amount: z.number().int().nonnegative().optional(),
+    suggested_tip_amounts: z.array(z.number().int().positive()).min(1).max(4).optional(),
+    start_parameter: z.string().max(64).optional(),
+    provider_data: z.string().max(4096).optional(),
+    photo_url: z.string().url().optional(),
+    photo_size: z.number().int().positive().optional(),
+    photo_width: z.number().int().positive().optional(),
+    photo_height: z.number().int().positive().optional(),
+    need_name: z.boolean().optional(),
+    need_phone_number: z.boolean().optional(),
+    need_email: z.boolean().optional(),
+    need_shipping_address: z.boolean().optional(),
+    send_phone_number_to_provider: z.boolean().optional(),
+    send_email_to_provider: z.boolean().optional(),
+    is_flexible: z.boolean().optional(),
+    disable_notification: z.boolean().optional(),
+    protect_content: z.boolean().optional(),
+    reply_to_message_id: z.number().int().positive().optional(),
+    allow_sending_without_reply: z.boolean().optional(),
+    reply_markup: inlineKeyboardMarkupSchema.optional(),
+    message_thread_id: z.number().int().positive().optional(),
+    subscription_period: z.number().int().positive().optional()
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.subscription_period && value.currency !== "XTR") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'subscription_period requires currency "XTR"'
+      });
+    }
+
+    if (value.currency === "XTR" && value.provider_token) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'provider_token must be omitted for currency "XTR"'
+      });
+    }
+
+    if (value.suggested_tip_amounts && value.max_tip_amount === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "suggested_tip_amounts requires max_tip_amount"
+      });
+    }
+
+    if (value.suggested_tip_amounts && value.max_tip_amount !== undefined) {
+      for (let index = 0; index < value.suggested_tip_amounts.length; index += 1) {
+        const amount = value.suggested_tip_amounts[index];
+        if (amount && amount > value.max_tip_amount) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["suggested_tip_amounts", index],
+            message: "Suggested tip amount must not exceed max_tip_amount"
+          });
+        }
+      }
+    }
+  });
+
 const sendMediaGroupSchema = z
   .object({
     chat_id: chatIdSchema,
@@ -501,7 +574,7 @@ const createChatInviteLinkSchema = z
   .object({
     chat_id: chatIdSchema,
     name: z.string().max(32).optional(),
-    expire_date: z.number().int().positive().optional(),
+    expire_date: templateablePositiveIntSchema.optional(),
     member_limit: z.number().int().min(1).max(99999).optional(),
     creates_join_request: z.boolean().optional()
   })
@@ -512,7 +585,7 @@ const editChatInviteLinkSchema = z
     chat_id: chatIdSchema,
     invite_link: z.string().min(1),
     name: z.string().max(32).optional(),
-    expire_date: z.number().int().positive().optional(),
+    expire_date: templateablePositiveIntSchema.optional(),
     member_limit: z.number().int().min(1).max(99999).optional(),
     creates_join_request: z.boolean().optional()
   })
@@ -598,6 +671,7 @@ const METHOD_SCHEMAS = {
   sendVideo: sendVideoSchema,
   sendDocument: sendDocumentSchema,
   sendMediaGroup: sendMediaGroupSchema,
+  sendInvoice: sendInvoiceSchema,
   copyMessage: copyMessageSchema,
   forwardMessage: forwardMessageSchema,
   editMessageText: editMessageTextSchema,
@@ -676,6 +750,7 @@ export const TELEGRAM_CAPABILITIES: Record<TelegramMethod, TelegramCapability> =
   sendVideo: buildCapability("sendVideo", { label: "Send Video", category: "messages", description: "Send video by URL/file id with caption support.", executionPolicy: { retryClass: "transient", timeoutMs: 30_000, idempotencyKeyStrategy: "event_and_action", rateLimitBucket: "telegram.write" } }),
   sendDocument: buildCapability("sendDocument", { label: "Send Document", category: "messages", description: "Send document by URL/file id.", executionPolicy: { retryClass: "transient", timeoutMs: 25_000, idempotencyKeyStrategy: "event_and_action", rateLimitBucket: "telegram.write" } }),
   sendMediaGroup: buildCapability("sendMediaGroup", { label: "Send Media Group", category: "messages", description: "Send media album (2-10 items).", executionPolicy: { retryClass: "transient", timeoutMs: 30_000, idempotencyKeyStrategy: "event_and_action", rateLimitBucket: "telegram.write" } }),
+  sendInvoice: buildCapability("sendInvoice", { label: "Send Invoice", category: "messages", description: "Send a Telegram invoice for payments or Telegram Stars.", executionPolicy: { retryClass: "transient", timeoutMs: 20_000, idempotencyKeyStrategy: "event_and_action", rateLimitBucket: "telegram.payments" } }),
   copyMessage: buildCapability("copyMessage", { label: "Copy Message", category: "messages", description: "Copy a message between chats.", executionPolicy: { retryClass: "transient", timeoutMs: 15_000, idempotencyKeyStrategy: "event_and_action", rateLimitBucket: "telegram.write" } }),
   forwardMessage: buildCapability("forwardMessage", { label: "Forward Message", category: "messages", description: "Forward message between chats.", executionPolicy: { retryClass: "transient", timeoutMs: 15_000, idempotencyKeyStrategy: "event_and_action", rateLimitBucket: "telegram.write" } }),
   editMessageText: buildCapability("editMessageText", { label: "Edit Message Text", category: "messages", description: "Edit existing message text with markup.", executionPolicy: { retryClass: "transient", timeoutMs: 15_000, idempotencyKeyStrategy: "event_and_action", rateLimitBucket: "telegram.write" } }),
@@ -756,13 +831,13 @@ const actionTriggerCompat: Partial<Record<TelegramActionType, readonly TelegramT
   "telegram.declineChatJoinRequest": ["chat_join_request_received", "update_received"]
 };
 
-export function isTelegramActionAllowedForTrigger(actionType: TelegramActionType, trigger: TelegramTriggerType): boolean {
+export function isTelegramActionAllowedForTrigger(actionType: TelegramActionType, trigger: TriggerType): boolean {
   const compat = actionTriggerCompat[actionType];
   if (!compat) {
     return true;
   }
 
-  return compat.includes(trigger);
+  return compat.includes(trigger as TelegramTriggerType);
 }
 
 export function getTelegramExecutionPolicy(actionType: TelegramActionType): TelegramExecutionPolicy {

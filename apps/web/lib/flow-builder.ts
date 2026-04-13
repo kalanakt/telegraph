@@ -149,6 +149,7 @@ function formatCatalogId(value: string) {
 
 function getTriggerCatalogGroup(trigger: TriggerType) {
   if (trigger === "webhook.received") return "Webhooks";
+  if (trigger === "cryptopay.invoice_paid") return "Crypto Pay";
   if (trigger === "shipping_query_received" || trigger === "pre_checkout_query_received") return "Commerce";
   if (
     trigger === "chat_member_updated" ||
@@ -170,7 +171,7 @@ function getTriggerCatalogGroup(trigger: TriggerType) {
 }
 
 function getActionCatalogGroup(actionType: ActionPayload["type"], category: string) {
-  if (actionType === "cryptopay.createInvoice") {
+  if (actionType === "cryptopay.createInvoice" || actionType === "telegram.sendInvoice") {
     return "Payments";
   }
 
@@ -194,7 +195,7 @@ function getActionCatalogGroup(actionType: ActionPayload["type"], category: stri
 }
 
 function getActionCatalogIcon(actionType: ActionPayload["type"]) {
-  if (actionType === "cryptopay.createInvoice") return "credit-card";
+  if (actionType === "cryptopay.createInvoice" || actionType === "telegram.sendInvoice") return "credit-card";
   if (actionType === "http.request") return "globe";
   if (actionType === "webhook.send") return "webhook";
   if (actionType.includes("Photo")) return "image";
@@ -524,6 +525,19 @@ export function createActionTemplate(actionType: ActionPayload["type"]): ActionT
         params: {
           chat_id: "{{event.chatId}}",
           action: "typing"
+        }
+      };
+    case "telegram.sendInvoice":
+      return {
+        type: actionType,
+        params: {
+          chat_id: "{{event.chatId}}",
+          title: "Premium access",
+          description: "Unlock premium access",
+          payload: "{{order.invoicePayload}}",
+          currency: "XTR",
+          prices: [{ label: "Premium access", amount: 500 }],
+          subscription_period: 2_592_000
         }
       };
     case "telegram.approveChatJoinRequest":

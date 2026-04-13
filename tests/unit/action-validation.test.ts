@@ -107,4 +107,35 @@ describe("actionSchema v2", () => {
       }).success
     ).toBe(true);
   });
+
+  it("accepts Telegram Stars invoices and rejects provider tokens for XTR", () => {
+    expect(
+      actionSchema.safeParse({
+        type: "telegram.sendInvoice",
+        params: {
+          chat_id: "{{event.chatId}}",
+          title: "Premium",
+          description: "Unlock premium access",
+          payload: "{{order.invoicePayload}}",
+          currency: "XTR",
+          prices: [{ label: "Premium access", amount: 500 }]
+        }
+      }).success
+    ).toBe(true);
+
+    expect(
+      actionSchema.safeParse({
+        type: "telegram.sendInvoice",
+        params: {
+          chat_id: "{{event.chatId}}",
+          title: "Premium",
+          description: "Unlock premium access",
+          payload: "{{order.invoicePayload}}",
+          currency: "XTR",
+          provider_token: "provider-token",
+          prices: [{ label: "Premium access", amount: 500 }]
+        }
+      }).success
+    ).toBe(false);
+  });
 });

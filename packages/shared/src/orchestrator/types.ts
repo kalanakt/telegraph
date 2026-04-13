@@ -16,6 +16,12 @@ export type HandleIncomingUpdateInput = {
   receivedAt: Date;
 };
 
+export type HandleIncomingEventInput = {
+  botId: string;
+  event: NormalizedEvent;
+  receivedAt: Date;
+};
+
 export type HandleIncomingWebhookInput = {
   ruleId: string;
   event: NormalizedEvent;
@@ -168,5 +174,6 @@ export type OrchestratorDeps = {
 
 export interface AutomationOrchestrator {
   handleIncomingUpdate(input: HandleIncomingUpdateInput): Promise<OrchestrationResult>;
+  handleIncomingEvent(input: HandleIncomingEventInput): Promise<OrchestrationResult>;
   handleIncomingWebhook(input: HandleIncomingWebhookInput): Promise<OrchestrationResult>;
 }

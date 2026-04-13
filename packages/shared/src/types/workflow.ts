@@ -21,13 +21,16 @@ export type FlowNodeMeta = {
   key?: string;
 };
 
+export const CRYPTOPAY_TRIGGER_TYPES = ["cryptopay.invoice_paid"] as const;
+export type CryptoPayTriggerType = (typeof CRYPTOPAY_TRIGGER_TYPES)[number];
+
 export const WEBHOOK_TRIGGER_TYPES = ["webhook.received"] as const;
 export type WebhookTriggerType = (typeof WEBHOOK_TRIGGER_TYPES)[number];
 
-export const FLOW_TRIGGER_TYPES = [...TELEGRAM_TRIGGER_TYPES, ...WEBHOOK_TRIGGER_TYPES] as const;
+export const FLOW_TRIGGER_TYPES = [...TELEGRAM_TRIGGER_TYPES, ...CRYPTOPAY_TRIGGER_TYPES, ...WEBHOOK_TRIGGER_TYPES] as const;
 
-export type TriggerType = TelegramTriggerType | WebhookTriggerType;
-export type EventSource = "telegram" | "webhook";
+export type TriggerType = TelegramTriggerType | CryptoPayTriggerType | WebhookTriggerType;
+export type EventSource = "telegram" | "cryptopay" | "webhook";
 
 export type ConditionType =
   | "text_contains"
@@ -628,6 +631,14 @@ export type NormalizedEventBase = {
   contactUserId?: number;
   successfulPaymentChargeId?: string;
   successfulPaymentProviderChargeId?: string;
+  subscriptionExpirationDate?: number;
+  isRecurring?: boolean;
+  isFirstRecurring?: boolean;
+  cryptoPayInvoiceId?: number;
+  cryptoPayInvoiceHash?: string;
+  cryptoPayStatus?: string;
+  cryptoPayPaidAmount?: string;
+  cryptoPayPaidAsset?: string;
   rawUpdate?: TelegramUpdate;
 };
 
@@ -696,6 +707,11 @@ export type UpdateReceivedEvent = NormalizedEventBase & {
   trigger: "update_received";
   rawUpdate: TelegramUpdate;
 };
+export type CryptoPayInvoicePaidEvent = NormalizedEventBase & {
+  source: "cryptopay";
+  trigger: "cryptopay.invoice_paid";
+  invoicePayload: string;
+};
 export type WebhookReceivedEvent = NormalizedEventBase & {
   source: "webhook";
   trigger: "webhook.received";
@@ -727,6 +743,7 @@ export type NormalizedEvent =
   | MessageReactionUpdatedEvent
   | MessageReactionCountUpdatedEvent
   | UpdateReceivedEvent
+  | CryptoPayInvoicePaidEvent
   | WebhookReceivedEvent;
 
 export type WorkflowContext = {

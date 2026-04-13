@@ -362,50 +362,51 @@ function checkpointMatchesEvent(
 export function createPrismaRuntimeRepository(prismaClient = prisma): RuntimeRepository {
   return {
     async prepareContextForEvent(input) {
-      const telegramUserId = toTelegramUserId(input.event.fromUserId);
-      const chatId = input.event.chatId ?? null;
+      const customerTelegramUserId = toTelegramUserId(input.event.targetUserId ?? input.event.fromUserId);
+      const sessionTelegramUserId = toTelegramUserId(input.event.fromUserId);
+      const directChatId = input.event.messageSource === "user" ? input.event.chatId ?? null : null;
 
       const customer =
-        telegramUserId === null
+        customerTelegramUserId === null
           ? null
           : await prismaClient.customerProfile.upsert({
               where: {
                 botId_telegramUserId: {
                   botId: input.botId,
-                  telegramUserId
+                  telegramUserId: customerTelegramUserId
                 }
               },
               create: {
                 botId: input.botId,
-                telegramUserId,
-                chatId,
+                telegramUserId: customerTelegramUserId,
+                chatId: directChatId,
                 username: input.event.fromUsername ?? null,
                 tags: [],
                 attributes: {},
                 lastInteractionAt: input.receivedAt
               },
               update: {
-                chatId: chatId ?? undefined,
+                chatId: directChatId ?? undefined,
                 username: input.event.fromUsername ?? undefined,
                 lastInteractionAt: input.receivedAt
               }
             });
 
       const session =
-        !chatId || telegramUserId === null
+        !directChatId || sessionTelegramUserId === null
           ? null
           : await prismaClient.conversationSession.upsert({
               where: {
                 botId_chatId_telegramUserId: {
                   botId: input.botId,
-                  chatId,
-                  telegramUserId
+                  chatId: directChatId,
+                  telegramUserId: sessionTelegramUserId
                 }
               },
               create: {
                 botId: input.botId,
-                chatId,
-                telegramUserId,
+                chatId: directChatId,
+                telegramUserId: sessionTelegramUserId,
                 customerProfileId: customer?.id ?? null,
                 status: "ACTIVE",
                 context: createEmptyWorkflowContext(),

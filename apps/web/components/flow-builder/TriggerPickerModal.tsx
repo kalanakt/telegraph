@@ -41,6 +41,7 @@ const TRIGGER_ICONS: Record<string, React.ElementType> = {
   poll_received: BarChart2,
   poll_answer_received: CheckSquare,
   update_received: Zap,
+  "cryptopay.invoice_paid": CreditCard,
   "webhook.received": Webhook,
 };
 
