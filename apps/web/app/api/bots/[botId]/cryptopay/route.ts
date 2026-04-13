@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { cryptoPayGetMe, decrypt, encrypt } from "@telegram-builder/shared";
 import { prisma } from "@/lib/prisma";
+import { toAbsoluteUrl } from "@/lib/site-url";
 import { requireAppUser } from "@/lib/user";
 
 function normalizeErrorMessage(error: unknown, fallback: string): string {
@@ -75,8 +76,8 @@ const updateCryptoPayWebhookSchema = z.object({
   webhookUrl: webhookUrlSchema
 });
 
-function buildWebhookUrl(request: Request, botId: string, secret: string) {
-  return new URL(`/api/cryptopay/webhook/${botId}/${secret}`, request.url).toString();
+function buildWebhookUrl(botId: string, secret: string) {
+  return toAbsoluteUrl(`/api/cryptopay/webhook/${botId}/${secret}`);
 }
 
 async function findOwnedBot(userId: string, botId: string) {
@@ -89,7 +90,6 @@ async function findOwnedBot(userId: string, botId: string) {
 }
 
 function serializeConnection(
-  request: Request,
   bot: {
     encryptedCryptoPayToken: string | null;
     encryptedCryptoPayWebhookSecret: string | null;
@@ -102,7 +102,7 @@ function serializeConnection(
   }
 ) {
   const secret = bot.encryptedCryptoPayWebhookSecret ? decrypt(bot.encryptedCryptoPayWebhookSecret) : null;
-  const defaultWebhookUrl = secret ? buildWebhookUrl(request, bot.id, secret) : null;
+  const defaultWebhookUrl = secret ? buildWebhookUrl(bot.id, secret) : null;
 
   return {
     connected: Boolean(bot.encryptedCryptoPayToken),
@@ -126,7 +126,7 @@ export async function GET(req: Request, context: { params: Promise<{ botId: stri
       return NextResponse.json({ error: "Bot not found" }, { status: 404 });
     }
 
-    return NextResponse.json(serializeConnection(req, bot));
+    return NextResponse.json(serializeConnection(bot));
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -168,7 +168,7 @@ export async function POST(req: Request, context: { params: Promise<{ botId: str
       }
     });
 
-    return NextResponse.json(serializeConnection(req, updated));
+    return NextResponse.json(serializeConnection(updated));
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -197,7 +197,7 @@ export async function PATCH(req: Request, context: { params: Promise<{ botId: st
       }
     });
 
-    return NextResponse.json(serializeConnection(req, updated));
+    return NextResponse.json(serializeConnection(updated));
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -231,7 +231,7 @@ export async function DELETE(req: Request, context: { params: Promise<{ botId: s
       }
     });
 
-    return NextResponse.json(serializeConnection(req, updated));
+    return NextResponse.json(serializeConnection(updated));
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

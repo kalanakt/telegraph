@@ -20,6 +20,10 @@ vi.mock("@/lib/prisma", () => ({
   }
 }));
 
+vi.mock("@/lib/site-url", () => ({
+  toAbsoluteUrl: (pathname: string) => `https://telegraph.us.com${pathname.startsWith("/") ? pathname : `/${pathname}`}`
+}));
+
 vi.mock("@telegram-builder/shared", async () => {
   const actual = await vi.importActual<typeof import("@telegram-builder/shared")>("@telegram-builder/shared");
   return {
@@ -107,8 +111,8 @@ describe("Crypto Pay bot settings route", () => {
       appId: "42",
       appName: "Payments",
       useTestnet: true,
-      defaultWebhookUrl: "http://localhost/api/cryptopay/webhook/bot_1/secret_123",
-      webhookUrl: "http://localhost/api/cryptopay/webhook/bot_1/secret_123"
+      defaultWebhookUrl: "https://telegraph.us.com/api/cryptopay/webhook/bot_1/secret_123",
+      webhookUrl: "https://telegraph.us.com/api/cryptopay/webhook/bot_1/secret_123"
     });
   });
 
@@ -168,8 +172,8 @@ describe("Crypto Pay bot settings route", () => {
     await expect(response.json()).resolves.toMatchObject({
       connected: true,
       customWebhookUrl: "https://billing.example.com/cryptopay",
-      defaultWebhookUrl: "http://localhost/api/cryptopay/webhook/bot_1/secret_123",
-      webhookUrl: "http://localhost/api/cryptopay/webhook/bot_1/secret_123"
+      defaultWebhookUrl: "https://telegraph.us.com/api/cryptopay/webhook/bot_1/secret_123",
+      webhookUrl: "https://telegraph.us.com/api/cryptopay/webhook/bot_1/secret_123"
     });
   });
 
