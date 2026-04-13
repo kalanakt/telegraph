@@ -243,20 +243,10 @@ export function CryptoPayConnectionCard({
 
         {state.webhookUrl ? (
           <div className="space-y-2">
-            <p className="text-xs uppercase text-muted-foreground">Telegraph endpoint</p>
-            <Input readOnly value={state.defaultWebhookUrl ?? state.webhookUrl ?? ""} className="text-xs" />
-            <p className="text-xs text-muted-foreground">
-              Telegraph listens on this endpoint and verifies the Crypto Pay signature on each webhook delivery.
-            </p>
-          </div>
-        ) : null}
-
-        {state.webhookUrl ? (
-          <div className="space-y-2">
             <p className="text-xs uppercase text-muted-foreground">Webhook URL to paste into Crypto Pay</p>
             <Input readOnly value={state.webhookUrl ?? ""} className="text-xs" />
             <p className="text-xs text-muted-foreground">
-              Add this URL in the Crypto Bot app Webhooks settings so paid invoices can update orders automatically.
+              Add this URL in the Crypto Bot app Webhooks settings. Telegraph verifies the Crypto Pay signature on each delivery and uses these updates to mark paid invoices.
             </p>
           </div>
         ) : null}
