@@ -92,6 +92,7 @@ model Bot {
   encryptedToken    String
   encryptedCryptoPayToken String?
   encryptedCryptoPayWebhookSecret String?
+  cryptoPayCustomWebhookUrl String?
   cryptoPayAppId    String?
   cryptoPayAppName  String?
   cryptoPayUseTestnet Boolean      @default(false)

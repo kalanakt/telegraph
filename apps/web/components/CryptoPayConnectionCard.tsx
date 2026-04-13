@@ -12,6 +12,8 @@ type Props = {
   appId?: string | null;
   appName?: string | null;
   webhookUrl?: string | null;
+  defaultWebhookUrl?: string | null;
+  customWebhookUrl?: string | null;
   useTestnet?: boolean;
   connectedAt?: string | null;
 };
@@ -21,9 +23,48 @@ type ResponsePayload = {
   appId?: string | null;
   appName?: string | null;
   webhookUrl?: string | null;
+  defaultWebhookUrl?: string | null;
+  customWebhookUrl?: string | null;
   useTestnet?: boolean;
   connectedAt?: string | null;
 };
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error === "string") {
+    const normalized = error.trim();
+    return normalized.length > 0 ? normalized : fallback;
+  }
+
+  if (error instanceof Error) {
+    return getErrorMessage(error.message, fallback);
+  }
+
+  if (Array.isArray(error)) {
+    const parts: string[] = error
+      .map((item) => getErrorMessage(item, ""))
+      .filter((item) => item.length > 0);
+    return parts.length > 0 ? parts.join(", ") : fallback;
+  }
+
+  if (error && typeof error === "object") {
+    const candidate = error as Record<string, unknown>;
+
+    for (const key of ["error", "message", "detail", "description"]) {
+      if (key in candidate) {
+        return getErrorMessage(candidate[key], fallback);
+      }
+    }
+
+    try {
+      const serialized = JSON.stringify(candidate);
+      return serialized.length > 0 ? serialized : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  return fallback;
+}
 
 export function CryptoPayConnectionCard({
   botId,
@@ -31,6 +72,8 @@ export function CryptoPayConnectionCard({
   appId,
   appName,
   webhookUrl,
+  defaultWebhookUrl,
+  customWebhookUrl,
   useTestnet = false,
   connectedAt,
 }: Props) {
@@ -42,12 +85,16 @@ export function CryptoPayConnectionCard({
     appId,
     appName,
     webhookUrl,
+    defaultWebhookUrl,
+    customWebhookUrl,
     useTestnet,
     connectedAt,
   });
+  const [webhookUrlInput, setWebhookUrlInput] = useState(customWebhookUrl ?? "");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingWebhook, setIsSavingWebhook] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -63,6 +110,7 @@ export function CryptoPayConnectionCard({
       if (!cancelled && response.ok && payload) {
         setState(payload);
         setTestnet(payload.useTestnet ?? false);
+        setWebhookUrlInput(payload.customWebhookUrl ?? "");
       }
     }
 
@@ -78,6 +126,9 @@ export function CryptoPayConnectionCard({
     [state.useTestnet],
   );
 
+  const hasWebhookOverride = webhookUrlInput.trim().length > 0;
+  const webhookUrlChanged = webhookUrlInput.trim() !== (state.customWebhookUrl ?? "");
+
   async function connect() {
     setIsSaving(true);
     setError("");
@@ -92,6 +143,7 @@ export function CryptoPayConnectionCard({
         body: JSON.stringify({
           token,
           useTestnet: testnet,
+          webhookUrl: webhookUrlInput.trim(),
         }),
       });
       const payload = (await response.json().catch(() => null)) as
@@ -99,17 +151,52 @@ export function CryptoPayConnectionCard({
         | null;
 
       if (!response.ok || !payload) {
-        throw new Error(payload?.error ?? "Could not connect Crypto Pay.");
+        throw new Error(getErrorMessage(payload?.error, "Could not connect Crypto Pay."));
       }
 
       setState(payload);
       setToken("");
+      setWebhookUrlInput(payload.customWebhookUrl ?? "");
       setMessage("Crypto Pay is connected.");
       router.refresh();
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "Could not connect Crypto Pay.");
+      setError(getErrorMessage(nextError, "Could not connect Crypto Pay."));
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function saveWebhookUrl() {
+    setIsSavingWebhook(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const response = await fetch(`/api/bots/${botId}/cryptopay`, {
+        method: "PATCH",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          webhookUrl: webhookUrlInput.trim(),
+        }),
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | ({ error?: string } & ResponsePayload)
+        | null;
+
+      if (!response.ok || !payload) {
+        throw new Error(getErrorMessage(payload?.error, "Could not update the Crypto Pay webhook URL."));
+      }
+
+      setState(payload);
+      setWebhookUrlInput(payload.customWebhookUrl ?? "");
+      setMessage(payload.customWebhookUrl ? "Custom Crypto Pay webhook URL saved." : "Crypto Pay webhook URL reset.");
+      router.refresh();
+    } catch (nextError) {
+      setError(getErrorMessage(nextError, "Could not update the Crypto Pay webhook URL."));
+    } finally {
+      setIsSavingWebhook(false);
     }
   }
 
@@ -127,14 +214,15 @@ export function CryptoPayConnectionCard({
         | null;
 
       if (!response.ok || !payload) {
-        throw new Error(payload?.error ?? "Could not disconnect Crypto Pay.");
+        throw new Error(getErrorMessage(payload?.error, "Could not disconnect Crypto Pay."));
       }
 
       setState(payload);
+      setWebhookUrlInput("");
       setMessage("Crypto Pay is disconnected.");
       router.refresh();
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "Could not disconnect Crypto Pay.");
+      setError(getErrorMessage(nextError, "Could not disconnect Crypto Pay."));
     } finally {
       setIsSaving(false);
     }
@@ -202,10 +290,54 @@ export function CryptoPayConnectionCard({
 
         {state.webhookUrl ? (
           <div className="space-y-2">
-            <p className="text-xs uppercase text-muted-foreground">Webhook URL</p>
-            <Input readOnly value={state.webhookUrl} className="text-xs" />
+            <p className="text-xs uppercase text-muted-foreground">Telegraph endpoint</p>
+            <Input readOnly value={state.defaultWebhookUrl ?? state.webhookUrl ?? ""} className="text-xs" />
             <p className="text-xs text-muted-foreground">
-              Enable webhooks in your Crypto Bot app settings with this exact URL so paid invoices can update orders automatically.
+              Telegraph listens on this endpoint and verifies the Crypto Pay signature on each webhook delivery.
+            </p>
+          </div>
+        ) : null}
+
+        {state.connected ? (
+          <div className="space-y-2">
+            <p className="text-xs uppercase text-muted-foreground">Custom webhook URL</p>
+            <Input
+              value={webhookUrlInput}
+              placeholder={state.defaultWebhookUrl ?? "https://example.com/api/cryptopay/webhook/..."}
+              onChange={(event) => setWebhookUrlInput(event.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Optional. Save a public webhook URL if you are routing Crypto Pay through your own domain or proxy.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={isSavingWebhook || !webhookUrlChanged}
+                onClick={saveWebhookUrl}
+              >
+                {isSavingWebhook ? "Saving..." : "Save webhook URL"}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                disabled={isSavingWebhook || !hasWebhookOverride}
+                onClick={() => setWebhookUrlInput("")}
+              >
+                Reset
+              </Button>
+            </div>
+          </div>
+        ) : null}
+
+        {state.webhookUrl ? (
+          <div className="space-y-2">
+            <p className="text-xs uppercase text-muted-foreground">Webhook URL to paste into Crypto Pay</p>
+            <Input readOnly value={state.webhookUrl ?? ""} className="text-xs" />
+            <p className="text-xs text-muted-foreground">
+              Add this URL in the Crypto Bot app Webhooks settings so paid invoices can update orders automatically.
             </p>
           </div>
         ) : null}

@@ -62,6 +62,42 @@ type CryptoPayResponse<T> =
       error?: string;
     };
 
+function normalizeCryptoPayError(value: unknown, fallback: string): string {
+  if (typeof value === "string") {
+    const normalized = value.trim();
+    return normalized.length > 0 ? normalized : fallback;
+  }
+
+  if (value instanceof Error) {
+    return normalizeCryptoPayError(value.message, fallback);
+  }
+
+  if (Array.isArray(value)) {
+    const parts: string[] = value
+      .map((item) => normalizeCryptoPayError(item, ""))
+      .filter((item) => item.length > 0);
+    return parts.length > 0 ? parts.join(", ") : fallback;
+  }
+
+  if (value && typeof value === "object") {
+    const candidate = value as Record<string, unknown>;
+
+    for (const key of ["error", "message", "detail", "description"]) {
+      if (key in candidate) {
+        return normalizeCryptoPayError(candidate[key], fallback);
+      }
+    }
+
+    try {
+      return JSON.stringify(candidate);
+    } catch {
+      return fallback;
+    }
+  }
+
+  return fallback;
+}
+
 export class CryptoPayRequestError extends Error {
   status?: number;
   code?: string;
@@ -102,7 +138,9 @@ async function cryptoPayRequest<T>(
 
   if (!response.ok) {
     throw new CryptoPayRequestError(
-      payload && !payload.ok ? payload.error ?? `Crypto Pay ${method} failed` : `Crypto Pay ${method} failed`,
+      payload && !payload.ok
+        ? normalizeCryptoPayError(payload.error, `Crypto Pay ${method} failed`)
+        : `Crypto Pay ${method} failed`,
       { status: response.status }
     );
   }
@@ -114,9 +152,9 @@ async function cryptoPayRequest<T>(
   }
 
   if (!payload.ok) {
-    throw new CryptoPayRequestError(payload.error ?? `Crypto Pay ${method} failed`, {
+    throw new CryptoPayRequestError(normalizeCryptoPayError(payload.error, `Crypto Pay ${method} failed`), {
       status: response.status,
-      code: payload.error
+      code: typeof payload.error === "string" ? payload.error : undefined
     });
   }
 

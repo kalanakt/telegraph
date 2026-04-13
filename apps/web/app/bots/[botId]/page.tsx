@@ -126,6 +126,7 @@ export default async function BotDetailPage({
         connected={Boolean(bot.encryptedCryptoPayToken)}
         appId={bot.cryptoPayAppId}
         appName={bot.cryptoPayAppName}
+        customWebhookUrl={bot.cryptoPayCustomWebhookUrl}
         useTestnet={bot.cryptoPayUseTestnet}
         connectedAt={bot.cryptoPayConnectedAt?.toISOString() ?? null}
       />
