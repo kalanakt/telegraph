@@ -74,6 +74,27 @@ function delayNode(id: string, x: number, y: number, delayMs: number, label?: st
   };
 }
 
+function awaitCallbackNode(
+  id: string,
+  x: number,
+  y: number,
+  data: {
+    timeout_ms?: number;
+    callback_prefix?: string;
+    store_as?: string;
+  },
+  label?: string,
+  key?: string
+) {
+  return {
+    id,
+    type: "await_callback" as const,
+    position: { x, y },
+    data,
+    ...withMeta(label, key),
+  };
+}
+
 function setVariableNode(id: string, x: number, y: number, path: string, value: JsonValue, label?: string, key?: string) {
   return {
     id,
@@ -98,6 +119,26 @@ function switchNode(
     type: "switch" as const,
     position: { x, y },
     data: { path, cases },
+    ...withMeta(label, key),
+  };
+}
+
+function formStepNode(
+  id: string,
+  x: number,
+  y: number,
+  field: string,
+  source: "text" | "contact_phone" | "contact_payload" | "shipping_address",
+  prompt?: string,
+  timeout_ms?: number,
+  label?: string,
+  key?: string
+) {
+  return {
+    id,
+    type: "form_step" as const,
+    position: { x, y },
+    data: { field, source, ...(prompt ? { prompt } : {}), ...(timeout_ms ? { timeout_ms } : {}) },
     ...withMeta(label, key),
   };
 }
@@ -1425,6 +1466,558 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
           ],
           [edge("e_hours_msg_1", "hours_msg_start", "hours_msg_match"), edge("e_hours_msg_2", "hours_msg_match", "hours_msg_reply", "true")]
+        ),
+      },
+    ],
+  }),
+  defineTemplate({
+    id: "builtin:appointment-booking-bot",
+    slug: "appointment-booking-bot",
+    title: "Appointment Booking Bot",
+    description:
+      "Collect appointment requests inside Telegram, confirm the details with the user, and forward each request to an admin chat for manual follow-up.",
+    visibility: "PUBLIC",
+    category: "sales",
+    audience: "business",
+    featured: false,
+    setupLevel: "guided",
+    requiresExternalIntegration: false,
+    flows: [
+      {
+        name: "Capture appointment requests from /start",
+        trigger: "command_received",
+        flowDefinition: defineFlow(
+          [
+            startNode("booking_start", 0, 0, "command_received", "Command received"),
+            conditionNode("booking_start_match", 220, 0, { type: "command_equals", value: "/start" }, "Is /start"),
+            setVariableNode(
+              "booking_admin_chat",
+              500,
+              0,
+              "config.admin_chat_id",
+              "SET_ADMIN_CHAT_ID",
+              "Admin chat ID (edit me)"
+            ),
+            actionNode(
+              "booking_menu",
+              780,
+              0,
+              {
+                type: "telegram.sendMessage",
+                params: {
+                  chat_id: "{{event.chatId}}",
+                  text:
+                    "Book an appointment or ask for help.\n\nChoose one option to continue.",
+                  reply_markup: {
+                    inline_keyboard: [
+                      [{ text: "Book appointment", callback_data: "booking:menu:book" }],
+                      [{ text: "Choose a service", callback_data: "booking:menu:services" }],
+                      [{ text: "Contact support", callback_data: "booking:menu:support" }],
+                    ],
+                  },
+                },
+              },
+              "Show main menu"
+            ),
+            awaitCallbackNode(
+              "booking_menu_choice",
+              1060,
+              0,
+              {
+                timeout_ms: 15 * 60 * 1000,
+                callback_prefix: "booking:menu:",
+                store_as: "booking.menu_action",
+              },
+              "Wait for menu choice"
+            ),
+            switchNode(
+              "booking_menu_switch",
+              1320,
+              0,
+              "vars.booking.menu_action",
+              [
+                { id: "book", value: "booking:menu:book", label: "Book appointment" },
+                { id: "services", value: "booking:menu:services", label: "Choose a service" },
+                { id: "support", value: "booking:menu:support", label: "Contact support" },
+              ],
+              "Route menu choice"
+            ),
+            actionNode(
+              "booking_services_intro",
+              1600,
+              -140,
+              {
+                type: "telegram.sendMessage",
+                params: {
+                  chat_id: "{{event.chatId}}",
+                  text:
+                    "Available services:\n• Consultation\n• Follow-up visit\n• Product demo\n\nReply with the service you want when the next message arrives.",
+                },
+              },
+              "Show services"
+            ),
+            actionNode(
+              "booking_support_reply",
+              1600,
+              140,
+              {
+                type: "telegram.sendMessage",
+                params: {
+                  chat_id: "{{event.chatId}}",
+                  text:
+                    "Please share your question here and a team member will follow up. You can also restart anytime with /start.",
+                },
+              },
+              "Send support reply"
+            ),
+            actionNode(
+              "booking_service_prompt",
+              1880,
+              -40,
+              {
+                type: "telegram.sendMessage",
+                params: {
+                  chat_id: "{{event.chatId}}",
+                  text: "What service do you want to book?",
+                },
+              },
+              "Ask service"
+            ),
+            formStepNode(
+              "booking_service_step",
+              2160,
+              -40,
+              "booking.service",
+              "text",
+              undefined,
+              30 * 60 * 1000,
+              "Store service"
+            ),
+            actionNode(
+              "booking_name_prompt",
+              2440,
+              -40,
+              {
+                type: "telegram.sendMessage",
+                params: {
+                  chat_id: "{{event.chatId}}",
+                  text: "What is your name?",
+                },
+              },
+              "Ask name"
+            ),
+            formStepNode(
+              "booking_name_step",
+              2720,
+              -40,
+              "booking.name",
+              "text",
+              undefined,
+              30 * 60 * 1000,
+              "Store name"
+            ),
+            actionNode(
+              "booking_date_prompt",
+              3000,
+              -40,
+              {
+                type: "telegram.sendMessage",
+                params: {
+                  chat_id: "{{event.chatId}}",
+                  text: "What date do you prefer?",
+                },
+              },
+              "Ask preferred date"
+            ),
+            formStepNode(
+              "booking_date_step",
+              3280,
+              -40,
+              "booking.date",
+              "text",
+              undefined,
+              30 * 60 * 1000,
+              "Store preferred date"
+            ),
+            actionNode(
+              "booking_time_prompt",
+              3560,
+              -40,
+              {
+                type: "telegram.sendMessage",
+                params: {
+                  chat_id: "{{event.chatId}}",
+                  text: "What time do you prefer?",
+                },
+              },
+              "Ask preferred time"
+            ),
+            formStepNode(
+              "booking_time_step",
+              3840,
+              -40,
+              "booking.time",
+              "text",
+              undefined,
+              30 * 60 * 1000,
+              "Store preferred time"
+            ),
+            actionNode(
+              "booking_phone_prompt",
+              4120,
+              -40,
+              {
+                type: "telegram.sendMessage",
+                params: {
+                  chat_id: "{{event.chatId}}",
+                  text: "What is your phone number?",
+                },
+              },
+              "Ask phone number"
+            ),
+            formStepNode(
+              "booking_phone_step",
+              4400,
+              -40,
+              "booking.phone",
+              "text",
+              undefined,
+              30 * 60 * 1000,
+              "Store phone number"
+            ),
+            actionNode(
+              "booking_note_prompt",
+              4680,
+              -40,
+              {
+                type: "telegram.sendMessage",
+                params: {
+                  chat_id: "{{event.chatId}}",
+                  text: "Any note or special request?",
+                },
+              },
+              "Ask note"
+            ),
+            formStepNode(
+              "booking_note_step",
+              4960,
+              -40,
+              "booking.note",
+              "text",
+              undefined,
+              30 * 60 * 1000,
+              "Store note"
+            ),
+            actionNode(
+              "booking_summary",
+              5240,
+              -40,
+              {
+                type: "telegram.sendMessage",
+                params: {
+                  chat_id: "{{event.chatId}}",
+                  text:
+                    "Please confirm your appointment request.\n\nName: {{vars.booking.name}}\nService: {{vars.booking.service}}\nDate: {{vars.booking.date}}\nTime: {{vars.booking.time}}\nPhone: {{vars.booking.phone}}\nNote: {{vars.booking.note}}",
+                  reply_markup: {
+                    inline_keyboard: [
+                      [
+                        { text: "Confirm", callback_data: "booking:summary:confirm" },
+                        { text: "Edit", callback_data: "booking:summary:edit" },
+                      ],
+                    ],
+                  },
+                },
+              },
+              "Show summary"
+            ),
+            awaitCallbackNode(
+              "booking_summary_choice",
+              5520,
+              -40,
+              {
+                timeout_ms: 15 * 60 * 1000,
+                callback_prefix: "booking:summary:",
+                store_as: "booking.summary_action",
+              },
+              "Wait for summary choice"
+            ),
+            switchNode(
+              "booking_summary_switch",
+              5800,
+              -40,
+              "vars.booking.summary_action",
+              [
+                { id: "confirm", value: "booking:summary:confirm", label: "Confirm" },
+                { id: "edit", value: "booking:summary:edit", label: "Edit" },
+              ],
+              "Route summary choice"
+            ),
+            conditionNode(
+              "booking_admin_configured",
+              8880,
+              -180,
+              {
+                type: "variable_equals",
+                key: "config.admin_chat_id",
+                value: "SET_ADMIN_CHAT_ID",
+              },
+              "Admin chat still placeholder"
+            ),
+            actionNode(
+              "booking_config_warning",
+              9160,
+              -320,
+              {
+                type: "telegram.sendMessage",
+                params: {
+                  chat_id: "{{event.chatId}}",
+                  text:
+                    "Booking is almost ready, but the admin chat is not configured yet. Edit the \"Admin chat ID (edit me)\" node in this flow, then try again.",
+                },
+              },
+              "Warn about setup"
+            ),
+            actionNode(
+              "booking_admin_notify",
+              9160,
+              -100,
+              {
+                type: "telegram.sendMessage",
+                params: {
+                  chat_id: "{{vars.config.admin_chat_id}}",
+                  text:
+                    "New Appointment Request\n\nName: {{vars.booking.name}}\nService: {{vars.booking.service}}\nDate: {{vars.booking.date}}\nTime: {{vars.booking.time}}\nPhone: {{vars.booking.phone}}\nTelegram: @{{event.fromUsername}}\nNote: {{vars.booking.note}}",
+                },
+              },
+              "Notify admin"
+            ),
+            actionNode(
+              "booking_user_confirmed",
+              9440,
+              -100,
+              {
+                type: "telegram.sendMessage",
+                params: {
+                  chat_id: "{{event.chatId}}",
+                  text:
+                    "Your appointment request has been sent. A team member will review it and contact you soon.",
+                },
+              },
+              "Confirm request"
+            ),
+            actionNode(
+              "booking_service_prompt_edit",
+              6080,
+              220,
+              {
+                type: "telegram.sendMessage",
+                params: {
+                  chat_id: "{{event.chatId}}",
+                  text: "Let's update the request. What service do you want to book?",
+                },
+              },
+              "Ask service again"
+            ),
+            formStepNode(
+              "booking_service_step_edit",
+              6360,
+              220,
+              "booking.service",
+              "text",
+              undefined,
+              30 * 60 * 1000,
+              "Store updated service"
+            ),
+            actionNode(
+              "booking_name_prompt_edit",
+              6640,
+              220,
+              {
+                type: "telegram.sendMessage",
+                params: {
+                  chat_id: "{{event.chatId}}",
+                  text: "What is your name?",
+                },
+              },
+              "Ask name again"
+            ),
+            formStepNode(
+              "booking_name_step_edit",
+              6920,
+              220,
+              "booking.name",
+              "text",
+              undefined,
+              30 * 60 * 1000,
+              "Store updated name"
+            ),
+            actionNode(
+              "booking_date_prompt_edit",
+              7200,
+              220,
+              {
+                type: "telegram.sendMessage",
+                params: {
+                  chat_id: "{{event.chatId}}",
+                  text: "What date do you prefer?",
+                },
+              },
+              "Ask preferred date again"
+            ),
+            formStepNode(
+              "booking_date_step_edit",
+              7480,
+              220,
+              "booking.date",
+              "text",
+              undefined,
+              30 * 60 * 1000,
+              "Store updated date"
+            ),
+            actionNode(
+              "booking_time_prompt_edit",
+              7760,
+              220,
+              {
+                type: "telegram.sendMessage",
+                params: {
+                  chat_id: "{{event.chatId}}",
+                  text: "What time do you prefer?",
+                },
+              },
+              "Ask preferred time again"
+            ),
+            formStepNode(
+              "booking_time_step_edit",
+              8040,
+              220,
+              "booking.time",
+              "text",
+              undefined,
+              30 * 60 * 1000,
+              "Store updated time"
+            ),
+            actionNode(
+              "booking_phone_prompt_edit",
+              8320,
+              220,
+              {
+                type: "telegram.sendMessage",
+                params: {
+                  chat_id: "{{event.chatId}}",
+                  text: "What is your phone number?",
+                },
+              },
+              "Ask phone number again"
+            ),
+            formStepNode(
+              "booking_phone_step_edit",
+              8600,
+              220,
+              "booking.phone",
+              "text",
+              undefined,
+              30 * 60 * 1000,
+              "Store updated phone"
+            ),
+            actionNode(
+              "booking_note_prompt_edit",
+              8880,
+              220,
+              {
+                type: "telegram.sendMessage",
+                params: {
+                  chat_id: "{{event.chatId}}",
+                  text: "Any note or special request?",
+                },
+              },
+              "Ask note again"
+            ),
+            formStepNode(
+              "booking_note_step_edit",
+              9160,
+              220,
+              "booking.note",
+              "text",
+              undefined,
+              30 * 60 * 1000,
+              "Store updated note"
+            ),
+            actionNode(
+              "booking_summary_edit",
+              9440,
+              220,
+              {
+                type: "telegram.sendMessage",
+                params: {
+                  chat_id: "{{event.chatId}}",
+                  text:
+                    "Review your updated appointment request.\n\nName: {{vars.booking.name}}\nService: {{vars.booking.service}}\nDate: {{vars.booking.date}}\nTime: {{vars.booking.time}}\nPhone: {{vars.booking.phone}}\nNote: {{vars.booking.note}}",
+                  reply_markup: {
+                    inline_keyboard: [[{ text: "Confirm", callback_data: "booking:updated:confirm" }]],
+                  },
+                },
+              },
+              "Show updated summary"
+            ),
+            awaitCallbackNode(
+              "booking_summary_choice_edit",
+              9720,
+              220,
+              {
+                timeout_ms: 15 * 60 * 1000,
+                callback_prefix: "booking:updated:",
+                store_as: "booking.updated_summary_action",
+              },
+              "Wait for updated confirmation"
+            ),
+          ],
+          [
+            edge("e_booking_1", "booking_start", "booking_start_match"),
+            edge("e_booking_2", "booking_start_match", "booking_admin_chat", "true"),
+            edge("e_booking_3", "booking_admin_chat", "booking_menu"),
+            edge("e_booking_4", "booking_menu", "booking_menu_choice"),
+            edge("e_booking_5", "booking_menu_choice", "booking_menu_switch"),
+            edge("e_booking_6", "booking_menu_switch", "booking_service_prompt", "book"),
+            edge("e_booking_7", "booking_menu_switch", "booking_services_intro", "services"),
+            edge("e_booking_8", "booking_menu_switch", "booking_support_reply", "support"),
+            edge("e_booking_9", "booking_menu_switch", "booking_support_reply", "default"),
+            edge("e_booking_10", "booking_services_intro", "booking_service_prompt"),
+            edge("e_booking_11", "booking_service_prompt", "booking_service_step"),
+            edge("e_booking_12", "booking_service_step", "booking_name_prompt"),
+            edge("e_booking_13", "booking_name_prompt", "booking_name_step"),
+            edge("e_booking_14", "booking_name_step", "booking_date_prompt"),
+            edge("e_booking_15", "booking_date_prompt", "booking_date_step"),
+            edge("e_booking_16", "booking_date_step", "booking_time_prompt"),
+            edge("e_booking_17", "booking_time_prompt", "booking_time_step"),
+            edge("e_booking_18", "booking_time_step", "booking_phone_prompt"),
+            edge("e_booking_19", "booking_phone_prompt", "booking_phone_step"),
+            edge("e_booking_20", "booking_phone_step", "booking_note_prompt"),
+            edge("e_booking_21", "booking_note_prompt", "booking_note_step"),
+            edge("e_booking_22", "booking_note_step", "booking_summary"),
+            edge("e_booking_23", "booking_summary", "booking_summary_choice"),
+            edge("e_booking_24", "booking_summary_choice", "booking_summary_switch"),
+            edge("e_booking_25", "booking_summary_switch", "booking_admin_configured", "confirm"),
+            edge("e_booking_26", "booking_summary_switch", "booking_service_prompt_edit", "edit"),
+            edge("e_booking_27", "booking_summary_switch", "booking_service_prompt_edit", "default"),
+            edge("e_booking_28", "booking_admin_configured", "booking_config_warning", "true"),
+            edge("e_booking_29", "booking_admin_configured", "booking_admin_notify", "false"),
+            edge("e_booking_30", "booking_admin_notify", "booking_user_confirmed"),
+            edge("e_booking_31", "booking_service_prompt_edit", "booking_service_step_edit"),
+            edge("e_booking_32", "booking_service_step_edit", "booking_name_prompt_edit"),
+            edge("e_booking_33", "booking_name_prompt_edit", "booking_name_step_edit"),
+            edge("e_booking_34", "booking_name_step_edit", "booking_date_prompt_edit"),
+            edge("e_booking_35", "booking_date_prompt_edit", "booking_date_step_edit"),
+            edge("e_booking_36", "booking_date_step_edit", "booking_time_prompt_edit"),
+            edge("e_booking_37", "booking_time_prompt_edit", "booking_time_step_edit"),
+            edge("e_booking_38", "booking_time_step_edit", "booking_phone_prompt_edit"),
+            edge("e_booking_39", "booking_phone_prompt_edit", "booking_phone_step_edit"),
+            edge("e_booking_40", "booking_phone_step_edit", "booking_note_prompt_edit"),
+            edge("e_booking_41", "booking_note_prompt_edit", "booking_note_step_edit"),
+            edge("e_booking_42", "booking_note_step_edit", "booking_summary_edit"),
+            edge("e_booking_43", "booking_summary_edit", "booking_summary_choice_edit"),
+            edge("e_booking_44", "booking_summary_choice_edit", "booking_admin_configured"),
+          ]
         ),
       },
     ],

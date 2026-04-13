@@ -1,6 +1,13 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   normalizeAwaitCallbackNodeData,
@@ -51,6 +58,10 @@ export function CommerceNodeInspector({ type, data, onUpdate }: Props) {
           <span>Store as</span>
           <Input value={normalized.store_as ?? ""} onChange={(event) => onUpdate({ store_as: event.target.value })} />
         </label>
+        <label className="builder-label mt-2">
+          <span>Timeout (ms)</span>
+          <Input value={String(normalized.timeout_ms ?? "")} onChange={(event) => onUpdate({ timeout_ms: Number(event.target.value || 0) || undefined })} />
+        </label>
       </div>
     );
   }
@@ -92,12 +103,28 @@ export function CommerceNodeInspector({ type, data, onUpdate }: Props) {
         </label>
         <label className="builder-label mt-2">
           <span>Source</span>
-          <Input value={normalized.source} onChange={(event) => onUpdate({ source: event.target.value })} />
+          <Select value={normalized.source} onValueChange={(value) => onUpdate({ source: value })}>
+            <SelectTrigger className="builder-field">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="text">text</SelectItem>
+              <SelectItem value="contact_phone">contact_phone</SelectItem>
+              <SelectItem value="contact_payload">contact_payload</SelectItem>
+              <SelectItem value="shipping_address">shipping_address</SelectItem>
+            </SelectContent>
+          </Select>
         </label>
         <label className="builder-label mt-2">
-          <span>Prompt</span>
-          <Textarea rows={3} value={normalized.prompt ?? ""} onChange={(event) => onUpdate({ prompt: event.target.value })} />
+          <span>Timeout (ms)</span>
+          <Input value={String(normalized.timeout_ms ?? "")} onChange={(event) => onUpdate({ timeout_ms: Number(event.target.value || 0) || undefined })} />
         </label>
+        <div className="mt-2 rounded-md border border-border/80 bg-background/65 px-3 py-2">
+          <p className="text-[10px] font-semibold text-foreground/78">Prompting note</p>
+          <p className="mt-0.5 text-[10px] text-muted-foreground">
+            This step stores the next reply. Send the question with a separate message node right before it.
+          </p>
+        </div>
       </div>
     );
   }

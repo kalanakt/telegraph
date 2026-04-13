@@ -15,6 +15,7 @@ import {
   findLinkedCallbackFlows,
   getBranchHandleForInsertedNode,
   setInlineButtonCallbackToken,
+  toFlowDefinition,
 } from "@/components/flow-builder/utils";
 
 describe("flow-builder trigger groups", () => {
@@ -237,6 +238,51 @@ describe("flow-builder toolbar node creation", () => {
 
     expect(edge.type).toBe("builder-edge");
     expect(edge.label).toBe("true");
+  });
+
+  it("serializes await-callback timeout and form-step source details", () => {
+    const start = createFlowNode("start", [], { x: 0, y: 0 });
+    const wait = createFlowNode("await_callback", [start], { x: 220, y: 0 });
+    const form = createFlowNode("form_step", [start, wait], { x: 440, y: 0 });
+
+    wait.data = {
+      ...wait.data,
+      timeout_ms: 45000,
+      callback_prefix: "booking:summary:",
+      store_as: "booking.summary_action",
+    };
+    form.data = {
+      ...form.data,
+      field: "booking.phone",
+      source: "contact_phone",
+      timeout_ms: 30000,
+    };
+
+    const flow = toFlowDefinition(
+      [start, wait, form],
+      [
+        { id: "e1", source: start.id, target: wait.id },
+        { id: "e2", source: wait.id, target: form.id },
+      ],
+    );
+
+    expect(flowDefinitionSchema.safeParse(flow).success).toBe(true);
+    expect(flow.nodes.find((node) => node.id === wait.id)).toMatchObject({
+      type: "await_callback",
+      data: {
+        timeout_ms: 45000,
+        callback_prefix: "booking:summary:",
+        store_as: "booking.summary_action",
+      },
+    });
+    expect(flow.nodes.find((node) => node.id === form.id)).toMatchObject({
+      type: "form_step",
+      data: {
+        field: "booking.phone",
+        source: "contact_phone",
+        timeout_ms: 30000,
+      },
+    });
   });
 
   it("uses a deterministic callback token and links matching callback flows", () => {

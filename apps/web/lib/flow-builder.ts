@@ -73,7 +73,7 @@ const LOGIC_CATALOG: Array<{
   },
   {
     kind: "collect_contact",
-    group: "Commerce Capture",
+    group: "Conversation State",
     title: "Collect Contact",
     description: "Wait for a contact share and map it into the customer profile.",
     icon: "user"
@@ -87,7 +87,7 @@ const LOGIC_CATALOG: Array<{
   },
   {
     kind: "form_step",
-    group: "Commerce Capture",
+    group: "Conversation State",
     title: "Form Step",
     description: "Capture structured input from the next user response.",
     icon: "form"

@@ -94,6 +94,22 @@ function makeUpdate(text = "hello") {
   };
 }
 
+function makeCallbackUpdate(data = "booking:summary:edit") {
+  return {
+    update_id: 11,
+    callback_query: {
+      id: "callback_1",
+      from: { id: 444, username: "booker" },
+      data,
+      message: {
+        message_id: 91,
+        chat: { id: 333, type: "private" },
+        text: "Confirm or edit"
+      }
+    }
+  };
+}
+
 function makeActiveBotContext(captureUsersEnabled = false) {
   return {
     botId: "bot_1",
@@ -760,5 +776,158 @@ describe("AutomationOrchestrator", () => {
     expect(enqueued).toHaveLength(1);
     expect(enqueued[0]?.actionNodeId).toBe("action_1");
     expect(enqueued[0]?.context.runtime.variables.customer_reply).toBe("hello after wait");
+  });
+
+  it("resumes callback waits and routes edit choices through a switch branch", async () => {
+    const enqueued: ActionJob[] = [];
+    const resolvedCheckpoints: string[] = [];
+
+    const flow = {
+      nodes: [
+        { id: "start_1", type: "start", position: { x: 0, y: 0 }, data: {} },
+        {
+          id: "await_summary",
+          type: "await_callback",
+          position: { x: 220, y: 0 },
+          data: {
+            timeout_ms: 60000,
+            callback_prefix: "booking:summary:",
+            store_as: "booking.summary_action"
+          }
+        },
+        {
+          id: "summary_switch",
+          type: "switch",
+          position: { x: 440, y: 0 },
+          data: {
+            path: "vars.booking.summary_action",
+            cases: [
+              { id: "confirm", value: "booking:summary:confirm", label: "Confirm" },
+              { id: "edit", value: "booking:summary:edit", label: "Edit" }
+            ]
+          }
+        },
+        {
+          id: "notify_admin",
+          type: "action",
+          position: { x: 680, y: -120 },
+          data: {
+            type: "telegram.sendMessage",
+            params: { chat_id: "-100admin", text: "New booking" }
+          }
+        },
+        {
+          id: "ask_service",
+          type: "action",
+          position: { x: 680, y: 120 },
+          data: {
+            type: "telegram.sendMessage",
+            params: { chat_id: "333", text: "What service do you want to book?" }
+          }
+        }
+      ],
+      edges: [
+        { id: "e1", source: "start_1", target: "await_summary" },
+        { id: "e2", source: "await_summary", target: "summary_switch" },
+        { id: "e3", source: "summary_switch", target: "notify_admin", sourceHandle: "confirm" },
+        { id: "e4", source: "summary_switch", target: "ask_service", sourceHandle: "edit" }
+      ]
+    };
+
+    const orchestrator = createAutomationOrchestrator({
+      botRepository: {
+        async findBotContext() {
+          return makeActiveBotContext();
+        }
+      },
+      botUserRepository: createNoopBotUserRepository(),
+      eventRepository: {
+        async createIncomingEvent() {
+          return { status: "created", eventId: "evt_callback_resume" };
+        }
+      },
+      ruleRepository: {
+        async listActiveRules() {
+          return [];
+        },
+        async findActiveRuleById() {
+          return {
+            ruleId: "rule_booking",
+            botId: "bot_1",
+            trigger: "command_received",
+            flowDefinition: flow
+          };
+        }
+      },
+      runRepository: {
+        async createRunWithActions(input) {
+          return {
+            runId: "run_callback_resume",
+            actionRuns: input.actions.map((action) => ({
+              actionId: action.actionId,
+              actionRunId: `action_run_${action.actionId}`,
+              action: action.payload
+            }))
+          };
+        }
+      },
+      runtimeRepository: {
+        async prepareContextForEvent() {
+          return {
+            sessionId: "session_1",
+            context: {
+              variables: {},
+              session: { id: "session_1", botId: "bot_1", chatId: "333", telegramUserId: "444" },
+              customer: {},
+              order: {}
+            }
+          };
+        },
+        async findMatchingCheckpoint() {
+          return {
+            checkpointId: "checkpoint_summary",
+            ruleId: "rule_booking",
+            nodeId: "await_summary",
+            checkpointType: "workflow.awaitCallback",
+            status: "OPEN",
+            sessionId: "session_1",
+            flowDefinition: flow,
+            botId: "bot_1",
+            metadata: {
+              store_as: "booking.summary_action",
+              callback_prefix: "booking:summary:"
+            }
+          };
+        },
+        async resolveCheckpoint(input) {
+          resolvedCheckpoints.push(input.checkpointId);
+        }
+      },
+      actionQueue: {
+        async enqueueAction(job) {
+          enqueued.push(job);
+        }
+      },
+      entitlementPolicy: {
+        async isMonthlyExecutionExceeded() {
+          return false;
+        }
+      },
+      decryptToken: () => "decrypted-token"
+    });
+
+    const result = await orchestrator.handleIncomingUpdate({
+      botId: "bot_1",
+      telegramUpdate: makeCallbackUpdate(),
+      receivedAt: new Date()
+    });
+
+    expect(result.runIds).toEqual(["run_callback_resume"]);
+    expect(resolvedCheckpoints).toEqual(["checkpoint_summary"]);
+    expect(enqueued).toHaveLength(1);
+    expect(enqueued[0]?.actionNodeId).toBe("ask_service");
+    expect(enqueued[0]?.context.runtime.variables.booking).toMatchObject({
+      summary_action: "booking:summary:edit"
+    });
   });
 });

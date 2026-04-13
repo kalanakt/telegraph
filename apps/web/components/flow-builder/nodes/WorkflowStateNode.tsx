@@ -28,7 +28,7 @@ function describe(type: string, data: Record<string, unknown>) {
     case "collect_shipping":
       return "Pause until Telegram sends a shipping query and attach it to the open order.";
     case "form_step":
-      return `Capture ${typeof data.field === "string" ? data.field : "input"} from ${typeof data.source === "string" ? data.source : "text"}.`;
+      return `Store the next ${typeof data.source === "string" ? data.source : "text"} reply in ${typeof data.field === "string" ? `vars.${data.field}` : "the selected field"}.`;
     case "upsert_customer":
       return "Merge mapped fields into the persistent customer profile.";
     case "upsert_order":
@@ -63,7 +63,7 @@ export function WorkflowStateNode({
             <Icon className="h-4 w-4" />
           </span>
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] uppercase text-muted-foreground">Commerce</div>
+            <div className="text-[10px] uppercase text-muted-foreground">Workflow state</div>
             <div className="font-semibold leading-tight text-foreground">{label}</div>
             <div className="mt-2 text-[11px] leading-5 text-foreground/76">{describe(type, data)}</div>
             <div className="mt-2 flex flex-wrap gap-1.5">

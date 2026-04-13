@@ -200,6 +200,16 @@ describe("template service", () => {
     expect(prismaMock.workflowTemplate.findFirst).not.toHaveBeenCalled();
   });
 
+  it("resolves the appointment booking built-in with one command flow", async () => {
+    const template = await getPublicTemplateBySlug("appointment-booking-bot");
+
+    expect(template?.id).toBe("builtin:appointment-booking-bot");
+    expect(template?.source).toBe("builtin");
+    expect(template?.flows).toHaveLength(1);
+    expect(template?.flows[0]?.trigger).toBe("command_received");
+    expect(prismaMock.workflowTemplate.findFirst).not.toHaveBeenCalled();
+  });
+
   it("installs built-in templates into disabled workflow rules", async () => {
     getUserPlanMock.mockResolvedValue("PRO");
     getRemainingRuleCapacityMock.mockResolvedValue(10);
