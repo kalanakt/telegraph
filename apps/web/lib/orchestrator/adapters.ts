@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import type { JobsOptions } from "bullmq";
 import * as Sentry from "@sentry/nextjs";
 import {
+  createEmptyWorkflowContext,
   decrypt,
   encrypt,
   getExecutionPolicy,
@@ -16,7 +17,9 @@ import {
   type FlowDefinition,
   type RuleRepository,
   type RuleRecord,
+  type RuntimeRepository,
   type RunRepository,
+  type WorkflowContext,
   flowDefinitionSchema,
   normalizePlanKey,
   PLAN_LIMITS
@@ -76,6 +79,24 @@ function isUniqueConstraintError(error: unknown): boolean {
   return false;
 }
 
+function toTelegramUserId(value: number | undefined): bigint | null {
+  return typeof value === "number" ? BigInt(value) : null;
+}
+
+function toRuntimeContext(value: unknown): WorkflowContext {
+  if (!value || typeof value !== "object") {
+    return createEmptyWorkflowContext();
+  }
+
+  const record = value as Record<string, unknown>;
+  return createEmptyWorkflowContext({
+    variables: (record.variables as WorkflowContext["variables"] | undefined) ?? {},
+    session: (record.session as WorkflowContext["session"] | undefined) ?? {},
+    customer: (record.customer as WorkflowContext["customer"] | undefined) ?? {},
+    order: (record.order as WorkflowContext["order"] | undefined) ?? {}
+  });
+}
+
 export function createPrismaBotRepository(prismaClient = prisma): BotRepository {
   return {
     async findBotContext(botId) {
@@ -115,6 +136,8 @@ export function createPrismaBotRepository(prismaClient = prisma): BotRepository 
         botId: bot.id,
         userId: bot.userId,
         encryptedToken,
+        encryptedCryptoPayToken: bot.encryptedCryptoPayToken,
+        cryptoPayUseTestnet: bot.cryptoPayUseTestnet,
         status: bot.status,
         plan: normalizePlanKey(bot.user.subscription?.plan),
         captureUsersEnabled: bot.captureUsersEnabled
@@ -234,10 +257,14 @@ export function createPrismaRunRepository(prismaClient = prisma): RunRepository 
             botId: input.botId,
             ruleId: input.rule.ruleId,
             eventId: input.eventId,
+            conversationSessionId: input.conversationSessionId ?? null,
+            customerProfileId: input.customerProfileId ?? null,
+            commerceOrderId: input.commerceOrderId ?? null,
+            resumedFromCheckpointId: input.resumedFromCheckpointId ?? null,
             status: "queued",
             trigger: input.eventPayload.trigger,
             eventPayload: toPrismaJson(input.eventPayload),
-            contextVariables: toPrismaJson(input.variables ?? {})
+            contextVariables: toPrismaJson(input.context ?? createEmptyWorkflowContext())
           }
         });
 
@@ -284,6 +311,313 @@ export function createPrismaRunRepository(prismaClient = prisma): RunRepository 
           };
         })
       };
+    }
+  };
+}
+
+function checkpointMatchesEvent(
+  checkpointType: string,
+  metadata: Record<string, unknown>,
+  event: {
+    trigger: string;
+    callbackData?: string;
+    hasContact?: boolean;
+    contactPhoneNumber?: string;
+  }
+) {
+  if (checkpointType === "workflow.awaitMessage") {
+    return ["message_received", "message_edited", "command_received"].includes(event.trigger);
+  }
+
+  if (checkpointType === "workflow.awaitCallback") {
+    if (event.trigger !== "callback_query_received") {
+      return false;
+    }
+    const prefix = typeof metadata.callback_prefix === "string" ? metadata.callback_prefix : "";
+    return !prefix || (event.callbackData ?? "").startsWith(prefix);
+  }
+
+  if (checkpointType === "workflow.collectContact") {
+    return Boolean(event.hasContact || event.contactPhoneNumber);
+  }
+
+  if (checkpointType === "workflow.collectShipping") {
+    return event.trigger === "shipping_query_received";
+  }
+
+  if (checkpointType === "workflow.formStep") {
+    const source = typeof metadata.source === "string" ? metadata.source : "text";
+    if (source === "shipping_address") {
+      return event.trigger === "shipping_query_received";
+    }
+    if (source === "contact_phone" || source === "contact_payload") {
+      return Boolean(event.hasContact || event.contactPhoneNumber);
+    }
+    return ["message_received", "message_edited", "command_received"].includes(event.trigger);
+  }
+
+  return false;
+}
+
+export function createPrismaRuntimeRepository(prismaClient = prisma): RuntimeRepository {
+  return {
+    async prepareContextForEvent(input) {
+      const telegramUserId = toTelegramUserId(input.event.fromUserId);
+      const chatId = input.event.chatId ?? null;
+
+      const customer =
+        telegramUserId === null
+          ? null
+          : await prismaClient.customerProfile.upsert({
+              where: {
+                botId_telegramUserId: {
+                  botId: input.botId,
+                  telegramUserId
+                }
+              },
+              create: {
+                botId: input.botId,
+                telegramUserId,
+                chatId,
+                username: input.event.fromUsername ?? null,
+                tags: [],
+                attributes: {},
+                lastInteractionAt: input.receivedAt
+              },
+              update: {
+                chatId: chatId ?? undefined,
+                username: input.event.fromUsername ?? undefined,
+                lastInteractionAt: input.receivedAt
+              }
+            });
+
+      const session =
+        !chatId || telegramUserId === null
+          ? null
+          : await prismaClient.conversationSession.upsert({
+              where: {
+                botId_chatId_telegramUserId: {
+                  botId: input.botId,
+                  chatId,
+                  telegramUserId
+                }
+              },
+              create: {
+                botId: input.botId,
+                chatId,
+                telegramUserId,
+                customerProfileId: customer?.id ?? null,
+                status: "ACTIVE",
+                context: createEmptyWorkflowContext(),
+                startedAt: input.receivedAt,
+                lastEventAt: input.receivedAt
+              },
+              update: {
+                customerProfileId: customer?.id ?? undefined,
+                lastEventAt: input.receivedAt
+              }
+            });
+
+      let order =
+        input.event.invoicePayload
+          ? await prismaClient.commerceOrder.findFirst({
+              where: {
+                botId: input.botId,
+                invoicePayload: input.event.invoicePayload
+              },
+              orderBy: { updatedAt: "desc" }
+            })
+          : null;
+
+      if (!order && session?.id) {
+        order = await prismaClient.commerceOrder.findFirst({
+          where: {
+            botId: input.botId,
+            sessionId: session.id,
+            status: {
+              in: ["draft", "awaiting_shipping", "awaiting_payment", "paid"]
+            }
+          },
+          orderBy: { updatedAt: "desc" }
+        });
+      }
+
+      if (order && (input.event.shippingQueryId || input.event.preCheckoutQueryId || input.event.successfulPaymentChargeId)) {
+        order = await prismaClient.commerceOrder.update({
+          where: { id: order.id },
+          data: {
+            shippingOptionId: input.event.shippingOptionId ?? undefined,
+            shippingAddress: input.event.shippingAddress ? (input.event.shippingAddress as never) : undefined,
+            orderInfo: input.event.orderInfo ? (input.event.orderInfo as never) : undefined,
+            currency: input.event.currency ?? undefined,
+            totalAmount: input.event.totalAmount ?? undefined,
+            status: input.event.successfulPaymentChargeId
+              ? "paid"
+              : input.event.preCheckoutQueryId
+              ? "awaiting_payment"
+              : input.event.shippingQueryId
+              ? "awaiting_shipping"
+              : undefined
+          }
+        });
+      }
+
+      const stored = toRuntimeContext(session?.context);
+      return {
+        sessionId: session?.id,
+        customerProfileId: customer?.id,
+        commerceOrderId: order?.id,
+        context: createEmptyWorkflowContext({
+          variables: stored.variables,
+          session: {
+            ...stored.session,
+            ...(session
+              ? {
+                  id: session.id,
+                  botId: session.botId,
+                  chatId: session.chatId,
+                  telegramUserId: session.telegramUserId?.toString(),
+                  customerProfileId: session.customerProfileId ?? undefined,
+                  status: session.status,
+                  handoffOwner: session.handoffOwner ?? undefined,
+                  handoffNote: session.handoffNote ?? undefined,
+                  context: ((session.context as Record<string, unknown> | null) ?? {}) as WorkflowContext["session"]["context"]
+                }
+              : {})
+          },
+          customer: {
+            ...stored.customer,
+            ...(customer
+              ? {
+                  id: customer.id,
+                  botId: customer.botId,
+                  telegramUserId: customer.telegramUserId.toString(),
+                  chatId: customer.chatId ?? undefined,
+                  username: customer.username ?? undefined,
+                  firstName: customer.firstName ?? undefined,
+                  lastName: customer.lastName ?? undefined,
+                  languageCode: customer.languageCode ?? undefined,
+                  phoneNumber: customer.phoneNumber ?? undefined,
+                  email: customer.email ?? undefined,
+                  tags: customer.tags as unknown as WorkflowContext["customer"]["tags"],
+                  attributes: ((customer.attributes as Record<string, unknown> | null) ?? {}) as WorkflowContext["customer"]["attributes"]
+                }
+              : {})
+          },
+          order: {
+            ...stored.order,
+            ...(order
+              ? {
+                  id: order.id,
+                  botId: order.botId,
+                  sessionId: order.sessionId ?? undefined,
+                  customerProfileId: order.customerProfileId ?? undefined,
+                  latestWorkflowRunId: order.latestWorkflowRunId ?? undefined,
+                  externalId: order.externalId ?? undefined,
+                  invoicePayload: order.invoicePayload ?? undefined,
+                  currency: order.currency ?? undefined,
+                  totalAmount: order.totalAmount ?? undefined,
+                  shippingOptionId: order.shippingOptionId ?? undefined,
+                  shippingAddress: order.shippingAddress as unknown as WorkflowContext["order"]["shippingAddress"],
+                  orderInfo: order.orderInfo as unknown as WorkflowContext["order"]["orderInfo"],
+                  attributes: ((order.attributes as Record<string, unknown> | null) ?? {}) as WorkflowContext["order"]["attributes"],
+                  status: order.status
+                }
+              : {})
+          }
+        })
+      };
+    },
+
+    async findMatchingCheckpoint(input) {
+      const telegramUserId = toTelegramUserId(input.event.fromUserId);
+      const chatId = input.event.chatId ?? null;
+      if (!chatId || telegramUserId === null) {
+        return null;
+      }
+
+      const session = await prismaClient.conversationSession.findUnique({
+        where: {
+          botId_chatId_telegramUserId: {
+            botId: input.botId,
+            chatId,
+            telegramUserId
+          }
+        }
+      });
+
+      if (!session || session.status !== "ACTIVE") {
+        return null;
+      }
+
+      const checkpoints = await prismaClient.sessionCheckpoint.findMany({
+        where: {
+          sessionId: session.id,
+          status: "OPEN"
+        },
+        include: {
+          rule: true
+        },
+        orderBy: { createdAt: "asc" }
+      });
+
+      for (const checkpoint of checkpoints) {
+        if (checkpoint.expiresAt && checkpoint.expiresAt <= input.receivedAt) {
+          await prismaClient.sessionCheckpoint.update({
+            where: { id: checkpoint.id },
+            data: {
+              status: "EXPIRED",
+              resolvedAt: input.receivedAt
+            }
+          });
+          continue;
+        }
+
+        const metadata =
+          checkpoint.metadata && typeof checkpoint.metadata === "object"
+            ? (checkpoint.metadata as Record<string, unknown>)
+            : {};
+
+        if (!checkpointMatchesEvent(checkpoint.checkpointType, metadata, input.event)) {
+          continue;
+        }
+
+        return {
+          checkpointId: checkpoint.id,
+          ruleId: checkpoint.ruleId,
+          nodeId: checkpoint.nodeId,
+          checkpointType: checkpoint.checkpointType,
+          status: checkpoint.status,
+          sessionId: checkpoint.sessionId,
+          flowDefinition: flowDefinitionSchema.parse(checkpoint.rule.flowDefinition) as FlowDefinition,
+          botId: checkpoint.rule.botId,
+          metadata: metadata as unknown as import("@telegram-builder/shared").RuntimeCheckpointRecord["metadata"]
+        };
+      }
+
+      return null;
+    },
+
+    async resolveCheckpoint(input) {
+      const checkpoint = await prismaClient.sessionCheckpoint.update({
+        where: { id: input.checkpointId },
+        data: {
+          status: "RESUMED",
+          resolvedAt: input.receivedAt,
+          resumeEventId: input.eventId
+        },
+        select: {
+          sessionId: true
+        }
+      });
+
+      await prismaClient.conversationSession.update({
+        where: { id: checkpoint.sessionId },
+        data: {
+          lastEventAt: input.receivedAt,
+          status: "ACTIVE"
+        }
+      });
     }
   };
 }

@@ -18,6 +18,7 @@ import { ActionInspector } from "./inspector/ActionInspector";
 import { SwitchInspector } from "./inspector/SwitchInspector";
 import { SetVariableInspector } from "./inspector/SetVariableInspector";
 import { DelayInspector } from "./inspector/DelayInspector";
+import { CommerceNodeInspector } from "./inspector/CommerceNodeInspector";
 import { TokenBrowser } from "./inspector/TokenBrowser";
 import type {
   ActionEditorData,
@@ -27,6 +28,18 @@ import type {
   SetVariableEditorData,
   SwitchEditorData,
 } from "./types";
+
+const COMMERCE_NODE_TYPES = [
+  "await_message",
+  "await_callback",
+  "collect_contact",
+  "collect_shipping",
+  "form_step",
+  "upsert_customer",
+  "upsert_order",
+  "create_invoice",
+  "order_transition",
+] as const;
 
 type Props = {
   selectedNode: Node | null;
@@ -61,6 +74,10 @@ export function FlowInspector({
     selectedNode?.type === "set_variable" ? normalizeSetVariableNodeData(selectedNode.data) : null;
   const selectedDelay =
     selectedNode?.type === "delay" ? normalizeDelayNodeData(selectedNode.data) : null;
+  const selectedCommerceNode =
+    selectedNode && COMMERCE_NODE_TYPES.includes(selectedNode.type as (typeof COMMERCE_NODE_TYPES)[number])
+      ? selectedNode
+      : null;
   const selectedMeta = selectedNode ? getNodeMeta(selectedNode.data, { label: "Node", key: selectedNode.id }) : null;
 
   return (
@@ -141,6 +158,14 @@ export function FlowInspector({
 
       {selectedNode?.type === "delay" && selectedDelay ? (
         <DelayInspector data={selectedDelay} onUpdate={onUpdateNodeData} />
+      ) : null}
+
+      {selectedCommerceNode ? (
+        <CommerceNodeInspector
+          type={String(selectedCommerceNode.type)}
+          data={selectedCommerceNode.data as Record<string, unknown>}
+          onUpdate={onUpdateNodeData}
+        />
       ) : null}
 
       {selectedNode?.type === "action" && selectedAction ? (

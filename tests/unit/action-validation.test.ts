@@ -93,4 +93,18 @@ describe("actionSchema v2", () => {
       }).success
     ).toBe(true);
   });
+
+  it("accepts Crypto Pay invoice actions", () => {
+    expect(
+      actionSchema.safeParse({
+        type: "cryptopay.createInvoice",
+        params: {
+          currency_type: "crypto",
+          asset: "USDT",
+          amount: "12.50",
+          payload: "{{order.invoicePayload}}"
+        }
+      }).success
+    ).toBe(true);
+  });
 });

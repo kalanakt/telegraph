@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { BotActionsMenu } from "@/components/BotActionsMenu";
 import { BotStatusBadge } from "@/components/BotStatusBadge";
+import { CryptoPayConnectionCard } from "@/components/CryptoPayConnectionCard";
 import { BotUsersToggle } from "@/components/BotUsersToggle";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -119,6 +120,15 @@ export default async function BotDetailPage({
           </div>
         </CardContent>
       </Card>
+
+      <CryptoPayConnectionCard
+        botId={bot.id}
+        connected={Boolean(bot.encryptedCryptoPayToken)}
+        appId={bot.cryptoPayAppId}
+        appName={bot.cryptoPayAppName}
+        useTestnet={bot.cryptoPayUseTestnet}
+        connectedAt={bot.cryptoPayConnectedAt?.toISOString() ?? null}
+      />
 
       <Card className="interactive-lift">
         <CardHeader>

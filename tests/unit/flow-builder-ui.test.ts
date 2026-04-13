@@ -140,6 +140,7 @@ describe("flow-builder composer payloads", () => {
     expect(actionSchema.safeParse(createActionTemplate("telegram.answerPreCheckoutQuery")).success).toBe(true);
     expect(actionSchema.safeParse(createActionTemplate("telegram.approveChatJoinRequest")).success).toBe(true);
     expect(actionSchema.safeParse(createActionTemplate("telegram.declineChatJoinRequest")).success).toBe(true);
+    expect(actionSchema.safeParse(createActionTemplate("cryptopay.createInvoice")).success).toBe(true);
   });
 
   it("builds a valid default template for chat actions", () => {

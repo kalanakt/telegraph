@@ -126,7 +126,20 @@ export function useFlowCallbacks(state: FlowState, setStatus: (msg: string) => v
 
       let nextEdges = remainingEdges;
       const isLinearPassthrough =
-        (node.type === "action" || node.type === "set_variable" || node.type === "delay") && outgoing.length === 1;
+        (
+          node.type === "action" ||
+          node.type === "set_variable" ||
+          node.type === "delay" ||
+          node.type === "await_message" ||
+          node.type === "await_callback" ||
+          node.type === "collect_contact" ||
+          node.type === "collect_shipping" ||
+          node.type === "form_step" ||
+          node.type === "upsert_customer" ||
+          node.type === "upsert_order" ||
+          node.type === "create_invoice" ||
+          node.type === "order_transition"
+        ) && outgoing.length === 1;
 
       if (isLinearPassthrough) {
         const downstream = outgoing[0];

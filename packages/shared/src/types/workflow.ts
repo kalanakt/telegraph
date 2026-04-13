@@ -1,4 +1,9 @@
 import type {
+  CryptoPayCreateInvoiceParams,
+  CryptoPayCurrencyType,
+  CryptoPayPaidButtonName
+} from "../crypto-pay/client.js";
+import type {
   TelegramActionType,
   TelegramMethod,
   TelegramMethodParams,
@@ -68,10 +73,20 @@ export type ConditionType =
 
 export type ActionType =
   | TelegramActionType
+  | "cryptopay.createInvoice"
   | "webhook.send"
   | "http.request"
   | "workflow.setVariable"
-  | "workflow.delay";
+  | "workflow.delay"
+  | "workflow.awaitMessage"
+  | "workflow.awaitCallback"
+  | "workflow.collectContact"
+  | "workflow.collectShipping"
+  | "workflow.formStep"
+  | "workflow.upsertCustomer"
+  | "workflow.upsertOrder"
+  | "workflow.createInvoice"
+  | "workflow.orderTransition";
 
 export type RetryClass = "transient" | "permanent";
 
@@ -171,7 +186,18 @@ export type HttpRequestActionPayload = {
   };
 };
 
-export type ActionPayload = TelegramActionUnion | WebhookSendActionPayload | HttpRequestActionPayload;
+export type CryptoPayCreateInvoiceActionPayload = {
+  type: "cryptopay.createInvoice";
+  params: CryptoPayCreateInvoiceParams;
+};
+
+export type ActionPayload =
+  | TelegramActionUnion
+  | WebhookSendActionPayload
+  | HttpRequestActionPayload
+  | CryptoPayCreateInvoiceActionPayload;
+
+export type { CryptoPayCurrencyType, CryptoPayPaidButtonName };
 
 export type WorkflowSetVariableActionPayload = {
   type: "workflow.setVariable";
@@ -188,12 +214,167 @@ export type WorkflowDelayActionPayload = {
   };
 };
 
+export type WorkflowAwaitMessageActionPayload = {
+  type: "workflow.awaitMessage";
+  params: {
+    timeout_ms?: number;
+    store_as?: string;
+  };
+};
+
+export type WorkflowAwaitCallbackActionPayload = {
+  type: "workflow.awaitCallback";
+  params: {
+    timeout_ms?: number;
+    callback_prefix?: string;
+    store_as?: string;
+  };
+};
+
+export type WorkflowCollectContactActionPayload = {
+  type: "workflow.collectContact";
+  params: {
+    timeout_ms?: number;
+  };
+};
+
+export type WorkflowCollectShippingActionPayload = {
+  type: "workflow.collectShipping";
+  params: {
+    timeout_ms?: number;
+  };
+};
+
+export type WorkflowFormStepActionPayload = {
+  type: "workflow.formStep";
+  params: {
+    field: string;
+    source: "text" | "contact_phone" | "contact_payload" | "shipping_address";
+    prompt?: string;
+    timeout_ms?: number;
+  };
+};
+
+export type WorkflowUpsertCustomerActionPayload = {
+  type: "workflow.upsertCustomer";
+  params: {
+    profile: JsonValue;
+  };
+};
+
+export type WorkflowUpsertOrderActionPayload = {
+  type: "workflow.upsertOrder";
+  params: {
+    external_id?: string;
+    invoice_payload?: string;
+    currency?: string;
+    total_amount?: number;
+    status?: CommerceOrderStatus;
+    data?: JsonValue;
+  };
+};
+
+export type WorkflowCreateInvoiceActionPayload = {
+  type: "workflow.createInvoice";
+  params: {
+    invoice_payload: string;
+    title?: string;
+    description?: string;
+    currency: string;
+    total_amount: number;
+    data?: JsonValue;
+  };
+};
+
+export type WorkflowOrderTransitionActionPayload = {
+  type: "workflow.orderTransition";
+  params: {
+    status: CommerceOrderStatus;
+    note?: string;
+  };
+};
+
 export type ExecutablePayload =
   | ActionPayload
   | WorkflowSetVariableActionPayload
-  | WorkflowDelayActionPayload;
+  | WorkflowDelayActionPayload
+  | WorkflowAwaitMessageActionPayload
+  | WorkflowAwaitCallbackActionPayload
+  | WorkflowCollectContactActionPayload
+  | WorkflowCollectShippingActionPayload
+  | WorkflowFormStepActionPayload
+  | WorkflowUpsertCustomerActionPayload
+  | WorkflowUpsertOrderActionPayload
+  | WorkflowCreateInvoiceActionPayload
+  | WorkflowOrderTransitionActionPayload;
 
-export type FlowNodeType = "start" | "condition" | "action" | "switch" | "set_variable" | "delay";
+export type CommerceOrderStatus = "draft" | "awaiting_shipping" | "awaiting_payment" | "paid" | "fulfilled" | "canceled";
+
+export type ConversationSessionStatus = "ACTIVE" | "PAUSED" | "HANDOFF" | "CLOSED";
+export type SessionCheckpointStatus = "OPEN" | "RESUMED" | "EXPIRED" | "CANCELED";
+
+export type ConversationSessionState = {
+  id?: string;
+  botId?: string;
+  chatId?: string;
+  telegramUserId?: string;
+  customerProfileId?: string;
+  status?: ConversationSessionStatus;
+  handoffOwner?: string;
+  handoffNote?: string;
+  checkpointId?: string;
+  resumedFromCheckpointId?: string;
+  context?: Record<string, JsonValue>;
+};
+
+export type CustomerProfileState = {
+  id?: string;
+  botId?: string;
+  telegramUserId?: string;
+  chatId?: string;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+  languageCode?: string;
+  phoneNumber?: string;
+  email?: string;
+  tags?: JsonValue;
+  attributes?: Record<string, JsonValue>;
+};
+
+export type CommerceOrderState = {
+  id?: string;
+  botId?: string;
+  sessionId?: string;
+  customerProfileId?: string;
+  latestWorkflowRunId?: string;
+  externalId?: string;
+  invoicePayload?: string;
+  currency?: string;
+  totalAmount?: number;
+  shippingOptionId?: string;
+  shippingAddress?: JsonValue;
+  orderInfo?: JsonValue;
+  attributes?: Record<string, JsonValue>;
+  status?: CommerceOrderStatus;
+};
+
+export type FlowNodeType =
+  | "start"
+  | "condition"
+  | "action"
+  | "switch"
+  | "set_variable"
+  | "delay"
+  | "await_message"
+  | "await_callback"
+  | "collect_contact"
+  | "collect_shipping"
+  | "form_step"
+  | "upsert_customer"
+  | "upsert_order"
+  | "create_invoice"
+  | "order_transition";
 
 export type FlowNodePosition = {
   x: number;
@@ -222,6 +403,59 @@ export type FlowSetVariableNodeData = {
 
 export type FlowDelayNodeData = {
   delay_ms: number;
+};
+
+export type FlowAwaitMessageNodeData = {
+  timeout_ms?: number;
+  store_as?: string;
+};
+
+export type FlowAwaitCallbackNodeData = {
+  timeout_ms?: number;
+  callback_prefix?: string;
+  store_as?: string;
+};
+
+export type FlowCollectContactNodeData = {
+  timeout_ms?: number;
+};
+
+export type FlowCollectShippingNodeData = {
+  timeout_ms?: number;
+};
+
+export type FlowFormStepNodeData = {
+  field: string;
+  source: "text" | "contact_phone" | "contact_payload" | "shipping_address";
+  prompt?: string;
+  timeout_ms?: number;
+};
+
+export type FlowUpsertCustomerNodeData = {
+  profile: JsonValue;
+};
+
+export type FlowUpsertOrderNodeData = {
+  external_id?: string;
+  invoice_payload?: string;
+  currency?: string;
+  total_amount?: number;
+  status?: CommerceOrderStatus;
+  data?: JsonValue;
+};
+
+export type FlowCreateInvoiceNodeData = {
+  invoice_payload: string;
+  title?: string;
+  description?: string;
+  currency: string;
+  total_amount: number;
+  data?: JsonValue;
+};
+
+export type FlowOrderTransitionNodeData = {
+  status: CommerceOrderStatus;
+  note?: string;
 };
 
 export type FlowNode =
@@ -266,6 +500,69 @@ export type FlowNode =
       position: FlowNodePosition;
       meta?: FlowNodeMeta;
       data: FlowDelayNodeData;
+    }
+  | {
+      id: string;
+      type: "await_message";
+      position: FlowNodePosition;
+      meta?: FlowNodeMeta;
+      data: FlowAwaitMessageNodeData;
+    }
+  | {
+      id: string;
+      type: "await_callback";
+      position: FlowNodePosition;
+      meta?: FlowNodeMeta;
+      data: FlowAwaitCallbackNodeData;
+    }
+  | {
+      id: string;
+      type: "collect_contact";
+      position: FlowNodePosition;
+      meta?: FlowNodeMeta;
+      data: FlowCollectContactNodeData;
+    }
+  | {
+      id: string;
+      type: "collect_shipping";
+      position: FlowNodePosition;
+      meta?: FlowNodeMeta;
+      data: FlowCollectShippingNodeData;
+    }
+  | {
+      id: string;
+      type: "form_step";
+      position: FlowNodePosition;
+      meta?: FlowNodeMeta;
+      data: FlowFormStepNodeData;
+    }
+  | {
+      id: string;
+      type: "upsert_customer";
+      position: FlowNodePosition;
+      meta?: FlowNodeMeta;
+      data: FlowUpsertCustomerNodeData;
+    }
+  | {
+      id: string;
+      type: "upsert_order";
+      position: FlowNodePosition;
+      meta?: FlowNodeMeta;
+      data: FlowUpsertOrderNodeData;
+    }
+  | {
+      id: string;
+      type: "create_invoice";
+      position: FlowNodePosition;
+      meta?: FlowNodeMeta;
+      data: FlowCreateInvoiceNodeData;
+    }
+  | {
+      id: string;
+      type: "order_transition";
+      position: FlowNodePosition;
+      meta?: FlowNodeMeta;
+      data: FlowOrderTransitionNodeData;
     };
 
 export type FlowEdge = {
@@ -296,6 +593,8 @@ export type NormalizedEventBase = {
   messageId?: number;
   callbackQueryId?: string;
   callbackData?: string;
+  callbackSourceMessageId?: number;
+  callbackSourceChatId?: string;
   inlineQueryId?: string;
   inlineQuery?: string;
   shippingQueryId?: string;
@@ -325,6 +624,10 @@ export type NormalizedEventBase = {
   hasSticker?: boolean;
   hasLocation?: boolean;
   hasContact?: boolean;
+  contactPhoneNumber?: string;
+  contactUserId?: number;
+  successfulPaymentChargeId?: string;
+  successfulPaymentProviderChargeId?: string;
   rawUpdate?: TelegramUpdate;
 };
 
@@ -428,6 +731,9 @@ export type NormalizedEvent =
 
 export type WorkflowContext = {
   variables: Record<string, JsonValue>;
+  session: ConversationSessionState;
+  customer: CustomerProfileState;
+  order: CommerceOrderState;
 };
 
 export type ActionExecutionResult = {

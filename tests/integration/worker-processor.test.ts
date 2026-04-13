@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { handleActionJobFailure, processActionJob, type WorkerProcessorDeps } from "../../apps/worker/src/processor";
-import type { ActionJob } from "@telegram-builder/shared";
+import { createEmptyWorkflowContext, type ActionJob } from "@telegram-builder/shared";
 
 function makeJob(): ActionJob {
   return {
@@ -43,7 +43,15 @@ function makeJob(): ActionJob {
     },
     context: {
       trigger: "message_received",
-      variables: {},
+      runtime: createEmptyWorkflowContext({
+        variables: {},
+        session: {
+          id: "session_1",
+          botId: "bot_1",
+          chatId: "42",
+          telegramUserId: "42",
+        },
+      }),
       createdAt: new Date().toISOString()
     }
   };
@@ -57,9 +65,15 @@ function createDeps(overrides: Partial<WorkerProcessorDeps> = {}): WorkerProcess
     },
     async updateWorkflowRunStatus() {},
     async getWorkflowRunContext() {
-      return {};
+      return createEmptyWorkflowContext();
     },
     async updateWorkflowRunContext() {},
+    async syncRuntimeState({ context }) {
+      return context;
+    },
+    async createCheckpoint() {
+      return { checkpointId: "checkpoint_1" };
+    },
     async getOrCreateActionRun() {
       return { actionRunId: "next_action_run", created: true };
     },
@@ -183,5 +197,154 @@ describe("worker processor", () => {
     ]);
     expect(runUpdates).toEqual([{ runId: "run_1", status: "failed" }]);
     expect(deadLetters).toHaveLength(1);
+  });
+
+  it("creates a checkpoint and marks the run waiting for await-message nodes", async () => {
+    const runUpdates: unknown[] = [];
+    const checkpoints: unknown[] = [];
+    const contextUpdates: unknown[] = [];
+
+    const deps = createDeps({
+      async updateWorkflowRunStatus(runId, status) {
+        runUpdates.push({ runId, status });
+      },
+      async createCheckpoint(input) {
+        checkpoints.push(input);
+        return { checkpointId: "checkpoint_wait_1" };
+      },
+      async updateWorkflowRunContext(runId, context) {
+        contextUpdates.push({ runId, context });
+      },
+    });
+
+    await processActionJob(
+      deps,
+      {
+        ...makeJob(),
+        actionNodeId: "await_1",
+        actionRunId: "action_run_wait",
+        actionType: "workflow.awaitMessage",
+        executionPolicy: {
+          retryClass: "permanent",
+          timeoutMs: 2000,
+          idempotencyKeyStrategy: "action_run",
+          rateLimitBucket: "workflow.wait",
+        },
+        idempotencyKey: "1:action_run_wait:workflow.awaitMessage",
+        action: { type: "workflow.awaitMessage", params: { timeout_ms: 60000, store_as: "customer_reply" } },
+        flowDefinition: {
+          nodes: [
+            { id: "start_1", type: "start", position: { x: 0, y: 0 }, data: {} },
+            { id: "await_1", type: "await_message", position: { x: 200, y: 0 }, data: { timeout_ms: 60000, store_as: "customer_reply" } },
+            { id: "action_2", type: "action", position: { x: 400, y: 0 }, data: { type: "telegram.sendMessage", params: { chat_id: "42", text: "after wait" } } },
+          ],
+          edges: [
+            { id: "e1", source: "start_1", target: "await_1" },
+            { id: "e2", source: "await_1", target: "action_2" },
+          ],
+        },
+      },
+      1
+    );
+
+    expect(checkpoints).toHaveLength(1);
+    expect(runUpdates).toEqual([{ runId: "run_1", status: "waiting" }]);
+    expect(contextUpdates.at(-1)).toMatchObject({
+      runId: "run_1",
+      context: {
+        session: {
+          checkpointId: "checkpoint_wait_1",
+        },
+      },
+    });
+  });
+
+  it("creates a Crypto Pay invoice and stores payment links in order state", async () => {
+    const contextUpdates: unknown[] = [];
+
+    const deps = createDeps({
+      async updateWorkflowRunContext(runId, context) {
+        contextUpdates.push({ runId, context });
+      },
+      async invokeCryptoPayMethod() {
+        return {
+          invoice_id: 77,
+          hash: "hash_77",
+          currency_type: "crypto",
+          status: "active",
+          asset: "USDT",
+          amount: "25",
+          payload: "order_1",
+          bot_invoice_url: "https://t.me/CryptoBot?start=invoice-77",
+        };
+      },
+    });
+
+    await processActionJob(
+      deps,
+      {
+        ...makeJob(),
+        actionNodeId: "crypto_1",
+        actionRunId: "action_run_crypto_1",
+        actionType: "cryptopay.createInvoice",
+        botToken: null,
+        cryptoPayToken: "crypto_token",
+        action: {
+          type: "cryptopay.createInvoice",
+          params: {
+            currency_type: "crypto",
+            asset: "USDT",
+            amount: "25",
+            payload: "{{order.id}}",
+          },
+        },
+        flowDefinition: {
+          nodes: [
+            { id: "start_1", type: "start", position: { x: 0, y: 0 }, data: {} },
+            {
+              id: "crypto_1",
+              type: "action",
+              position: { x: 200, y: 0 },
+              data: {
+                type: "cryptopay.createInvoice",
+                params: {
+                  currency_type: "crypto",
+                  asset: "USDT",
+                  amount: "25",
+                  payload: "{{order.id}}",
+                },
+              },
+            },
+          ],
+          edges: [{ id: "e1", source: "start_1", target: "crypto_1" }],
+        },
+        context: {
+          ...makeJob().context,
+          runtime: createEmptyWorkflowContext({
+            session: {
+              id: "session_1",
+            },
+            order: {
+              id: "order_1",
+            },
+          }),
+        },
+      },
+      1
+    );
+
+    expect(contextUpdates.at(-1)).toMatchObject({
+      runId: "run_1",
+      context: {
+        order: {
+          invoicePayload: "order_1",
+          status: "awaiting_payment",
+          attributes: {
+            cryptoPayInvoiceHash: "hash_77",
+            cryptoPayInvoiceUrl: "https://t.me/CryptoBot?start=invoice-77",
+          },
+        },
+      },
+    });
   });
 });

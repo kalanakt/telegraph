@@ -1,11 +1,29 @@
 import type { ExecutablePayload, FlowDefinition, JsonValue, NormalizedEvent, WorkflowContext } from "../types/workflow.js";
 import { evaluateCondition } from "./evaluator.js";
 import { getPathValue, toTemplateString } from "./object-path.js";
+import { createEmptyWorkflowContext, getContextScopeValue } from "./runtime-state.js";
 
 export type DerivedFlowAction = {
   actionId: string;
   payload: ExecutablePayload;
 };
+
+function isExecutableNode(node: FlowDefinition["nodes"][number]) {
+  return (
+    node.type === "action" ||
+    node.type === "set_variable" ||
+    node.type === "delay" ||
+    node.type === "await_message" ||
+    node.type === "await_callback" ||
+    node.type === "collect_contact" ||
+    node.type === "collect_shipping" ||
+    node.type === "form_step" ||
+    node.type === "upsert_customer" ||
+    node.type === "upsert_order" ||
+    node.type === "create_invoice" ||
+    node.type === "order_transition"
+  );
+}
 
 function toOutgoingEdgeMap(flow: FlowDefinition) {
   const map = new Map<string, Array<{ target: string; sourceHandle?: string }>>();
@@ -23,7 +41,7 @@ function getNodeMap(flow: FlowDefinition) {
 
 export function listFlowActions(flow: FlowDefinition): DerivedFlowAction[] {
   return flow.nodes
-    .filter((node) => node.type === "action" || node.type === "set_variable" || node.type === "delay")
+    .filter((node) => isExecutableNode(node))
     .map((node) => ({
       actionId: node.id,
       payload: toExecutablePayload(node)
@@ -45,6 +63,104 @@ function toExecutablePayload(node: FlowDefinition["nodes"][number]): ExecutableP
     };
   }
 
+  if (node.type === "await_message") {
+    return {
+      type: "workflow.awaitMessage",
+      params: {
+        timeout_ms: node.data.timeout_ms,
+        store_as: node.data.store_as
+      }
+    };
+  }
+
+  if (node.type === "await_callback") {
+    return {
+      type: "workflow.awaitCallback",
+      params: {
+        timeout_ms: node.data.timeout_ms,
+        callback_prefix: node.data.callback_prefix,
+        store_as: node.data.store_as
+      }
+    };
+  }
+
+  if (node.type === "collect_contact") {
+    return {
+      type: "workflow.collectContact",
+      params: {
+        timeout_ms: node.data.timeout_ms
+      }
+    };
+  }
+
+  if (node.type === "collect_shipping") {
+    return {
+      type: "workflow.collectShipping",
+      params: {
+        timeout_ms: node.data.timeout_ms
+      }
+    };
+  }
+
+  if (node.type === "form_step") {
+    return {
+      type: "workflow.formStep",
+      params: {
+        field: node.data.field,
+        source: node.data.source,
+        prompt: node.data.prompt,
+        timeout_ms: node.data.timeout_ms
+      }
+    };
+  }
+
+  if (node.type === "upsert_customer") {
+    return {
+      type: "workflow.upsertCustomer",
+      params: {
+        profile: node.data.profile
+      }
+    };
+  }
+
+  if (node.type === "upsert_order") {
+    return {
+      type: "workflow.upsertOrder",
+      params: {
+        external_id: node.data.external_id,
+        invoice_payload: node.data.invoice_payload,
+        currency: node.data.currency,
+        total_amount: node.data.total_amount,
+        status: node.data.status,
+        data: node.data.data
+      }
+    };
+  }
+
+  if (node.type === "create_invoice") {
+    return {
+      type: "workflow.createInvoice",
+      params: {
+        invoice_payload: node.data.invoice_payload,
+        title: node.data.title,
+        description: node.data.description,
+        currency: node.data.currency,
+        total_amount: node.data.total_amount,
+        data: node.data.data
+      }
+    };
+  }
+
+  if (node.type === "order_transition") {
+    return {
+      type: "workflow.orderTransition",
+      params: {
+        status: node.data.status,
+        note: node.data.note
+      }
+    };
+  }
+
   return {
     type: "workflow.delay",
     params: {
@@ -58,19 +174,11 @@ function resolveSwitchValue(event: NormalizedEvent, context: WorkflowContext, pa
     return event as unknown as JsonValue;
   }
 
-  if (path === "vars") {
-    return context.variables;
-  }
-
   if (path.startsWith("event.")) {
     return getPathValue(event, path.replace(/^event\./, "")) as JsonValue | undefined;
   }
 
-  if (path.startsWith("vars.")) {
-    return getPathValue(context.variables, path.replace(/^vars\./, "")) as JsonValue | undefined;
-  }
-
-  return undefined;
+  return getContextScopeValue(context, path);
 }
 
 export function getFrontierActions(
@@ -98,7 +206,7 @@ export function getFrontierActions(
       continue;
     }
 
-    if (node.type === "action" || node.type === "set_variable" || node.type === "delay") {
+    if (isExecutableNode(node)) {
       if (!seenActionIds.has(node.id)) {
         seenActionIds.add(node.id);
         actions.push({
@@ -147,7 +255,7 @@ export function deriveActionsFromFlow(flow: FlowDefinition, event: NormalizedEve
     return [];
   }
 
-  return getFrontierActions(flow, startNode.id, event, {
+  return getFrontierActions(flow, startNode.id, event, createEmptyWorkflowContext({
     variables: { ...(event.variables ?? {}) }
-  });
+  }));
 }

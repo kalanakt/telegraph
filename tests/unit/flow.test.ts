@@ -283,4 +283,46 @@ describe("deriveActionsFromFlow", () => {
       }
     ]);
   });
+
+  it("returns stateful commerce nodes as executable payloads", () => {
+    const flow = {
+      nodes: [
+        { id: "start", type: "start", position: { x: 0, y: 0 }, data: {} },
+        {
+          id: "await_1",
+          type: "await_message",
+          position: { x: 200, y: 0 },
+          data: { timeout_ms: 60000, store_as: "customer_reply" }
+        },
+        {
+          id: "invoice_1",
+          type: "create_invoice",
+          position: { x: 400, y: 0 },
+          data: {
+            invoice_payload: "order-{{event.updateId}}",
+            currency: "USD",
+            total_amount: 1500,
+            title: "Starter order"
+          }
+        }
+      ],
+      edges: [
+        { id: "e1", source: "start", target: "await_1" },
+        { id: "e2", source: "await_1", target: "invoice_1" }
+      ]
+    };
+
+    expect(deriveActionsFromFlow(flow, baseEvent)).toEqual([
+      {
+        actionId: "await_1",
+        payload: {
+          type: "workflow.awaitMessage",
+          params: {
+            timeout_ms: 60000,
+            store_as: "customer_reply"
+          }
+        }
+      }
+    ]);
+  });
 });

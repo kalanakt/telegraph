@@ -1,9 +1,18 @@
 import type {
   ActionPayload,
+  FlowAwaitCallbackNodeData,
+  FlowAwaitMessageNodeData,
+  FlowCollectContactNodeData,
+  FlowCollectShippingNodeData,
+  FlowCreateInvoiceNodeData,
   FlowDelayNodeData,
+  FlowFormStepNodeData,
   FlowNodeMeta,
+  FlowOrderTransitionNodeData,
   FlowSetVariableNodeData,
   FlowSwitchNodeData,
+  FlowUpsertCustomerNodeData,
+  FlowUpsertOrderNodeData,
   TriggerType,
 } from "@telegram-builder/shared";
 import type { Edge, Node } from "@xyflow/react";
@@ -32,7 +41,22 @@ export type FlowBuilderProps = {
   initialRuleId?: string;
 };
 
-export type FlowNodeKind = "start" | "condition" | "action" | "switch" | "set_variable" | "delay";
+export type FlowNodeKind =
+  | "start"
+  | "condition"
+  | "action"
+  | "switch"
+  | "set_variable"
+  | "delay"
+  | "await_message"
+  | "await_callback"
+  | "collect_contact"
+  | "collect_shipping"
+  | "form_step"
+  | "upsert_customer"
+  | "upsert_order"
+  | "create_invoice"
+  | "order_transition";
 
 export type BuilderNodeMeta = FlowNodeMeta & {
   __meta?: never;
@@ -138,6 +162,42 @@ export type SetVariableEditorData = FlowSetVariableNodeData & {
 };
 
 export type DelayEditorData = FlowDelayNodeData & {
+  __meta?: BuilderNodeMeta;
+};
+
+export type AwaitMessageEditorData = FlowAwaitMessageNodeData & {
+  __meta?: BuilderNodeMeta;
+};
+
+export type AwaitCallbackEditorData = FlowAwaitCallbackNodeData & {
+  __meta?: BuilderNodeMeta;
+};
+
+export type CollectContactEditorData = FlowCollectContactNodeData & {
+  __meta?: BuilderNodeMeta;
+};
+
+export type CollectShippingEditorData = FlowCollectShippingNodeData & {
+  __meta?: BuilderNodeMeta;
+};
+
+export type FormStepEditorData = FlowFormStepNodeData & {
+  __meta?: BuilderNodeMeta;
+};
+
+export type UpsertCustomerEditorData = FlowUpsertCustomerNodeData & {
+  __meta?: BuilderNodeMeta;
+};
+
+export type UpsertOrderEditorData = FlowUpsertOrderNodeData & {
+  __meta?: BuilderNodeMeta;
+};
+
+export type CreateInvoiceEditorData = FlowCreateInvoiceNodeData & {
+  __meta?: BuilderNodeMeta;
+};
+
+export type OrderTransitionEditorData = FlowOrderTransitionNodeData & {
   __meta?: BuilderNodeMeta;
 };
 

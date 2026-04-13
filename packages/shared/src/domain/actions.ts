@@ -23,6 +23,60 @@ const INTERNAL_ACTION_POLICIES: Partial<Record<ActionType, ExecutionPolicy>> = {
     timeoutMs: 2_000,
     idempotencyKeyStrategy: "action_run",
     rateLimitBucket: "workflow.internal"
+  },
+  "workflow.awaitMessage": {
+    retryClass: "permanent",
+    timeoutMs: 2_000,
+    idempotencyKeyStrategy: "action_run",
+    rateLimitBucket: "workflow.wait"
+  },
+  "workflow.awaitCallback": {
+    retryClass: "permanent",
+    timeoutMs: 2_000,
+    idempotencyKeyStrategy: "action_run",
+    rateLimitBucket: "workflow.wait"
+  },
+  "workflow.collectContact": {
+    retryClass: "permanent",
+    timeoutMs: 2_000,
+    idempotencyKeyStrategy: "action_run",
+    rateLimitBucket: "workflow.wait"
+  },
+  "workflow.collectShipping": {
+    retryClass: "permanent",
+    timeoutMs: 2_000,
+    idempotencyKeyStrategy: "action_run",
+    rateLimitBucket: "workflow.wait"
+  },
+  "workflow.formStep": {
+    retryClass: "permanent",
+    timeoutMs: 2_000,
+    idempotencyKeyStrategy: "action_run",
+    rateLimitBucket: "workflow.wait"
+  },
+  "workflow.upsertCustomer": {
+    retryClass: "permanent",
+    timeoutMs: 2_000,
+    idempotencyKeyStrategy: "action_run",
+    rateLimitBucket: "workflow.state"
+  },
+  "workflow.upsertOrder": {
+    retryClass: "permanent",
+    timeoutMs: 2_000,
+    idempotencyKeyStrategy: "action_run",
+    rateLimitBucket: "workflow.state"
+  },
+  "workflow.createInvoice": {
+    retryClass: "permanent",
+    timeoutMs: 2_000,
+    idempotencyKeyStrategy: "action_run",
+    rateLimitBucket: "workflow.state"
+  },
+  "workflow.orderTransition": {
+    retryClass: "permanent",
+    timeoutMs: 2_000,
+    idempotencyKeyStrategy: "action_run",
+    rateLimitBucket: "workflow.state"
   }
 };
 

@@ -2,7 +2,7 @@ import { captureWorkerException, flushSentry } from "./sentry.js";
 import { Queue, Worker } from "bullmq";
 import IORedis from "ioredis";
 import { PrismaClient } from "@prisma/client";
-import { QUEUES, getExecutionPolicy, logError, logInfo, logWarn, type ActionJob } from "@telegram-builder/shared";
+import { QUEUES, createEmptyWorkflowContext, getExecutionPolicy, logError, logInfo, logWarn, type ActionJob } from "@telegram-builder/shared";
 import { handleActionJobFailure, processActionJob, type WorkerProcessorDeps, workerTelegramDeps } from "./processor.js";
 import { getWorkerRuntimeEnv, type WorkerRuntimeEnv } from "./env.js";
 import { startRetentionSweeper } from "./retention.js";
@@ -68,13 +68,133 @@ const deps: WorkerProcessorDeps = {
       select: { contextVariables: true }
     });
 
-    return ((run?.contextVariables as Record<string, unknown> | null) ?? {}) as Record<string, string | number | boolean | null>;
+    return createEmptyWorkflowContext((run?.contextVariables as Record<string, unknown> | null) ?? undefined);
   },
-  async updateWorkflowRunContext(runId, variables) {
+  async updateWorkflowRunContext(runId, context) {
     await prisma.workflowRun.update({
       where: { id: runId },
-      data: { contextVariables: variables as never }
+      data: { contextVariables: context as never }
     });
+  },
+  async syncRuntimeState({ runId, context }) {
+    let nextContext = createEmptyWorkflowContext(context);
+
+    if (nextContext.customer.id) {
+      const updatedCustomer = await prisma.customerProfile.update({
+        where: { id: nextContext.customer.id },
+        data: {
+          username: nextContext.customer.username ?? undefined,
+          firstName: nextContext.customer.firstName ?? undefined,
+          lastName: nextContext.customer.lastName ?? undefined,
+          languageCode: nextContext.customer.languageCode ?? undefined,
+          phoneNumber: nextContext.customer.phoneNumber ?? undefined,
+          email: nextContext.customer.email ?? undefined,
+          tags: (nextContext.customer.tags ?? []) as never,
+          attributes: (nextContext.customer.attributes ?? {}) as never
+        }
+      });
+
+      nextContext = {
+        ...nextContext,
+        customer: {
+          ...nextContext.customer,
+          id: updatedCustomer.id
+        }
+      };
+    }
+
+    if (nextContext.session.id) {
+      await prisma.conversationSession.update({
+        where: { id: nextContext.session.id },
+        data: {
+          customerProfileId: nextContext.customer.id ?? undefined,
+          status: nextContext.session.status ?? undefined,
+          handoffOwner: nextContext.session.handoffOwner ?? undefined,
+          handoffNote: nextContext.session.handoffNote ?? undefined,
+          context: nextContext as never,
+          lastEventAt: new Date()
+        }
+      });
+    }
+
+    if (nextContext.order.id) {
+      const updatedOrder = await prisma.commerceOrder.update({
+        where: { id: nextContext.order.id },
+        data: {
+          sessionId: nextContext.session.id ?? undefined,
+          customerProfileId: nextContext.customer.id ?? undefined,
+          latestWorkflowRunId: runId,
+          externalId: nextContext.order.externalId ?? undefined,
+          invoicePayload: nextContext.order.invoicePayload ?? undefined,
+          currency: nextContext.order.currency ?? undefined,
+          totalAmount: nextContext.order.totalAmount ?? undefined,
+          shippingOptionId: nextContext.order.shippingOptionId ?? undefined,
+          shippingAddress: nextContext.order.shippingAddress as never,
+          orderInfo: nextContext.order.orderInfo as never,
+          attributes: (nextContext.order.attributes ?? {}) as never,
+          status: nextContext.order.status ?? undefined
+        }
+      });
+
+      nextContext = {
+        ...nextContext,
+        order: {
+          ...nextContext.order,
+          id: updatedOrder.id
+        }
+      };
+    } else if ((nextContext.order.invoicePayload || nextContext.order.externalId) && nextContext.session.botId) {
+      const createdOrder = await prisma.commerceOrder.create({
+        data: {
+          botId: nextContext.session.botId,
+          sessionId: nextContext.session.id ?? null,
+          customerProfileId: nextContext.customer.id ?? null,
+          latestWorkflowRunId: runId,
+          externalId: nextContext.order.externalId ?? null,
+          invoicePayload: nextContext.order.invoicePayload ?? null,
+          currency: nextContext.order.currency ?? null,
+          totalAmount: nextContext.order.totalAmount ?? null,
+          shippingOptionId: nextContext.order.shippingOptionId ?? null,
+          shippingAddress: (nextContext.order.shippingAddress ?? {}) as never,
+          orderInfo: (nextContext.order.orderInfo ?? {}) as never,
+          attributes: (nextContext.order.attributes ?? {}) as never,
+          status: nextContext.order.status ?? "draft"
+        }
+      });
+
+      await prisma.workflowRun.update({
+        where: { id: runId },
+        data: {
+          commerceOrderId: createdOrder.id
+        }
+      });
+
+      nextContext = {
+        ...nextContext,
+        order: {
+          ...nextContext.order,
+          id: createdOrder.id
+        }
+      };
+    }
+
+    return nextContext;
+  },
+  async createCheckpoint(input) {
+    const checkpoint = await prisma.sessionCheckpoint.create({
+      data: {
+        sessionId: input.sessionId,
+        workflowRunId: input.runId,
+        ruleId: input.ruleId,
+        nodeId: input.nodeId,
+        checkpointType: input.checkpointType,
+        status: "OPEN",
+        metadata: input.metadata as never,
+        expiresAt: input.expiresAt
+      }
+    });
+
+    return { checkpointId: checkpoint.id };
   },
   async getOrCreateActionRun(input) {
     try {

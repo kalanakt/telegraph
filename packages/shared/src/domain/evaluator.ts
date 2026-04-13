@@ -1,4 +1,5 @@
 import { getPathValue, normalizeHeaderLookup, toTemplateString } from "./object-path.js";
+import { createEmptyWorkflowContext } from "./runtime-state.js";
 import type { ConditionPayload, NormalizedEvent, WorkflowContext } from "../types/workflow.js";
 
 function valueToComparable(input: unknown): string {
@@ -8,7 +9,7 @@ function valueToComparable(input: unknown): string {
 export function evaluateCondition(
   event: NormalizedEvent,
   condition: ConditionPayload,
-  context: WorkflowContext = { variables: event.variables ?? {} }
+  context: WorkflowContext = createEmptyWorkflowContext({ variables: event.variables ?? {} })
 ): boolean {
   switch (condition.type) {
     case "text_contains":
@@ -112,7 +113,7 @@ export function evaluateCondition(
 export function evaluateAllConditions(
   event: NormalizedEvent,
   conditions: ConditionPayload[],
-  context: WorkflowContext = { variables: event.variables ?? {} }
+  context: WorkflowContext = createEmptyWorkflowContext({ variables: event.variables ?? {} })
 ): boolean {
   return conditions.every((condition) => evaluateCondition(event, condition, context));
 }

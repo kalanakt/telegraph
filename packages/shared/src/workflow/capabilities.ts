@@ -22,7 +22,7 @@ export type WorkflowActionManifestItem = {
   actionType: ActionPayload["type"];
   label: string;
   category: string;
-  source: "telegram" | "http" | "webhook";
+  source: "telegram" | "http" | "webhook" | "cryptopay";
   description: string;
   executionPolicy: ExecutionPolicy;
 };
@@ -120,6 +120,19 @@ const BUILTIN_ACTION_MANIFEST: WorkflowActionManifestItem[] = [
     source: "http",
     description: "Call an external HTTP API and map the response into runtime vars.",
     executionPolicy: { retryClass: "transient", timeoutMs: 20_000, idempotencyKeyStrategy: "action_run", rateLimitBucket: "http.request" }
+  },
+  {
+    actionType: "cryptopay.createInvoice",
+    label: "Create Crypto Pay Invoice",
+    category: "Payments",
+    source: "cryptopay",
+    description: "Create a Crypto Bot payment invoice and store the payment links in runtime state.",
+    executionPolicy: {
+      retryClass: "transient",
+      timeoutMs: 20_000,
+      idempotencyKeyStrategy: "action_run",
+      rateLimitBucket: "cryptopay.createInvoice"
+    }
   }
 ];
 

@@ -5,10 +5,10 @@ import { TELEGRAM_CAPABILITIES, TELEGRAM_METHODS } from "../telegram/capabilitie
 import type { ActionPayload, ConditionPayload, FlowDefinition, TriggerType } from "../types/workflow.js";
 
 const TEMPLATE_FIELD_REGEX = /\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g;
-const ALLOWED_TEMPLATE_PREFIXES = new Set(["event", "vars"]);
+const ALLOWED_TEMPLATE_PREFIXES = new Set(["event", "vars", "session", "customer", "order"]);
 const NODE_KEY_REGEX = /^[a-z][a-z0-9_]*$/;
 const VAR_PATH_REGEX = /^[a-z][a-z0-9_]*(?:\.[a-zA-Z0-9_]+)*$/;
-const VALUE_PATH_REGEX = /^(event|vars)(?:\.[a-zA-Z0-9_]+)*$/;
+const VALUE_PATH_REGEX = /^(event|vars|session|customer|order)(?:\.[a-zA-Z0-9_]+)*$/;
 
 const recordOfStringsSchema = z.record(z.string(), z.string());
 const nodeMetaSchema = z
@@ -110,6 +110,55 @@ const httpRequestSchema = z.object({
     .strict()
 });
 
+const cryptoPayCreateInvoiceSchema = z
+  .object({
+    type: z.literal("cryptopay.createInvoice"),
+    params: z
+      .object({
+        currency_type: z.enum(["crypto", "fiat"]).optional(),
+        asset: z.string().min(1).max(16).optional(),
+        fiat: z.string().min(1).max(16).optional(),
+        accepted_assets: z.string().min(1).max(128).optional(),
+        amount: z.string().min(1).max(64),
+        swap_to: z.string().min(1).max(16).optional(),
+        description: z.string().max(1024).optional(),
+        hidden_message: z.string().max(2048).optional(),
+        paid_btn_name: z.enum(["viewItem", "openChannel", "openBot", "callback"]).optional(),
+        paid_btn_url: z.string().min(1).max(2048).optional(),
+        payload: z.string().min(1).max(4096).optional(),
+        allow_comments: z.boolean().optional(),
+        allow_anonymous: z.boolean().optional(),
+        expires_in: z.number().int().min(1).max(2_678_400).optional()
+      })
+      .strict()
+  })
+  .superRefine((input, ctx) => {
+    const currencyType = input.params.currency_type ?? "crypto";
+    if (currencyType === "crypto" && !input.params.asset) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["params", "asset"],
+        message: "asset is required when currency_type is crypto"
+      });
+    }
+
+    if (currencyType === "fiat" && !input.params.fiat) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["params", "fiat"],
+        message: "fiat is required when currency_type is fiat"
+      });
+    }
+
+    if (input.params.paid_btn_name && !input.params.paid_btn_url) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["params", "paid_btn_url"],
+        message: "paid_btn_url is required when paid_btn_name is set"
+      });
+    }
+  });
+
 export const actionSchema: z.ZodType<ActionPayload> = z
   .object({
     type: z.string().min(1),
@@ -156,6 +205,19 @@ export const actionSchema: z.ZodType<ActionPayload> = z
 
     if (input.type === "http.request") {
       const parsed = httpRequestSchema.safeParse(input);
+      if (!parsed.success) {
+        for (const issue of parsed.error.issues) {
+          ctx.addIssue({
+            ...issue,
+            path: issue.path
+          });
+        }
+      }
+      return;
+    }
+
+    if (input.type === "cryptopay.createInvoice") {
+      const parsed = cryptoPayCreateInvoiceSchema.safeParse(input);
       if (!parsed.success) {
         for (const issue of parsed.error.issues) {
           ctx.addIssue({
@@ -235,13 +297,122 @@ const delayNodeSchema = flowNodeBaseSchema.extend({
     .strict()
 });
 
+const awaitMessageNodeSchema = flowNodeBaseSchema.extend({
+  type: z.literal("await_message"),
+  data: z
+    .object({
+      timeout_ms: z.number().int().positive().max(30 * 24 * 60 * 60 * 1000).optional(),
+      store_as: z.string().regex(VAR_PATH_REGEX, "Await message storage path must be vars.dot.notation.").optional()
+    })
+    .strict()
+});
+
+const awaitCallbackNodeSchema = flowNodeBaseSchema.extend({
+  type: z.literal("await_callback"),
+  data: z
+    .object({
+      timeout_ms: z.number().int().positive().max(30 * 24 * 60 * 60 * 1000).optional(),
+      callback_prefix: z.string().min(1).max(64).optional(),
+      store_as: z.string().regex(VAR_PATH_REGEX, "Await callback storage path must be vars.dot.notation.").optional()
+    })
+    .strict()
+});
+
+const collectContactNodeSchema = flowNodeBaseSchema.extend({
+  type: z.literal("collect_contact"),
+  data: z
+    .object({
+      timeout_ms: z.number().int().positive().max(30 * 24 * 60 * 60 * 1000).optional()
+    })
+    .strict()
+});
+
+const collectShippingNodeSchema = flowNodeBaseSchema.extend({
+  type: z.literal("collect_shipping"),
+  data: z
+    .object({
+      timeout_ms: z.number().int().positive().max(30 * 24 * 60 * 60 * 1000).optional()
+    })
+    .strict()
+});
+
+const formStepNodeSchema = flowNodeBaseSchema.extend({
+  type: z.literal("form_step"),
+  data: z
+    .object({
+      field: z.string().regex(VAR_PATH_REGEX, "Form field must be vars.dot.notation."),
+      source: z.enum(["text", "contact_phone", "contact_payload", "shipping_address"]),
+      prompt: z.string().max(500).optional(),
+      timeout_ms: z.number().int().positive().max(30 * 24 * 60 * 60 * 1000).optional()
+    })
+    .strict()
+});
+
+const upsertCustomerNodeSchema = flowNodeBaseSchema.extend({
+  type: z.literal("upsert_customer"),
+  data: z
+    .object({
+      profile: jsonValueSchema
+    })
+    .strict()
+});
+
+const commerceOrderStatusSchema = z.enum(["draft", "awaiting_shipping", "awaiting_payment", "paid", "fulfilled", "canceled"]);
+
+const upsertOrderNodeSchema = flowNodeBaseSchema.extend({
+  type: z.literal("upsert_order"),
+  data: z
+    .object({
+      external_id: z.string().min(1).max(200).optional(),
+      invoice_payload: z.string().min(1).max(256).optional(),
+      currency: z.string().min(1).max(16).optional(),
+      total_amount: z.number().int().positive().optional(),
+      status: commerceOrderStatusSchema.optional(),
+      data: jsonValueSchema.optional()
+    })
+    .strict()
+});
+
+const createInvoiceNodeSchema = flowNodeBaseSchema.extend({
+  type: z.literal("create_invoice"),
+  data: z
+    .object({
+      invoice_payload: z.string().min(1).max(256),
+      title: z.string().max(255).optional(),
+      description: z.string().max(2048).optional(),
+      currency: z.string().min(1).max(16),
+      total_amount: z.number().int().positive(),
+      data: jsonValueSchema.optional()
+    })
+    .strict()
+});
+
+const orderTransitionNodeSchema = flowNodeBaseSchema.extend({
+  type: z.literal("order_transition"),
+  data: z
+    .object({
+      status: commerceOrderStatusSchema,
+      note: z.string().max(500).optional()
+    })
+    .strict()
+});
+
 export const flowNodeSchema = z.discriminatedUnion("type", [
   startNodeSchema,
   conditionNodeSchema,
   actionNodeSchema,
   switchNodeSchema,
   setVariableNodeSchema,
-  delayNodeSchema
+  delayNodeSchema,
+  awaitMessageNodeSchema,
+  awaitCallbackNodeSchema,
+  collectContactNodeSchema,
+  collectShippingNodeSchema,
+  formStepNodeSchema,
+  upsertCustomerNodeSchema,
+  upsertOrderNodeSchema,
+  createInvoiceNodeSchema,
+  orderTransitionNodeSchema
 ]);
 
 export const flowEdgeSchema = z.object({
@@ -339,6 +510,31 @@ export function validateFlowForTrigger(
 
     if (node.type === "set_variable") {
       validateTemplateValues(node.data.value, ctx, node.id);
+      continue;
+    }
+
+    if (node.type === "await_message" && node.data.store_as) {
+      validateTemplateValues(node.data.store_as, ctx, node.id);
+      continue;
+    }
+
+    if (node.type === "await_callback" && node.data.store_as) {
+      validateTemplateValues(node.data.store_as, ctx, node.id);
+      continue;
+    }
+
+    if (node.type === "upsert_customer") {
+      validateTemplateValues(node.data.profile, ctx, node.id);
+      continue;
+    }
+
+    if (node.type === "upsert_order" && typeof node.data.data !== "undefined") {
+      validateTemplateValues(node.data.data, ctx, node.id);
+      continue;
+    }
+
+    if (node.type === "create_invoice") {
+      validateTemplateValues(node.data.data, ctx, node.id);
     }
   }
 }

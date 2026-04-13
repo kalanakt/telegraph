@@ -5,6 +5,7 @@ import {
   createPrismaBotUserRepository,
   createPrismaEntitlementPolicy,
   createPrismaEventRepository,
+  createPrismaRuntimeRepository,
   createPrismaRuleRepository,
   createPrismaRunRepository
 } from "./adapters";
@@ -19,6 +20,7 @@ export function getAutomationOrchestrator() {
       ruleRepository: createPrismaRuleRepository(),
       eventRepository: createPrismaEventRepository(),
       runRepository: createPrismaRunRepository(),
+      runtimeRepository: createPrismaRuntimeRepository(),
       actionQueue: createBullMqActionQueueAdapter(),
       entitlementPolicy: createPrismaEntitlementPolicy(),
       decryptToken: decrypt

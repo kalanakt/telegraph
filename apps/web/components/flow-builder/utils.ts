@@ -7,11 +7,20 @@ import {
 import {
   type ActionPayload,
   conditionSchema,
+  type FlowAwaitCallbackNodeData,
+  type FlowAwaitMessageNodeData,
+  type FlowCollectContactNodeData,
+  type FlowCollectShippingNodeData,
+  type FlowCreateInvoiceNodeData,
   type FlowDelayNodeData,
   type FlowDefinition,
+  type FlowFormStepNodeData,
   type FlowNodeMeta,
+  type FlowOrderTransitionNodeData,
   type FlowSetVariableNodeData,
   type FlowSwitchNodeData,
+  type FlowUpsertCustomerNodeData,
+  type FlowUpsertOrderNodeData,
   type TriggerType,
 } from "@telegram-builder/shared";
 import {
@@ -22,16 +31,25 @@ import {
 } from "@/lib/flow-builder";
 import type {
   ActionEditorData,
+  AwaitCallbackEditorData,
+  AwaitMessageEditorData,
+  CollectContactEditorData,
+  CollectShippingEditorData,
   BuilderNodeMeta,
+  CreateInvoiceEditorData,
   ConditionEditorData,
   DelayEditorData,
+  FormStepEditorData,
   FlowNodeKind,
   InlineKeyboardButton,
   LinkedCallbackFlow,
+  OrderTransitionEditorData,
   RuleOption,
   ReplyKeyboardButton,
   SetVariableEditorData,
   SwitchEditorData,
+  UpsertCustomerEditorData,
+  UpsertOrderEditorData,
 } from "./types";
 
 export const EDGE_STYLE = { stroke: "rgba(14, 165, 233, 0.46)", strokeWidth: 1.5 };
@@ -73,6 +91,18 @@ function slugifyNodeKey(value: string): string {
   return /^[a-z]/.test(base) ? base : `node_${base}`;
 }
 
+function toCommerceStatus(value: unknown): FlowUpsertOrderNodeData["status"] {
+  const normalized = asString(value);
+  return normalized === "awaiting_shipping" ||
+    normalized === "awaiting_payment" ||
+    normalized === "paid" ||
+    normalized === "fulfilled" ||
+    normalized === "canceled" ||
+    normalized === "draft"
+    ? normalized
+    : "draft";
+}
+
 function buildDefaultNodeMeta(kind: FlowNodeKind, id: string): BuilderNodeMeta {
   const readable =
     kind === "start"
@@ -85,7 +115,25 @@ function buildDefaultNodeMeta(kind: FlowNodeKind, id: string): BuilderNodeMeta {
       ? "Switch"
       : kind === "set_variable"
       ? "Set Variable"
-      : "Delay";
+      : kind === "delay"
+      ? "Delay"
+      : kind === "await_message"
+      ? "Await Message"
+      : kind === "await_callback"
+      ? "Await Callback"
+      : kind === "collect_contact"
+      ? "Collect Contact"
+      : kind === "collect_shipping"
+      ? "Collect Shipping"
+      : kind === "form_step"
+      ? "Form Step"
+      : kind === "upsert_customer"
+      ? "Upsert Customer"
+      : kind === "upsert_order"
+      ? "Upsert Order"
+      : kind === "create_invoice"
+      ? "Create Invoice"
+      : "Order Transition";
 
   return {
     label: readable,
@@ -134,16 +182,30 @@ export function toCanvasNodes(flow: FlowDefinition, legacyTrigger?: TriggerType)
         id: node.id,
         type: node.type,
         position: node.position,
-        data: withNodeMeta(trigger ? { ...node.data, trigger } : { ...node.data }, meta),
+        data: { __kind: node.type, ...withNodeMeta(trigger ? { ...node.data, trigger } : { ...node.data }, meta) },
       };
     }
 
-    if (node.type === "condition" || node.type === "switch" || node.type === "set_variable" || node.type === "delay") {
+    if (
+      node.type === "condition" ||
+      node.type === "switch" ||
+      node.type === "set_variable" ||
+      node.type === "delay" ||
+      node.type === "await_message" ||
+      node.type === "await_callback" ||
+      node.type === "collect_contact" ||
+      node.type === "collect_shipping" ||
+      node.type === "form_step" ||
+      node.type === "upsert_customer" ||
+      node.type === "upsert_order" ||
+      node.type === "create_invoice" ||
+      node.type === "order_transition"
+    ) {
       return {
         id: node.id,
         type: node.type,
         position: node.position,
-        data: withNodeMeta(node.data as Record<string, unknown>, meta),
+        data: { __kind: node.type, ...withNodeMeta(node.data as Record<string, unknown>, meta) },
       };
     }
 
@@ -151,7 +213,7 @@ export function toCanvasNodes(flow: FlowDefinition, legacyTrigger?: TriggerType)
       id: node.id,
       type: node.type,
       position: node.position,
-      data: withNodeMeta(migrateLegacyActionData(node.data) as Record<string, unknown>, meta),
+      data: { __kind: node.type, ...withNodeMeta(migrateLegacyActionData(node.data) as Record<string, unknown>, meta) },
     };
   });
 }
@@ -285,6 +347,103 @@ export function normalizeDelayNodeData(data: unknown): DelayEditorData {
   };
 }
 
+export function normalizeAwaitMessageNodeData(data: unknown): AwaitMessageEditorData {
+  const record = typeof data === "object" && data !== null ? (data as Record<string, unknown>) : {};
+  return {
+    timeout_ms: asNumber(record.timeout_ms) || 0 || undefined,
+    store_as: asString(record.store_as) || "last_reply",
+    __meta: getNodeMeta(data, buildDefaultNodeMeta("await_message", "await_message"))
+  };
+}
+
+export function normalizeAwaitCallbackNodeData(data: unknown): AwaitCallbackEditorData {
+  const record = typeof data === "object" && data !== null ? (data as Record<string, unknown>) : {};
+  return {
+    timeout_ms: asNumber(record.timeout_ms) || 0 || undefined,
+    callback_prefix: asString(record.callback_prefix) || "",
+    store_as: asString(record.store_as) || "last_callback",
+    __meta: getNodeMeta(data, buildDefaultNodeMeta("await_callback", "await_callback"))
+  };
+}
+
+export function normalizeCollectContactNodeData(data: unknown): CollectContactEditorData {
+  const record = typeof data === "object" && data !== null ? (data as Record<string, unknown>) : {};
+  return {
+    timeout_ms: asNumber(record.timeout_ms) || 0 || undefined,
+    __meta: getNodeMeta(data, buildDefaultNodeMeta("collect_contact", "collect_contact"))
+  };
+}
+
+export function normalizeCollectShippingNodeData(data: unknown): CollectShippingEditorData {
+  const record = typeof data === "object" && data !== null ? (data as Record<string, unknown>) : {};
+  return {
+    timeout_ms: asNumber(record.timeout_ms) || 0 || undefined,
+    __meta: getNodeMeta(data, buildDefaultNodeMeta("collect_shipping", "collect_shipping"))
+  };
+}
+
+export function normalizeFormStepNodeData(data: unknown): FormStepEditorData {
+  const record = typeof data === "object" && data !== null ? (data as Record<string, unknown>) : {};
+  const source = asString(record.source);
+  return {
+    field: asString(record.field) || "customer_input",
+    source:
+      source === "contact_phone" || source === "contact_payload" || source === "shipping_address" ? source : "text",
+    prompt: asString(record.prompt) || "",
+    timeout_ms: asNumber(record.timeout_ms) || 0 || undefined,
+    __meta: getNodeMeta(data, buildDefaultNodeMeta("form_step", "form_step"))
+  };
+}
+
+export function normalizeUpsertCustomerNodeData(data: unknown): UpsertCustomerEditorData {
+  const record = typeof data === "object" && data !== null ? (data as Record<string, unknown>) : {};
+  return {
+    profile:
+      typeof record.profile === "object" && record.profile !== null
+        ? (record.profile as FlowUpsertCustomerNodeData["profile"])
+        : {
+            username: "{{event.fromUsername}}",
+            phoneNumber: "{{event.contactPhoneNumber}}"
+          },
+    __meta: getNodeMeta(data, buildDefaultNodeMeta("upsert_customer", "upsert_customer"))
+  };
+}
+
+export function normalizeUpsertOrderNodeData(data: unknown): UpsertOrderEditorData {
+  const record = typeof data === "object" && data !== null ? (data as Record<string, unknown>) : {};
+  return {
+    external_id: asString(record.external_id),
+    invoice_payload: asString(record.invoice_payload),
+    currency: asString(record.currency) || "USD",
+    total_amount: asNumber(record.total_amount) || 1000,
+    status: toCommerceStatus(record.status),
+    data: typeof record.data === "undefined" ? { lineItems: [] } : (record.data as FlowUpsertOrderNodeData["data"]),
+    __meta: getNodeMeta(data, buildDefaultNodeMeta("upsert_order", "upsert_order"))
+  };
+}
+
+export function normalizeCreateInvoiceNodeData(data: unknown): CreateInvoiceEditorData {
+  const record = typeof data === "object" && data !== null ? (data as Record<string, unknown>) : {};
+  return {
+    invoice_payload: asString(record.invoice_payload) || "{{event.updateId}}",
+    title: asString(record.title) || "Telegram order",
+    description: asString(record.description) || "Telegram commerce checkout",
+    currency: asString(record.currency) || "USD",
+    total_amount: asNumber(record.total_amount) || 1000,
+    data: typeof record.data === "undefined" ? { lineItems: [] } : (record.data as FlowCreateInvoiceNodeData["data"]),
+    __meta: getNodeMeta(data, buildDefaultNodeMeta("create_invoice", "create_invoice"))
+  };
+}
+
+export function normalizeOrderTransitionNodeData(data: unknown): OrderTransitionEditorData {
+  const record = typeof data === "object" && data !== null ? (data as Record<string, unknown>) : {};
+  return {
+    status: toCommerceStatus(record.status ?? "awaiting_payment") as FlowOrderTransitionNodeData["status"],
+    note: asString(record.note) || "",
+    __meta: getNodeMeta(data, buildDefaultNodeMeta("order_transition", "order_transition"))
+  };
+}
+
 export function toFlowDefinition(nodes: Node[], edges: Edge[]): FlowDefinition {
   const flowNodes = nodes.map((node) => {
     const meta = getNodeMeta(node.data, buildDefaultNodeMeta(node.type as FlowNodeKind, node.id));
@@ -354,6 +513,98 @@ export function toFlowDefinition(nodes: Node[], edges: Edge[]): FlowDefinition {
       };
     }
 
+    if (node.type === "await_message") {
+      const normalized = normalizeAwaitMessageNodeData(node.data);
+      return { id: node.id, type: "await_message" as const, position: node.position, meta, data: { timeout_ms: normalized.timeout_ms, store_as: normalized.store_as } };
+    }
+
+    if (node.type === "await_callback") {
+      const normalized = normalizeAwaitCallbackNodeData(node.data);
+      return {
+        id: node.id,
+        type: "await_callback" as const,
+        position: node.position,
+        meta,
+        data: { timeout_ms: normalized.timeout_ms, callback_prefix: normalized.callback_prefix || undefined, store_as: normalized.store_as }
+      };
+    }
+
+    if (node.type === "collect_contact") {
+      const normalized = normalizeCollectContactNodeData(node.data);
+      return { id: node.id, type: "collect_contact" as const, position: node.position, meta, data: { timeout_ms: normalized.timeout_ms } };
+    }
+
+    if (node.type === "collect_shipping") {
+      const normalized = normalizeCollectShippingNodeData(node.data);
+      return { id: node.id, type: "collect_shipping" as const, position: node.position, meta, data: { timeout_ms: normalized.timeout_ms } };
+    }
+
+    if (node.type === "form_step") {
+      const normalized = normalizeFormStepNodeData(node.data);
+      return {
+        id: node.id,
+        type: "form_step" as const,
+        position: node.position,
+        meta,
+        data: { field: normalized.field, source: normalized.source, prompt: normalized.prompt || undefined, timeout_ms: normalized.timeout_ms }
+      };
+    }
+
+    if (node.type === "upsert_customer") {
+      const normalized = normalizeUpsertCustomerNodeData(node.data);
+      return { id: node.id, type: "upsert_customer" as const, position: node.position, meta, data: { profile: normalized.profile } };
+    }
+
+    if (node.type === "upsert_order") {
+      const normalized = normalizeUpsertOrderNodeData(node.data);
+      return {
+        id: node.id,
+        type: "upsert_order" as const,
+        position: node.position,
+        meta,
+        data: {
+          external_id: normalized.external_id || undefined,
+          invoice_payload: normalized.invoice_payload || undefined,
+          currency: normalized.currency || undefined,
+          total_amount: normalized.total_amount,
+          status: normalized.status as FlowUpsertOrderNodeData["status"],
+          data: normalized.data
+        }
+      };
+    }
+
+    if (node.type === "create_invoice") {
+      const normalized = normalizeCreateInvoiceNodeData(node.data);
+      return {
+        id: node.id,
+        type: "create_invoice" as const,
+        position: node.position,
+        meta,
+        data: {
+          invoice_payload: normalized.invoice_payload,
+          title: normalized.title || undefined,
+          description: normalized.description || undefined,
+          currency: normalized.currency,
+          total_amount: normalized.total_amount,
+          data: normalized.data
+        }
+      };
+    }
+
+    if (node.type === "order_transition") {
+      const normalized = normalizeOrderTransitionNodeData(node.data);
+      return {
+        id: node.id,
+        type: "order_transition" as const,
+        position: node.position,
+        meta,
+        data: {
+          status: normalized.status as FlowOrderTransitionNodeData["status"],
+          note: normalized.note || undefined
+        }
+      };
+    }
+
     return {
       id: node.id,
       type: "action" as const,
@@ -393,6 +644,15 @@ export function getDefaultNodeData(kind: FlowNodeKind) {
   if (kind === "switch") return withNodeMeta(defaultSwitchData(), buildDefaultNodeMeta(kind, kind));
   if (kind === "set_variable") return withNodeMeta(defaultSetVariableData(), buildDefaultNodeMeta(kind, kind));
   if (kind === "delay") return withNodeMeta(defaultDelayData(), buildDefaultNodeMeta(kind, kind));
+  if (kind === "await_message") return withNodeMeta(defaultAwaitMessageData(), buildDefaultNodeMeta(kind, kind));
+  if (kind === "await_callback") return withNodeMeta(defaultAwaitCallbackData(), buildDefaultNodeMeta(kind, kind));
+  if (kind === "collect_contact") return withNodeMeta(defaultCollectContactData(), buildDefaultNodeMeta(kind, kind));
+  if (kind === "collect_shipping") return withNodeMeta(defaultCollectShippingData(), buildDefaultNodeMeta(kind, kind));
+  if (kind === "form_step") return withNodeMeta(defaultFormStepData(), buildDefaultNodeMeta(kind, kind));
+  if (kind === "upsert_customer") return withNodeMeta(defaultUpsertCustomerData(), buildDefaultNodeMeta(kind, kind));
+  if (kind === "upsert_order") return withNodeMeta(defaultUpsertOrderData(), buildDefaultNodeMeta(kind, kind));
+  if (kind === "create_invoice") return withNodeMeta(defaultCreateInvoiceData(), buildDefaultNodeMeta(kind, kind));
+  if (kind === "order_transition") return withNodeMeta(defaultOrderTransitionData(), buildDefaultNodeMeta(kind, kind));
   return withNodeMeta(createActionTemplate("telegram.sendMessage"), buildDefaultNodeMeta(kind, kind));
 }
 
@@ -416,6 +676,12 @@ export function getNextNodePosition(
       ? 160
       : kind === "delay"
       ? 240
+      : kind === "await_message" || kind === "await_callback"
+      ? 320
+      : kind === "collect_contact" || kind === "collect_shipping" || kind === "form_step"
+      ? 400
+      : kind === "upsert_customer" || kind === "upsert_order" || kind === "create_invoice" || kind === "order_transition"
+      ? 480
       : 120;
 
   return {
@@ -443,6 +709,7 @@ export function createFlowNode(
       : getDefaultNodeData(kind)
   ) as Record<string, unknown>;
   data.__meta = sanitizeNodeMeta((data as { __meta?: BuilderNodeMeta }).__meta, buildDefaultNodeMeta(kind, id));
+  data.__kind = kind;
   return {
     id,
     type: kind,
@@ -522,6 +789,79 @@ export function defaultSetVariableData(): SetVariableEditorData {
 export function defaultDelayData(): DelayEditorData {
   return {
     delay_ms: 60_000,
+  };
+}
+
+export function defaultAwaitMessageData(): AwaitMessageEditorData {
+  return {
+    timeout_ms: 15 * 60_000,
+    store_as: "last_reply",
+  };
+}
+
+export function defaultAwaitCallbackData(): AwaitCallbackEditorData {
+  return {
+    timeout_ms: 15 * 60_000,
+    callback_prefix: "",
+    store_as: "last_callback",
+  };
+}
+
+export function defaultCollectContactData(): CollectContactEditorData {
+  return {
+    timeout_ms: 15 * 60_000,
+  };
+}
+
+export function defaultCollectShippingData(): CollectShippingEditorData {
+  return {
+    timeout_ms: 15 * 60_000,
+  };
+}
+
+export function defaultFormStepData(): FormStepEditorData {
+  return {
+    field: "customer_input",
+    source: "text",
+    prompt: "",
+    timeout_ms: 15 * 60_000,
+  };
+}
+
+export function defaultUpsertCustomerData(): UpsertCustomerEditorData {
+  return {
+    profile: {
+      username: "{{event.fromUsername}}",
+      phoneNumber: "{{event.contactPhoneNumber}}",
+    },
+  };
+}
+
+export function defaultUpsertOrderData(): UpsertOrderEditorData {
+  return {
+    invoice_payload: "",
+    currency: "USD",
+    total_amount: 1000,
+    status: "draft",
+    data: { lineItems: [] },
+  };
+}
+
+export function defaultCreateInvoiceData(): CreateInvoiceEditorData {
+  return {
+    invoice_payload: "{{event.updateId}}",
+    title: "Telegram order",
+    description: "Telegram commerce checkout",
+    currency: "USD",
+    total_amount: 1000,
+    data: { lineItems: [] },
+  };
+}
+
+export function defaultOrderTransitionData(): OrderTransitionEditorData {
+  return {
+    status: "awaiting_payment",
+    note: "",
   };
 }
 

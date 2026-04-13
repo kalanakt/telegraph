@@ -645,4 +645,120 @@ describe("AutomationOrchestrator", () => {
     expect(result.reason).toBe("processed");
     expect(enqueued).toHaveLength(1);
   });
+
+  it("resumes from an open checkpoint before starting fresh flows", async () => {
+    const enqueued: ActionJob[] = [];
+    const resolvedCheckpoints: string[] = [];
+    const createdRuns: unknown[] = [];
+
+    const flow = {
+      nodes: [
+        { id: "start_1", type: "start", position: { x: 0, y: 0 }, data: {} },
+        { id: "await_1", type: "await_message", position: { x: 200, y: 0 }, data: { timeout_ms: 60000, store_as: "customer_reply" } },
+        {
+          id: "action_1",
+          type: "action",
+          position: { x: 400, y: 0 },
+          data: { type: "telegram.sendMessage", params: { chat_id: "333", text: "thanks {{vars.customer_reply}}" } }
+        }
+      ],
+      edges: [
+        { id: "e1", source: "start_1", target: "await_1" },
+        { id: "e2", source: "await_1", target: "action_1" }
+      ]
+    };
+
+    const orchestrator = createAutomationOrchestrator({
+      botRepository: {
+        async findBotContext() {
+          return makeActiveBotContext();
+        }
+      },
+      botUserRepository: createNoopBotUserRepository(),
+      eventRepository: {
+        async createIncomingEvent() {
+          return { status: "created", eventId: "evt_resume" };
+        }
+      },
+      ruleRepository: {
+        async listActiveRules() {
+          return [];
+        },
+        async findActiveRuleById() {
+          return {
+            ruleId: "rule_wait",
+            botId: "bot_1",
+            trigger: "message_received",
+            flowDefinition: flow
+          };
+        }
+      },
+      runRepository: {
+        async createRunWithActions(input) {
+          createdRuns.push(input);
+          return {
+            runId: "run_resumed",
+            actionRuns: input.actions.map((action) => ({
+              actionId: action.actionId,
+              actionRunId: `action_run_${action.actionId}`,
+              action: action.payload
+            }))
+          };
+        }
+      },
+      runtimeRepository: {
+        async prepareContextForEvent() {
+          return {
+            sessionId: "session_1",
+            context: {
+              variables: {},
+              session: { id: "session_1", botId: "bot_1", chatId: "333", telegramUserId: "444" },
+              customer: {},
+              order: {}
+            }
+          };
+        },
+        async findMatchingCheckpoint() {
+          return {
+            checkpointId: "checkpoint_1",
+            ruleId: "rule_wait",
+            nodeId: "await_1",
+            checkpointType: "workflow.awaitMessage",
+            status: "OPEN",
+            sessionId: "session_1",
+            flowDefinition: flow,
+            botId: "bot_1",
+            metadata: { store_as: "customer_reply" }
+          };
+        },
+        async resolveCheckpoint(input) {
+          resolvedCheckpoints.push(input.checkpointId);
+        }
+      },
+      actionQueue: {
+        async enqueueAction(job) {
+          enqueued.push(job);
+        }
+      },
+      entitlementPolicy: {
+        async isMonthlyExecutionExceeded() {
+          return false;
+        }
+      },
+      decryptToken: () => "decrypted-token"
+    });
+
+    const result = await orchestrator.handleIncomingUpdate({
+      botId: "bot_1",
+      telegramUpdate: makeUpdate("hello after wait"),
+      receivedAt: new Date()
+    });
+
+    expect(result.runIds).toEqual(["run_resumed"]);
+    expect(resolvedCheckpoints).toEqual(["checkpoint_1"]);
+    expect(createdRuns).toHaveLength(1);
+    expect(enqueued).toHaveLength(1);
+    expect(enqueued[0]?.actionNodeId).toBe("action_1");
+    expect(enqueued[0]?.context.runtime.variables.customer_reply).toBe("hello after wait");
+  });
 });

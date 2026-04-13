@@ -26,6 +26,7 @@ import { ActionNode } from "./nodes/ActionNode";
 import { SwitchNode } from "./nodes/SwitchNode";
 import { SetVariableNode } from "./nodes/SetVariableNode";
 import { DelayNode } from "./nodes/DelayNode";
+import { WorkflowStateNode } from "./nodes/WorkflowStateNode";
 import { BuilderEdge } from "./edges/BuilderEdge";
 import { defaultEdgeOptions } from "./utils";
 import { getTriggerIcon } from "./TriggerPickerModal";
@@ -38,6 +39,15 @@ const nodeTypes = {
   switch: SwitchNode,
   set_variable: SetVariableNode,
   delay: DelayNode,
+  await_message: WorkflowStateNode,
+  await_callback: WorkflowStateNode,
+  collect_contact: WorkflowStateNode,
+  collect_shipping: WorkflowStateNode,
+  form_step: WorkflowStateNode,
+  upsert_customer: WorkflowStateNode,
+  upsert_order: WorkflowStateNode,
+  create_invoice: WorkflowStateNode,
+  order_transition: WorkflowStateNode,
 };
 
 const edgeTypes = {

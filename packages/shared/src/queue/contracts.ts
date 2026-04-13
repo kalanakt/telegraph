@@ -1,4 +1,4 @@
-import type { ExecutablePayload, ExecutionPolicy, FlowDefinition, JsonValue, NormalizedEvent } from "../types/workflow.js";
+import type { ExecutablePayload, ExecutionPolicy, FlowDefinition, NormalizedEvent, WorkflowContext } from "../types/workflow.js";
 
 export const QUEUES = {
   ACTIONS: "actions",
@@ -11,6 +11,8 @@ export type ActionJob = {
   actionNodeId: string;
   actionRunId: string;
   botToken?: string | null;
+  cryptoPayToken?: string | null;
+  cryptoPayUseTestnet?: boolean | null;
   actionType: ExecutablePayload["type"];
   executionPolicy: ExecutionPolicy;
   idempotencyKey: string;
@@ -20,7 +22,7 @@ export type ActionJob = {
   flowDefinition: FlowDefinition;
   context: {
     trigger: NormalizedEvent["trigger"];
-    variables: Record<string, JsonValue>;
+    runtime: WorkflowContext;
     createdAt: string;
   };
 };

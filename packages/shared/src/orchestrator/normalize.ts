@@ -54,6 +54,47 @@ function extractMessageFeatures(message: unknown): Partial<Pick<NormalizedEvent,
   >;
 }
 
+function extractMessageCommerceFields(
+  message: unknown
+): Partial<
+  Pick<
+    NormalizedEvent,
+    | "contactPhoneNumber"
+    | "contactUserId"
+    | "invoicePayload"
+    | "currency"
+    | "totalAmount"
+    | "successfulPaymentChargeId"
+    | "successfulPaymentProviderChargeId"
+    | "shippingOptionId"
+    | "orderInfo"
+  >
+> {
+  if (!message || typeof message !== "object") {
+    return {};
+  }
+
+  const msg = message as Record<string, unknown>;
+  const contact = typeof msg.contact === "object" && msg.contact !== null ? (msg.contact as Record<string, unknown>) : null;
+  const payment =
+    typeof msg.successful_payment === "object" && msg.successful_payment !== null
+      ? (msg.successful_payment as Record<string, unknown>)
+      : null;
+
+  return {
+    contactPhoneNumber: typeof contact?.phone_number === "string" ? contact.phone_number : undefined,
+    contactUserId: typeof contact?.user_id === "number" ? contact.user_id : undefined,
+    invoicePayload: typeof payment?.invoice_payload === "string" ? payment.invoice_payload : undefined,
+    currency: typeof payment?.currency === "string" ? payment.currency : undefined,
+    totalAmount: typeof payment?.total_amount === "number" ? payment.total_amount : undefined,
+    successfulPaymentChargeId: typeof payment?.telegram_payment_charge_id === "string" ? payment.telegram_payment_charge_id : undefined,
+    successfulPaymentProviderChargeId:
+      typeof payment?.provider_payment_charge_id === "string" ? payment.provider_payment_charge_id : undefined,
+    shippingOptionId: typeof payment?.shipping_option_id === "string" ? payment.shipping_option_id : undefined,
+    orderInfo: typeof payment?.order_info === "object" && payment.order_info !== null ? (payment.order_info as JsonValue) : undefined
+  };
+}
+
 export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent {
   const messageSource = update.message;
   if (messageSource) {
@@ -75,6 +116,7 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
         command: command.command,
         commandArgs: command.commandArgs,
         ...extractMessageFeatures(messageSource),
+        ...extractMessageCommerceFields(messageSource),
         variables: {}
       };
     }
@@ -92,6 +134,7 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
       messageSource: mapMessageSource(messageSource.chat.type),
       text,
       ...extractMessageFeatures(messageSource),
+      ...extractMessageCommerceFields(messageSource),
       variables: {}
     };
   }
@@ -163,7 +206,10 @@ export function normalizeTelegramUpdate(update: TelegramUpdate): NormalizedEvent
       messageSource: mapMessageSource(cb.message?.chat?.type),
       text: cb.data ?? "",
       callbackData: cb.data,
+      callbackSourceMessageId: cb.message?.message_id,
+      callbackSourceChatId: cb.message?.chat ? String(cb.message.chat.id) : undefined,
       ...(cb.message ? extractMessageFeatures(cb.message) : {}),
+      ...(cb.message ? extractMessageCommerceFields(cb.message) : {}),
       variables: {}
     };
   }

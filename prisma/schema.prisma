@@ -25,6 +25,29 @@ enum ActionStatus {
   failed
 }
 
+enum ConversationSessionStatus {
+  ACTIVE
+  PAUSED
+  HANDOFF
+  CLOSED
+}
+
+enum SessionCheckpointStatus {
+  OPEN
+  RESUMED
+  EXPIRED
+  CANCELED
+}
+
+enum CommerceOrderStatus {
+  draft
+  awaiting_shipping
+  awaiting_payment
+  paid
+  fulfilled
+  canceled
+}
+
 enum TemplateVisibility {
   PRIVATE
   PUBLIC
@@ -67,6 +90,12 @@ model Bot {
   username          String?
   displayName       String?
   encryptedToken    String
+  encryptedCryptoPayToken String?
+  encryptedCryptoPayWebhookSecret String?
+  cryptoPayAppId    String?
+  cryptoPayAppName  String?
+  cryptoPayUseTestnet Boolean      @default(false)
+  cryptoPayConnectedAt DateTime?
   status            BotStatus       @default(active)
   captureUsersEnabled Boolean       @default(false)
   createdAt         DateTime        @default(now())
@@ -76,6 +105,9 @@ model Bot {
   incomingEvents    IncomingEvent[]
   workflowRuns      WorkflowRun[]
   botUsers          BotUser[]
+  conversationSessions ConversationSession[]
+  customerProfiles  CustomerProfile[]
+  commerceOrders    CommerceOrder[]
 
   @@unique([userId, telegramBotId])
 }
@@ -99,6 +131,113 @@ model BotUser {
   @@index([botId, lastSeenAt])
 }
 
+model ConversationSession {
+  id                 String                    @id @default(cuid())
+  botId              String
+  chatId             String
+  telegramUserId     BigInt?
+  customerProfileId  String?
+  status             ConversationSessionStatus @default(ACTIVE)
+  context            Json
+  startedAt          DateTime                  @default(now())
+  lastEventAt        DateTime                  @default(now())
+  pausedAt           DateTime?
+  handedOffAt        DateTime?
+  handoffOwner       String?
+  handoffNote        String?
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  bot                Bot                       @relation(fields: [botId], references: [id], onDelete: Cascade)
+  customerProfile    CustomerProfile?          @relation(fields: [customerProfileId], references: [id], onDelete: SetNull)
+  checkpoints        SessionCheckpoint[]
+  workflowRuns       WorkflowRun[]
+  commerceOrders     CommerceOrder[]
+
+  @@unique([botId, chatId, telegramUserId])
+  @@index([botId, status, lastEventAt])
+}
+
+model SessionCheckpoint {
+  id                    String                  @id @default(cuid())
+  sessionId             String
+  workflowRunId         String?
+  ruleId                String
+  nodeId                String
+  checkpointType        String
+  status                SessionCheckpointStatus @default(OPEN)
+  resumeKey             String?
+  metadata              Json
+  expiresAt             DateTime?
+  resolvedAt            DateTime?
+  resumeEventId         String?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  session               ConversationSession     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  workflowRun           WorkflowRun?            @relation("RunCreatedCheckpoints", fields: [workflowRunId], references: [id], onDelete: SetNull)
+  rule                  WorkflowRule            @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  resumeEvent           IncomingEvent?          @relation(fields: [resumeEventId], references: [id], onDelete: SetNull)
+  resumedRuns           WorkflowRun[]           @relation("RunResumedFromCheckpoint")
+
+  @@index([sessionId, status, createdAt])
+  @@index([ruleId, status, createdAt])
+  @@index([resumeKey, status])
+}
+
+model CustomerProfile {
+  id                 String               @id @default(cuid())
+  botId              String
+  telegramUserId     BigInt
+  chatId             String?
+  username           String?
+  firstName          String?
+  lastName           String?
+  languageCode       String?
+  phoneNumber        String?
+  email              String?
+  tags               Json
+  attributes         Json
+  lastInteractionAt  DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  bot                Bot                  @relation(fields: [botId], references: [id], onDelete: Cascade)
+  conversationSessions ConversationSession[]
+  workflowRuns       WorkflowRun[]
+  commerceOrders     CommerceOrder[]
+
+  @@unique([botId, telegramUserId])
+  @@index([botId, updatedAt])
+}
+
+model CommerceOrder {
+  id                 String              @id @default(cuid())
+  botId              String
+  sessionId          String?
+  customerProfileId  String?
+  latestWorkflowRunId String?
+  externalId         String?
+  invoicePayload     String?
+  currency           String?
+  totalAmount        Int?
+  shippingOptionId   String?
+  shippingAddress    Json
+  orderInfo          Json
+  attributes         Json
+  status             CommerceOrderStatus @default(draft)
+  paidAt             DateTime?
+  fulfilledAt        DateTime?
+  canceledAt         DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  bot                Bot                 @relation(fields: [botId], references: [id], onDelete: Cascade)
+  session            ConversationSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  customerProfile    CustomerProfile?    @relation(fields: [customerProfileId], references: [id], onDelete: SetNull)
+  workflowRuns       WorkflowRun[]
+
+  @@index([botId, status, updatedAt])
+  @@index([invoicePayload])
+  @@unique([botId, externalId])
+}
+
 model WorkflowRule {
   id           String            @id @default(cuid())
   userId       String
@@ -115,6 +254,7 @@ model WorkflowRule {
   conditions   RuleCondition[]
   actions      RuleAction[]
   workflowRuns WorkflowRun[]
+  checkpoints  SessionCheckpoint[]
 
   @@index([botId, trigger, enabled])
 }
@@ -164,6 +304,7 @@ model IncomingEvent {
   createdAt      DateTime @default(now())
   bot            Bot      @relation(fields: [botId], references: [id], onDelete: Cascade)
   workflowRuns   WorkflowRun[]
+  resumedCheckpoints SessionCheckpoint[]
 
   @@index([botId, createdAt])
 }
@@ -174,6 +315,10 @@ model WorkflowRun {
   botId        String
   ruleId       String
   eventId      String
+  conversationSessionId String?
+  customerProfileId String?
+  commerceOrderId String?
+  resumedFromCheckpointId String?
   status       String       @default("pending")
   trigger      String
   eventPayload Json
@@ -184,10 +329,16 @@ model WorkflowRun {
   bot          Bot          @relation(fields: [botId], references: [id], onDelete: Cascade)
   rule         WorkflowRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
   event        IncomingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  conversationSession ConversationSession? @relation(fields: [conversationSessionId], references: [id], onDelete: SetNull)
+  customerProfile CustomerProfile? @relation(fields: [customerProfileId], references: [id], onDelete: SetNull)
+  commerceOrder CommerceOrder? @relation(fields: [commerceOrderId], references: [id], onDelete: SetNull)
+  resumedFromCheckpoint SessionCheckpoint? @relation("RunResumedFromCheckpoint", fields: [resumedFromCheckpointId], references: [id], onDelete: SetNull)
   actionRuns   ActionRun[]
+  createdCheckpoints SessionCheckpoint[] @relation("RunCreatedCheckpoints")
 
   @@index([botId, createdAt])
   @@index([userId, createdAt])
+  @@index([conversationSessionId, createdAt])
 }
 
 model ActionRun {

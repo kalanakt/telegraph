@@ -1,7 +1,7 @@
 import type { PlanKey } from "../config/limits.js";
 import type { ActionJob } from "../queue/contracts.js";
 import type { TelegramUpdate } from "../types/telegram.js";
-import type { ExecutablePayload, FlowDefinition, JsonValue, NormalizedEvent, TriggerType } from "../types/workflow.js";
+import type { ExecutablePayload, FlowDefinition, JsonValue, NormalizedEvent, SessionCheckpointStatus, TriggerType, WorkflowContext } from "../types/workflow.js";
 import type { TelegramActor } from "./actors.js";
 
 export type OrchestrationReason =
@@ -33,6 +33,8 @@ export type BotContext = {
   botId: string;
   userId: string;
   encryptedToken: string;
+  encryptedCryptoPayToken?: string | null;
+  cryptoPayUseTestnet?: boolean;
   status: string;
   plan: PlanKey;
   captureUsersEnabled: boolean;
@@ -92,7 +94,11 @@ export interface RunRepository {
     }>;
     eventId: string;
     eventPayload: NormalizedEvent;
-    variables: Record<string, JsonValue>;
+    context: WorkflowContext;
+    conversationSessionId?: string;
+    customerProfileId?: string;
+    commerceOrderId?: string;
+    resumedFromCheckpointId?: string;
   }): Promise<{
     runId: string;
     actionRuns: Array<{
@@ -101,6 +107,43 @@ export interface RunRepository {
       action: ExecutablePayload;
     }>;
   }>;
+}
+
+export type RuntimeCheckpointRecord = {
+  checkpointId: string;
+  ruleId: string;
+  nodeId: string;
+  checkpointType: string;
+  status: SessionCheckpointStatus;
+  sessionId: string;
+  flowDefinition: FlowDefinition;
+  botId: string;
+  metadata: Record<string, JsonValue>;
+};
+
+export type PreparedRuntimeContext = {
+  sessionId?: string;
+  customerProfileId?: string;
+  commerceOrderId?: string;
+  context: WorkflowContext;
+};
+
+export interface RuntimeRepository {
+  prepareContextForEvent(input: {
+    botId: string;
+    event: NormalizedEvent;
+    receivedAt: Date;
+  }): Promise<PreparedRuntimeContext>;
+  findMatchingCheckpoint(input: {
+    botId: string;
+    event: NormalizedEvent;
+    receivedAt: Date;
+  }): Promise<RuntimeCheckpointRecord | null>;
+  resolveCheckpoint(input: {
+    checkpointId: string;
+    eventId: string;
+    receivedAt: Date;
+  }): Promise<void>;
 }
 
 export interface ActionQueue {
@@ -117,6 +160,7 @@ export type OrchestratorDeps = {
   ruleRepository: RuleRepository;
   eventRepository: EventRepository;
   runRepository: RunRepository;
+  runtimeRepository: RuntimeRepository;
   actionQueue: ActionQueue;
   entitlementPolicy: EntitlementPolicy;
   decryptToken: (encryptedToken: string) => string;

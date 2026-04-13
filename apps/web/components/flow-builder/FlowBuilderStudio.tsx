@@ -256,7 +256,17 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
       "{{event.fromUserId}}",
       "{{event.messageId}}",
       "{{event.callbackData}}",
+      "{{event.contactPhoneNumber}}",
+      "{{event.invoicePayload}}",
+      "{{event.shippingOptionId}}",
       "{{vars}}",
+      "{{session.id}}",
+      "{{session.chatId}}",
+      "{{customer.id}}",
+      "{{customer.phoneNumber}}",
+      "{{order.id}}",
+      "{{order.invoicePayload}}",
+      "{{order.status}}",
     ];
 
     const nodeTokens = nodes.flatMap((node) => {

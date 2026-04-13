@@ -56,6 +56,69 @@ const LOGIC_CATALOG: Array<{
     title: "Delay",
     description: "Pause execution before continuing to the next node.",
     icon: "delay"
+  },
+  {
+    kind: "await_message",
+    group: "Conversation State",
+    title: "Await Message",
+    description: "Pause this session until the user replies with a new message.",
+    icon: "message"
+  },
+  {
+    kind: "await_callback",
+    group: "Conversation State",
+    title: "Await Callback",
+    description: "Pause until the user taps an inline button callback.",
+    icon: "branch"
+  },
+  {
+    kind: "collect_contact",
+    group: "Commerce Capture",
+    title: "Collect Contact",
+    description: "Wait for a contact share and map it into the customer profile.",
+    icon: "user"
+  },
+  {
+    kind: "collect_shipping",
+    group: "Commerce Capture",
+    title: "Collect Shipping",
+    description: "Wait for Telegram shipping data and attach it to the order.",
+    icon: "package"
+  },
+  {
+    kind: "form_step",
+    group: "Commerce Capture",
+    title: "Form Step",
+    description: "Capture structured input from the next user response.",
+    icon: "form"
+  },
+  {
+    kind: "upsert_customer",
+    group: "Commerce State",
+    title: "Upsert Customer",
+    description: "Create or update the persistent customer profile.",
+    icon: "user"
+  },
+  {
+    kind: "upsert_order",
+    group: "Commerce State",
+    title: "Upsert Order",
+    description: "Create or update the active order record.",
+    icon: "package"
+  },
+  {
+    kind: "create_invoice",
+    group: "Commerce State",
+    title: "Create Invoice",
+    description: "Store invoice metadata for a Telegram-native payment flow.",
+    icon: "credit-card"
+  },
+  {
+    kind: "order_transition",
+    group: "Commerce State",
+    title: "Order Transition",
+    description: "Move the order into the next commerce status.",
+    icon: "refresh"
   }
 ];
 
@@ -107,6 +170,10 @@ function getTriggerCatalogGroup(trigger: TriggerType) {
 }
 
 function getActionCatalogGroup(actionType: ActionPayload["type"], category: string) {
+  if (actionType === "cryptopay.createInvoice") {
+    return "Payments";
+  }
+
   if (actionType === "webhook.send" || actionType === "http.request") {
     return "External Calls";
   }
@@ -127,6 +194,7 @@ function getActionCatalogGroup(actionType: ActionPayload["type"], category: stri
 }
 
 function getActionCatalogIcon(actionType: ActionPayload["type"]) {
+  if (actionType === "cryptopay.createInvoice") return "credit-card";
   if (actionType === "http.request") return "globe";
   if (actionType === "webhook.send") return "webhook";
   if (actionType.includes("Photo")) return "image";
@@ -507,6 +575,17 @@ export function createActionTemplate(actionType: ActionPayload["type"]): ActionT
           response_body_format: "json"
         }
       };
+    case "cryptopay.createInvoice":
+      return {
+        type: actionType,
+        params: {
+          currency_type: "crypto",
+          asset: "USDT",
+          amount: "10",
+          description: "Order {{order.id}}",
+          payload: "{{order.invoicePayload}}"
+        }
+      };
     default:
       return {
         type: actionType,
@@ -831,6 +910,10 @@ export function summarizeAction(payload: ActionPayload): string {
 
   if (payload.type === "http.request") {
     return `${asString(params.method) ?? "HTTP"} ${asString(params.url) ?? ""}`.trim();
+  }
+
+  if (payload.type === "cryptopay.createInvoice") {
+    return `${asString(params.amount) ?? "0"} ${asString(params.asset) ?? asString(params.fiat) ?? "invoice"}`.trim();
   }
 
   return `${getCapabilityLabel(payload.type)}`;
