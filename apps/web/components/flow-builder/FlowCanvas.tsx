@@ -114,6 +114,7 @@ export function FlowCanvas({
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onSelectionChange={onSelectionChange}
+        deleteKeyCode={null}
         onNodeClick={(_, node) => onNodeActivate?.(node)}
         onPaneClick={() => onPaneClick?.()}
         connectionRadius={26}

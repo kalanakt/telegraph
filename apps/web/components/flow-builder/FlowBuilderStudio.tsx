@@ -56,6 +56,18 @@ type CanvasSnapshot = {
   trigger: TriggerType;
 };
 
+function isEditableKeyboardTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  if (target.isContentEditable) {
+    return true;
+  }
+
+  return Boolean(target.closest('input, textarea, select, [contenteditable="true"], [role="textbox"]'));
+}
+
 function getDraftStorageKey(ruleId: string) {
   return `telegraph.flow-builder.draft.${ruleId}`;
 }
@@ -424,6 +436,10 @@ export function FlowBuilderStudio({ bots, rules, initialRuleId }: Props) {
 
   useEffect(() => {
     function handleKeydown(event: KeyboardEvent) {
+      if (event.defaultPrevented || isEditableKeyboardTarget(event.target)) {
+        return;
+      }
+
       const metaKey = event.metaKey || event.ctrlKey;
       if (metaKey && event.key.toLowerCase() === "z") {
         event.preventDefault();

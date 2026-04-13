@@ -1103,6 +1103,7 @@ export function AddRuleForm({ bots, rules, initialRuleId }: FlowBuilderProps) {
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
+              deleteKeyCode={null}
               onSelectionChange={({ nodes: selected }) =>
                 setSelectedNodeId(selected[0]?.id ?? null)
               }
