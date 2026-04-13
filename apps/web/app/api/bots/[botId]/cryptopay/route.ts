@@ -68,8 +68,7 @@ const webhookUrlSchema = z
 
 const connectCryptoPaySchema = z.object({
   token: z.string().trim().min(1),
-  useTestnet: z.boolean().optional(),
-  webhookUrl: webhookUrlSchema
+  useTestnet: z.boolean().optional()
 });
 
 const updateCryptoPayWebhookSchema = z.object({
@@ -104,7 +103,6 @@ function serializeConnection(
 ) {
   const secret = bot.encryptedCryptoPayWebhookSecret ? decrypt(bot.encryptedCryptoPayWebhookSecret) : null;
   const defaultWebhookUrl = secret ? buildWebhookUrl(request, bot.id, secret) : null;
-  const webhookUrl = bot.cryptoPayCustomWebhookUrl ?? defaultWebhookUrl;
 
   return {
     connected: Boolean(bot.encryptedCryptoPayToken),
@@ -114,7 +112,7 @@ function serializeConnection(
     connectedAt: bot.cryptoPayConnectedAt?.toISOString() ?? null,
     defaultWebhookUrl,
     customWebhookUrl: bot.cryptoPayCustomWebhookUrl,
-    webhookUrl
+    webhookUrl: defaultWebhookUrl
   };
 }
 
@@ -161,7 +159,7 @@ export async function POST(req: Request, context: { params: Promise<{ botId: str
       data: {
         encryptedCryptoPayToken: encrypt(data.token),
         encryptedCryptoPayWebhookSecret: encrypt(webhookSecret),
-        cryptoPayCustomWebhookUrl: data.webhookUrl,
+        cryptoPayCustomWebhookUrl: null,
         cryptoPayAppId:
           typeof app.app_id === "number" || typeof app.app_id === "string" ? String(app.app_id) : null,
         cryptoPayAppName: typeof app.name === "string" ? app.name : null,

@@ -65,7 +65,7 @@ describe("Crypto Pay bot settings route", () => {
       id: "bot_1",
       encryptedCryptoPayToken: "enc:token_123",
       encryptedCryptoPayWebhookSecret: "enc:stored-secret",
-      cryptoPayCustomWebhookUrl: "https://pay.example.com/cryptopay",
+      cryptoPayCustomWebhookUrl: null,
       cryptoPayAppId: "42",
       cryptoPayAppName: "Payments",
       cryptoPayUseTestnet: true,
@@ -80,8 +80,7 @@ describe("Crypto Pay bot settings route", () => {
         },
         body: JSON.stringify({
           token: "token_123",
-          useTestnet: true,
-          webhookUrl: "https://pay.example.com/cryptopay"
+          useTestnet: true
         })
       }),
       {
@@ -96,7 +95,7 @@ describe("Crypto Pay bot settings route", () => {
       data: {
         encryptedCryptoPayToken: "enc:token_123",
         encryptedCryptoPayWebhookSecret: "enc:secret_123",
-        cryptoPayCustomWebhookUrl: "https://pay.example.com/cryptopay",
+        cryptoPayCustomWebhookUrl: null,
         cryptoPayAppId: "42",
         cryptoPayAppName: "Payments",
         cryptoPayUseTestnet: true,
@@ -108,9 +107,8 @@ describe("Crypto Pay bot settings route", () => {
       appId: "42",
       appName: "Payments",
       useTestnet: true,
-      customWebhookUrl: "https://pay.example.com/cryptopay",
       defaultWebhookUrl: "http://localhost/api/cryptopay/webhook/bot_1/secret_123",
-      webhookUrl: "https://pay.example.com/cryptopay"
+      webhookUrl: "http://localhost/api/cryptopay/webhook/bot_1/secret_123"
     });
   });
 
@@ -171,7 +169,7 @@ describe("Crypto Pay bot settings route", () => {
       connected: true,
       customWebhookUrl: "https://billing.example.com/cryptopay",
       defaultWebhookUrl: "http://localhost/api/cryptopay/webhook/bot_1/secret_123",
-      webhookUrl: "https://billing.example.com/cryptopay"
+      webhookUrl: "http://localhost/api/cryptopay/webhook/bot_1/secret_123"
     });
   });
 
@@ -210,7 +208,7 @@ describe("Crypto Pay bot settings route", () => {
     });
   });
 
-  it("returns a readable validation error for an invalid custom webhook URL", async () => {
+  it("returns a readable validation error when the token is missing", async () => {
     requireAppUserMock.mockResolvedValue({ id: "user_1" });
     findFirstMock.mockResolvedValue({
       id: "bot_1",
@@ -225,8 +223,7 @@ describe("Crypto Pay bot settings route", () => {
           "content-type": "application/json"
         },
         body: JSON.stringify({
-          token: "token_123",
-          webhookUrl: "not-a-url"
+          token: ""
         })
       }),
       {
@@ -236,7 +233,7 @@ describe("Crypto Pay bot settings route", () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
-      error: "webhookUrl: Invalid URL"
+      error: "token: Too small: expected string to have >=1 characters"
     });
   });
 });
