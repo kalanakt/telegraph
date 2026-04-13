@@ -1489,10 +1489,10 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
         flowDefinition: defineFlow(
           [
             startNode("booking_start", 0, 0, "command_received", "Command received"),
-            conditionNode("booking_start_match", 220, 0, { type: "command_equals", value: "/start" }, "Is /start"),
+            conditionNode("booking_start_match", 360, 0, { type: "command_equals", value: "/start" }, "Is /start"),
             setVariableNode(
               "booking_admin_chat",
-              500,
+              760,
               0,
               "config.admin_chat_id",
               "SET_ADMIN_CHAT_ID",
@@ -1500,7 +1500,7 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             actionNode(
               "booking_menu",
-              780,
+              1160,
               0,
               {
                 type: "telegram.sendMessage",
@@ -1521,7 +1521,7 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             awaitCallbackNode(
               "booking_menu_choice",
-              1060,
+              1560,
               0,
               {
                 timeout_ms: 15 * 60 * 1000,
@@ -1532,7 +1532,7 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             switchNode(
               "booking_menu_switch",
-              1320,
+              1960,
               0,
               "vars.booking.menu_action",
               [
@@ -1544,8 +1544,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             actionNode(
               "booking_services_intro",
-              1600,
-              -140,
+              2360,
+              -220,
               {
                 type: "telegram.sendMessage",
                 params: {
@@ -1558,8 +1558,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             actionNode(
               "booking_support_reply",
-              1600,
-              140,
+              2360,
+              220,
               {
                 type: "telegram.sendMessage",
                 params: {
@@ -1572,8 +1572,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             actionNode(
               "booking_service_prompt",
-              1880,
-              -40,
+              2760,
+              0,
               {
                 type: "telegram.sendMessage",
                 params: {
@@ -1585,8 +1585,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             formStepNode(
               "booking_service_step",
-              2160,
-              -40,
+              3140,
+              0,
               "booking.service",
               "text",
               undefined,
@@ -1595,8 +1595,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             actionNode(
               "booking_name_prompt",
-              2440,
-              -40,
+              3520,
+              0,
               {
                 type: "telegram.sendMessage",
                 params: {
@@ -1608,8 +1608,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             formStepNode(
               "booking_name_step",
-              2720,
-              -40,
+              3900,
+              0,
               "booking.name",
               "text",
               undefined,
@@ -1618,8 +1618,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             actionNode(
               "booking_date_prompt",
-              3000,
-              -40,
+              4280,
+              0,
               {
                 type: "telegram.sendMessage",
                 params: {
@@ -1631,8 +1631,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             formStepNode(
               "booking_date_step",
-              3280,
-              -40,
+              4660,
+              0,
               "booking.date",
               "text",
               undefined,
@@ -1641,8 +1641,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             actionNode(
               "booking_time_prompt",
-              3560,
-              -40,
+              5040,
+              0,
               {
                 type: "telegram.sendMessage",
                 params: {
@@ -1654,8 +1654,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             formStepNode(
               "booking_time_step",
-              3840,
-              -40,
+              5420,
+              0,
               "booking.time",
               "text",
               undefined,
@@ -1664,8 +1664,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             actionNode(
               "booking_phone_prompt",
-              4120,
-              -40,
+              5800,
+              0,
               {
                 type: "telegram.sendMessage",
                 params: {
@@ -1677,8 +1677,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             formStepNode(
               "booking_phone_step",
-              4400,
-              -40,
+              6180,
+              0,
               "booking.phone",
               "text",
               undefined,
@@ -1687,8 +1687,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             actionNode(
               "booking_note_prompt",
-              4680,
-              -40,
+              6560,
+              0,
               {
                 type: "telegram.sendMessage",
                 params: {
@@ -1700,8 +1700,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             formStepNode(
               "booking_note_step",
-              4960,
-              -40,
+              6940,
+              0,
               "booking.note",
               "text",
               undefined,
@@ -1710,8 +1710,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             actionNode(
               "booking_summary",
-              5240,
-              -40,
+              7320,
+              0,
               {
                 type: "telegram.sendMessage",
                 params: {
@@ -1732,8 +1732,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             awaitCallbackNode(
               "booking_summary_choice",
-              5520,
-              -40,
+              7700,
+              0,
               {
                 timeout_ms: 15 * 60 * 1000,
                 callback_prefix: "booking:summary:",
@@ -1743,8 +1743,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             switchNode(
               "booking_summary_switch",
-              5800,
-              -40,
+              8080,
+              0,
               "vars.booking.summary_action",
               [
                 { id: "confirm", value: "booking:summary:confirm", label: "Confirm" },
@@ -1754,7 +1754,7 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             conditionNode(
               "booking_admin_configured",
-              8880,
+              13820,
               -180,
               {
                 type: "variable_equals",
@@ -1765,7 +1765,7 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             actionNode(
               "booking_config_warning",
-              9160,
+              14200,
               -320,
               {
                 type: "telegram.sendMessage",
@@ -1779,8 +1779,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             actionNode(
               "booking_admin_notify",
-              9160,
-              -100,
+              14200,
+              -80,
               {
                 type: "telegram.sendMessage",
                 params: {
@@ -1793,8 +1793,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             actionNode(
               "booking_user_confirmed",
-              9440,
-              -100,
+              14580,
+              -80,
               {
                 type: "telegram.sendMessage",
                 params: {
@@ -1807,8 +1807,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             actionNode(
               "booking_service_prompt_edit",
-              6080,
-              220,
+              8480,
+              260,
               {
                 type: "telegram.sendMessage",
                 params: {
@@ -1820,8 +1820,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             formStepNode(
               "booking_service_step_edit",
-              6360,
-              220,
+              8860,
+              260,
               "booking.service",
               "text",
               undefined,
@@ -1830,8 +1830,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             actionNode(
               "booking_name_prompt_edit",
-              6640,
-              220,
+              9240,
+              260,
               {
                 type: "telegram.sendMessage",
                 params: {
@@ -1843,8 +1843,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             formStepNode(
               "booking_name_step_edit",
-              6920,
-              220,
+              9620,
+              260,
               "booking.name",
               "text",
               undefined,
@@ -1853,8 +1853,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             actionNode(
               "booking_date_prompt_edit",
-              7200,
-              220,
+              10000,
+              260,
               {
                 type: "telegram.sendMessage",
                 params: {
@@ -1866,8 +1866,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             formStepNode(
               "booking_date_step_edit",
-              7480,
-              220,
+              10380,
+              260,
               "booking.date",
               "text",
               undefined,
@@ -1876,8 +1876,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             actionNode(
               "booking_time_prompt_edit",
-              7760,
-              220,
+              10760,
+              260,
               {
                 type: "telegram.sendMessage",
                 params: {
@@ -1889,8 +1889,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             formStepNode(
               "booking_time_step_edit",
-              8040,
-              220,
+              11140,
+              260,
               "booking.time",
               "text",
               undefined,
@@ -1899,8 +1899,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             actionNode(
               "booking_phone_prompt_edit",
-              8320,
-              220,
+              11520,
+              260,
               {
                 type: "telegram.sendMessage",
                 params: {
@@ -1912,8 +1912,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             formStepNode(
               "booking_phone_step_edit",
-              8600,
-              220,
+              11900,
+              260,
               "booking.phone",
               "text",
               undefined,
@@ -1922,8 +1922,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             actionNode(
               "booking_note_prompt_edit",
-              8880,
-              220,
+              12280,
+              260,
               {
                 type: "telegram.sendMessage",
                 params: {
@@ -1935,8 +1935,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             formStepNode(
               "booking_note_step_edit",
-              9160,
-              220,
+              12660,
+              260,
               "booking.note",
               "text",
               undefined,
@@ -1945,8 +1945,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             actionNode(
               "booking_summary_edit",
-              9440,
-              220,
+              13040,
+              260,
               {
                 type: "telegram.sendMessage",
                 params: {
@@ -1962,8 +1962,8 @@ export const CURATED_WORKFLOW_TEMPLATES: CuratedWorkflowTemplate[] = [
             ),
             awaitCallbackNode(
               "booking_summary_choice_edit",
-              9720,
-              220,
+              13420,
+              260,
               {
                 timeout_ms: 15 * 60 * 1000,
                 callback_prefix: "booking:updated:",
