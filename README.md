@@ -1,70 +1,59 @@
-<!-- <p align="center">
-  <img src="" alt="Telegraph — The easiest way to build and run Telegram bots" width="100%">
-</p> -->
-
 <div align="center">
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="docs/assets/logo-light.svg">
-  <img alt="Multica" src="docs/assets/logo-light.svg" width="50">
+  <img alt="Telegraph" src="docs/assets/logo-light.svg" width="50">
 </picture>
 
 # Telegraph
 
-**The easiest way to build and run Telegram bots.**
-
-no coding required.<br/>
-Manage everything from one dashboard with instant deploy and scalable automation.
+**Build and run Telegram bot automations with a visual flow builder.**
 
 [![CI](https://github.com/kalanakt/telegraph/actions/workflows/ci.yml/badge.svg)](https://github.com/kalanakt/telegraph/actions/workflows/ci.yml)
 [![GitHub stars](https://img.shields.io/github/stars/kalanakt/telegraph?style=flat)](https://github.com/kalanakt/telegraph/stargazers)
 
-[Website](https://telegraph.us.com) · [Cloud](https://telegraph.us.com/dashboard) · [Telegram](https://t.me/jointelegraph) · [Self-Hosting](SELF_HOSTING.md) · [Contributing](CONTRIBUTING.md)
+[Website](https://telegraph.us.com) · [Cloud](https://telegraph.us.com/dashboard) · [Telegram](https://t.me/jointelegraph) · [Contributing](CONTRIBUTING.md)
 
 </div>
 
-## Apps
+## What Is Telegraph?
 
-- `apps/web` - Next.js dashboard, API routes, and Telegram webhook entrypoint
-- `apps/worker` - BullMQ worker that executes queued actions
-- `packages/shared` - shared domain logic, orchestrator, validation, and Telegram helpers
-- `prisma` - PostgreSQL schema and migrations
-- `tests` - Vitest tests
+Telegraph is a SaaS platform for building Telegram bot automations without hand-writing the execution layer yourself. It combines a visual builder, webhook ingestion, workflow orchestration, queued action processing, and operational safeguards into one system for shipping Telegram bots at scale.
 
-## Local development
+## Features
 
-```bash
-pnpm install
-cp .env.example .env
-pnpm prisma:generate
-pnpm prisma:push
-pnpm dev:web
+- Visual flow builder for Telegram automations
+- Trigger, condition, and action-driven workflow execution
+- Shared orchestrator logic used by both the web app and worker
+- BullMQ-backed action processing for reliable async execution
+- Billing and plan-limit enforcement during orchestration
+- Encrypted bot token storage with application-level security
+- Event deduplication and action idempotency for safer replays
+
+## Architecture
+
+```mermaid
+flowchart LR
+    telegram["Telegram Update"] --> webhook["/api/telegram/webhook/[botId]"]
+    webhook --> web["apps/web"]
+    web --> adapters["DB Adapters"]
+    adapters --> orchestrator["Shared Orchestrator"]
+    orchestrator --> db[("PostgreSQL")]
+    orchestrator --> queue["BullMQ Actions Queue"]
+    queue --> worker["apps/worker"]
+    worker --> telegramApi["Telegram API"]
+    worker --> db
 ```
 
-Run the worker in a second terminal:
+## Repository Layout
 
-```bash
-pnpm dev:worker
-```
+| Path | Responsibility |
+| --- | --- |
+| `apps/web` | Next.js dashboard, API routes, webhook entrypoint, and flow builder UI |
+| `apps/worker` | BullMQ worker that consumes and executes queued actions |
+| `packages/shared` | Core domain logic, orchestrator, Telegram client, validation, and queue contracts |
+| `prisma` | PostgreSQL schema and migrations |
+| `tests` | Vitest unit and integration tests |
 
-## Common commands
-
-```bash
-pnpm dev:web
-pnpm dev:worker
-pnpm test
-pnpm build
-pnpm prisma:generate
-pnpm prisma:push
-pnpm prisma:migrate
-```
-
-## Required environment variables
-
-- `DATABASE_URL`
-- `REDIS_URL`
-- `ENCRYPTION_KEY`
-- `TELEGRAM_WEBHOOK_BASE_URL`
-
-See [`.env.example`](/Users/kalanakt/Dev/netronk/telegraph.dev/.env.example) for the full list.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full development workflow, worktree support, testing, and troubleshooting.
