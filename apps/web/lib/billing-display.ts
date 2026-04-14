@@ -70,3 +70,17 @@ export function formatBillingPeriodEndLabel(value?: Date | string | null) {
 
   return billingDateFormatter.format(date);
 }
+
+export function getBillingPortalState(hasPortal: boolean) {
+  if (hasPortal) {
+    return {
+      href: "/portal",
+      label: "Billing portal"
+    };
+  }
+
+  return {
+    href: null,
+    label: "Available after customer sync"
+  };
+}

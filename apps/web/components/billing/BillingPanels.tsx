@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  getBillingPortalState,
   getBillingStatusTone,
   getDisplayPlan,
   getDisplayStatus,
@@ -257,6 +258,7 @@ export function BillingOverviewCard({
   const statusTone = getBillingStatusTone(subscription?.status);
   const normalizedPlan = normalizePlanKey(subscription?.plan);
   const hasPortal = Boolean(subscription?.creemCustomerId);
+  const portalState = getBillingPortalState(hasPortal);
   const showRecoveryWarning = normalizedPlan === "PRO" && !hasPortal;
 
   return (
@@ -312,7 +314,13 @@ export function BillingOverviewCard({
             Billing portal
           </p>
           <p className="text-sm text-foreground">
-            {hasPortal ? "Available" : "Available after customer sync"}
+            {portalState.href ? (
+              <a href={portalState.href} className="underline underline-offset-4">
+                {portalState.label}
+              </a>
+            ) : (
+              portalState.label
+            )}
           </p>
         </div>
         {showRecoveryWarning ? (
@@ -325,23 +333,13 @@ export function BillingOverviewCard({
           </div>
         ) : null}
       </CardContent>
-      <CardFooter className="gap-2 bg-transparent">
-        {normalizedPlan === "PRO" ? (
-          hasPortal ? (
-            <Button asChild type="button" variant="outline">
-              <a href="/portal">Open billing portal</a>
-            </Button>
-          ) : (
-            <Button type="button" variant="outline" disabled>
-              Billing portal syncing
-            </Button>
-          )
-        ) : (
+      {normalizedPlan === "FREE" ? (
+        <CardFooter className="gap-2 bg-transparent">
           <Button asChild type="button">
             <a href="/api/checkout">Upgrade to Pro</a>
           </Button>
-        )}
-      </CardFooter>
+        </CardFooter>
+      ) : null}
     </Card>
   );
 }
