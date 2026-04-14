@@ -14,7 +14,8 @@ function applyBaseEnv() {
   process.env.CLERK_SECRET_KEY = "sk_test_123";
   process.env.CREEM_API_KEY = "creem_test_123";
   process.env.CREEM_WEBHOOK_SECRET = "whsec_123";
-  process.env.CREEM_PRO_PRODUCT_ID = "prod_123";
+  process.env.CREEM_PRO_MONTHLY_PRODUCT_ID = "prod_monthly";
+  process.env.CREEM_PRO_YEARLY_PRODUCT_ID = "prod_yearly";
   process.env.TELEGRAM_WEBHOOK_SECRET_TOKEN = "telegram-secret";
 }
 
@@ -42,6 +43,13 @@ describe("runtime env validation", () => {
     resetWebRuntimeEnvForTests();
 
     expect(() => getWebRuntimeEnv()).toThrow(/TELEGRAM_WEBHOOK_SECRET_TOKEN is required/);
+  });
+
+  it("fails web validation when the yearly Creem product id is missing", () => {
+    delete process.env.CREEM_PRO_YEARLY_PRODUCT_ID;
+    resetWebRuntimeEnvForTests();
+
+    expect(() => getWebRuntimeEnv()).toThrow(/CREEM_PRO_YEARLY_PRODUCT_ID is required/);
   });
 
   it("accepts a valid production worker env", () => {

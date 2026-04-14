@@ -7,49 +7,56 @@ import {
 } from "@/lib/creem-billing";
 
 describe("mapCreemProductIdToPlanKey", () => {
-  it("maps the configured product to PRO", () => {
-    process.env.CREEM_PRO_PRODUCT_ID = "prod_pro";
-    expect(mapCreemProductIdToPlanKey("prod_pro")).toBe("PRO");
+  it("maps the monthly and yearly products to PRO", () => {
+    process.env.CREEM_PRO_MONTHLY_PRODUCT_ID = "prod_monthly";
+    process.env.CREEM_PRO_YEARLY_PRODUCT_ID = "prod_yearly";
+
+    expect(mapCreemProductIdToPlanKey("prod_monthly")).toBe("PRO");
+    expect(mapCreemProductIdToPlanKey("prod_yearly")).toBe("PRO");
   });
 
   it("maps other products to FREE", () => {
-    process.env.CREEM_PRO_PRODUCT_ID = "prod_pro";
+    process.env.CREEM_PRO_MONTHLY_PRODUCT_ID = "prod_monthly";
+    process.env.CREEM_PRO_YEARLY_PRODUCT_ID = "prod_yearly";
     expect(mapCreemProductIdToPlanKey("prod_other")).toBe("FREE");
   });
 });
 
 describe("resolveCreemEventPlanStatus", () => {
   it("keeps active subscriptions on PRO", () => {
-    process.env.CREEM_PRO_PRODUCT_ID = "prod_pro";
+    process.env.CREEM_PRO_MONTHLY_PRODUCT_ID = "prod_monthly";
+    process.env.CREEM_PRO_YEARLY_PRODUCT_ID = "prod_yearly";
 
     expect(
       resolveCreemEventPlanStatus({
         eventType: "subscription.active",
-        productId: "prod_pro",
+        productId: "prod_monthly",
         status: "active"
       })
     ).toEqual({ plan: "PRO", status: "active" });
   });
 
   it("marks scheduled cancellation as billable until period end", () => {
-    process.env.CREEM_PRO_PRODUCT_ID = "prod_pro";
+    process.env.CREEM_PRO_MONTHLY_PRODUCT_ID = "prod_monthly";
+    process.env.CREEM_PRO_YEARLY_PRODUCT_ID = "prod_yearly";
 
     expect(
       resolveCreemEventPlanStatus({
         eventType: "subscription.scheduled_cancel",
-        productId: "prod_pro",
+        productId: "prod_yearly",
         status: "canceled"
       })
     ).toEqual({ plan: "PRO", status: "scheduled_cancel" });
   });
 
   it("downgrades paused subscriptions to FREE", () => {
-    process.env.CREEM_PRO_PRODUCT_ID = "prod_pro";
+    process.env.CREEM_PRO_MONTHLY_PRODUCT_ID = "prod_monthly";
+    process.env.CREEM_PRO_YEARLY_PRODUCT_ID = "prod_yearly";
 
     expect(
       resolveCreemEventPlanStatus({
         eventType: "subscription.paused",
-        productId: "prod_pro",
+        productId: "prod_monthly",
         status: "paused"
       })
     ).toEqual({ plan: "FREE", status: "paused" });

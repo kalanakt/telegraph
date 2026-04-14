@@ -30,20 +30,19 @@ export function getCreemWebhookSecret() {
   return process.env.CREEM_WEBHOOK_SECRET ?? "";
 }
 
-export function getCreemProProductId() {
-  return process.env.CREEM_PRO_PRODUCT_ID ?? "";
+export function getCreemProProductIds() {
+  return [
+    process.env.CREEM_PRO_MONTHLY_PRODUCT_ID,
+    process.env.CREEM_PRO_YEARLY_PRODUCT_ID
+  ].filter((value): value is string => Boolean(value && value.trim()));
 }
 
 export function getCreemProProductIdForInterval(interval?: string | null) {
   if (interval === "yearly") {
-    return process.env.CREEM_PRO_YEARLY_PRODUCT_ID ?? getCreemProProductId();
+    return process.env.CREEM_PRO_YEARLY_PRODUCT_ID ?? "";
   }
 
-  if (interval === "monthly") {
-    return process.env.CREEM_PRO_MONTHLY_PRODUCT_ID ?? getCreemProProductId();
-  }
-
-  return getCreemProProductId();
+  return process.env.CREEM_PRO_MONTHLY_PRODUCT_ID ?? "";
 }
 
 export function createCreemClient() {

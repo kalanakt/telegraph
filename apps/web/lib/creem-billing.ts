@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import type { FlatCheckoutCompleted, FlatSubscriptionEvent } from "@creem_io/nextjs";
 import { normalizePlanKey, type PlanKey } from "@telegram-builder/shared";
 import { prisma } from "./prisma";
-import { createCreemClient, getCreemApiKey, getCreemProProductId } from "./creem";
+import { createCreemClient, getCreemApiKey, getCreemProProductIds } from "./creem";
 
 type TelegraphSubscriptionStatus =
   | "active"
@@ -109,9 +109,9 @@ function toDate(value: Date | string | number | null | undefined): Date | null {
 }
 
 function mapProductIdToPlan(productId?: string | null): PlanKey {
-  const configuredProductId = getCreemProProductId();
+  const configuredProductIds = new Set(getCreemProProductIds());
 
-  if (configuredProductId && productId === configuredProductId) {
+  if (productId && configuredProductIds.has(productId)) {
     return "PRO";
   }
 
