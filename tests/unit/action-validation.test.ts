@@ -31,6 +31,33 @@ describe("actionSchema v2", () => {
     expect(parsed.params.reply_markup).toBeDefined();
   });
 
+  it("supports parse mode and link preview controls for text message actions", () => {
+    expect(
+      actionSchema.safeParse({
+        type: "telegram.sendMessage",
+        params: {
+          chat_id: "123",
+          text: "*Hello* https://example.com",
+          parse_mode: "Markdown",
+          disable_web_page_preview: true,
+        },
+      }).success,
+    ).toBe(true);
+
+    expect(
+      actionSchema.safeParse({
+        type: "telegram.editMessageText",
+        params: {
+          chat_id: "123",
+          message_id: "42",
+          text: "*Updated* https://example.com",
+          parse_mode: "MarkdownV2",
+          disable_web_page_preview: true,
+        },
+      }).success,
+    ).toBe(true);
+  });
+
   it("rejects invalid payloads", () => {
     const result = actionSchema.safeParse({
       type: "telegram.sendMessage",

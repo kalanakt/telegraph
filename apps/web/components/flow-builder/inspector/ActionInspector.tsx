@@ -18,6 +18,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { createActionTemplate, getActionPresets, getActionTypeOptions, migrateLegacyActionData } from "@/lib/flow-builder";
 import {
+  actionSupportsDisableWebPagePreview,
+  actionSupportsParseMode,
+  actionSupportsReplyKeyboard,
   asString,
   getInlineKeyboard,
   getReplyKeyboard,
@@ -69,7 +72,11 @@ function getUploadConfig(actionType: ActionPayload["type"]): {
 export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: Props) {
   const params = action.params;
   const isCompatible = isActionAllowedForTrigger(action.type as ActionPayload["type"], trigger);
-  const isCoreComposer = CORE_COMPOSER_METHODS.has(action.type);
+  const isEditMessageText = action.type === "telegram.editMessageText";
+  const isCoreComposer = CORE_COMPOSER_METHODS.has(action.type) || isEditMessageText;
+  const canConfigureParseMode = actionSupportsParseMode(action.type);
+  const canDisableWebPagePreview = actionSupportsDisableWebPagePreview(action.type);
+  const canUseReplyKeyboard = actionSupportsReplyKeyboard(action.type);
   const actionTypeOptions = useMemo(() => getActionTypeOptions(trigger), [trigger]);
   const presets = useMemo(() => getActionPresets(action.type as ActionPayload["type"]), [action.type]);
 
@@ -207,7 +214,28 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
               />
             </label>
 
-            {action.type === "telegram.sendMessage" ? (
+            {isEditMessageText ? (
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                <label className="builder-label">
+                  <span>Message ID</span>
+                  <Input
+                    value={asString(params.message_id)}
+                    onChange={(e) => onUpdateParams({ message_id: e.target.value })}
+                    placeholder="{{event.messageId}}"
+                  />
+                </label>
+                <label className="builder-label">
+                  <span>Inline message ID</span>
+                  <Input
+                    value={asString(params.inline_message_id)}
+                    onChange={(e) => onUpdateParams({ inline_message_id: e.target.value })}
+                    placeholder="Optional alternative"
+                  />
+                </label>
+              </div>
+            ) : null}
+
+            {action.type === "telegram.sendMessage" || isEditMessageText ? (
               <label className="builder-label mt-2">
                 <span>Text</span>
                 <Textarea
@@ -338,30 +366,43 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
               </div>
             ) : null}
 
-            <div className="builder-label mt-2">
-              <span>Parse mode</span>
-              <Select
-                value={asString(params.parse_mode) || NO_PARSE_MODE}
-                onValueChange={(value) => {
-                  if (value === NO_PARSE_MODE) {
-                    const { parse_mode: _omit, ...rest } = params;
-                    onReplace({ ...action, params: rest });
-                    return;
-                  }
-                  onUpdateParams({ parse_mode: value });
-                }}
-              >
-                <SelectTrigger className="builder-field">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NO_PARSE_MODE}>None</SelectItem>
-                  <SelectItem value="Markdown">Markdown</SelectItem>
-                  <SelectItem value="MarkdownV2">MarkdownV2</SelectItem>
-                  <SelectItem value="HTML">HTML</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {canConfigureParseMode ? (
+              <div className="builder-label mt-2">
+                <span>Parse mode</span>
+                <Select
+                  value={asString(params.parse_mode) || NO_PARSE_MODE}
+                  onValueChange={(value) => {
+                    if (value === NO_PARSE_MODE) {
+                      const { parse_mode: _omit, ...rest } = params;
+                      onReplace({ ...action, params: rest });
+                      return;
+                    }
+                    onUpdateParams({ parse_mode: value });
+                  }}
+                >
+                  <SelectTrigger className="builder-field">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_PARSE_MODE}>None</SelectItem>
+                    <SelectItem value="Markdown">Markdown</SelectItem>
+                    <SelectItem value="MarkdownV2">MarkdownV2</SelectItem>
+                    <SelectItem value="HTML">HTML</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
+
+            {canDisableWebPagePreview ? (
+              <label className="mt-2 flex items-center gap-2 text-sm text-foreground/80">
+                <input
+                  type="checkbox"
+                  checked={Boolean(params.disable_web_page_preview)}
+                  onChange={(e) => onUpdateParams({ disable_web_page_preview: e.target.checked })}
+                />
+                Disable link preview
+              </label>
+            ) : null}
           </div>
 
           <div className="builder-section">
@@ -390,7 +431,7 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
                 <SelectContent>
                   <SelectItem value="none">None</SelectItem>
                   <SelectItem value="inline">Inline keyboard</SelectItem>
-                  <SelectItem value="reply">Reply keyboard</SelectItem>
+                  {canUseReplyKeyboard ? <SelectItem value="reply">Reply keyboard</SelectItem> : null}
                 </SelectContent>
               </Select>
             </div>
@@ -494,7 +535,7 @@ export function ActionInspector({ action, trigger, onReplace, onUpdateParams }: 
               </div>
             ) : null}
 
-            {replyMarkupKind === "reply" ? (
+            {replyMarkupKind === "reply" && canUseReplyKeyboard ? (
               <div className="mt-3 space-y-2">
                 {replyKeyboard.map((row, rowIndex) => (
                   <div key={`reply-row-${rowIndex}`} className="space-y-2 rounded-md border border-border/80 bg-background/65 p-2">

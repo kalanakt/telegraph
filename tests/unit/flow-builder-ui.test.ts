@@ -8,6 +8,9 @@ import {
   migrateLegacyActionData
 } from "@/lib/flow-builder";
 import {
+  actionSupportsDisableWebPagePreview,
+  actionSupportsParseMode,
+  actionSupportsReplyKeyboard,
   buildCallbackToken,
   canCreateConnection,
   createBuilderEdge,
@@ -156,6 +159,27 @@ describe("flow-builder composer payloads", () => {
       }
     });
     expect(actionSchema.safeParse(payload).success).toBe(true);
+  });
+});
+
+describe("flow-builder composer feature flags", () => {
+  it("marks parse-mode capable telegram actions correctly", () => {
+    expect(actionSupportsParseMode("telegram.sendMessage")).toBe(true);
+    expect(actionSupportsParseMode("telegram.sendPhoto")).toBe(true);
+    expect(actionSupportsParseMode("telegram.sendVideo")).toBe(true);
+    expect(actionSupportsParseMode("telegram.sendDocument")).toBe(true);
+    expect(actionSupportsParseMode("telegram.editMessageText")).toBe(true);
+    expect(actionSupportsParseMode("telegram.deleteMessage")).toBe(false);
+  });
+
+  it("limits link preview toggles and reply keyboards to supported actions", () => {
+    expect(actionSupportsDisableWebPagePreview("telegram.sendMessage")).toBe(true);
+    expect(actionSupportsDisableWebPagePreview("telegram.editMessageText")).toBe(true);
+    expect(actionSupportsDisableWebPagePreview("telegram.sendPhoto")).toBe(false);
+
+    expect(actionSupportsReplyKeyboard("telegram.sendMessage")).toBe(true);
+    expect(actionSupportsReplyKeyboard("telegram.sendPhoto")).toBe(true);
+    expect(actionSupportsReplyKeyboard("telegram.editMessageText")).toBe(false);
   });
 });
 

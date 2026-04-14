@@ -1084,6 +1084,38 @@ export function getReplyMarkupKind(params: Record<string, unknown>): "none" | "i
   return "none";
 }
 
+const PARSE_MODE_ACTIONS = new Set<ActionPayload["type"]>([
+  "telegram.sendMessage",
+  "telegram.sendPhoto",
+  "telegram.sendVideo",
+  "telegram.sendDocument",
+  "telegram.editMessageText",
+]);
+
+const DISABLE_WEB_PAGE_PREVIEW_ACTIONS = new Set<ActionPayload["type"]>([
+  "telegram.sendMessage",
+  "telegram.editMessageText",
+]);
+
+const REPLY_KEYBOARD_ACTIONS = new Set<ActionPayload["type"]>([
+  "telegram.sendMessage",
+  "telegram.sendPhoto",
+  "telegram.sendVideo",
+  "telegram.sendDocument",
+]);
+
+export function actionSupportsParseMode(actionType: ActionPayload["type"]) {
+  return PARSE_MODE_ACTIONS.has(actionType);
+}
+
+export function actionSupportsDisableWebPagePreview(actionType: ActionPayload["type"]) {
+  return DISABLE_WEB_PAGE_PREVIEW_ACTIONS.has(actionType);
+}
+
+export function actionSupportsReplyKeyboard(actionType: ActionPayload["type"]) {
+  return REPLY_KEYBOARD_ACTIONS.has(actionType);
+}
+
 export function updateInlineKeyboard(
   rows: InlineKeyboardButton[][],
   rowIndex: number,
