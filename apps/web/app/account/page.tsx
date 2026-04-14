@@ -1,6 +1,7 @@
 import { UserProfile } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 import { BillingOverviewCard } from "@/components/billing/BillingPanels";
+import { formatBillingPeriodEndLabel } from "@/lib/billing-display";
 import { clerkProfileAppearance } from "@/lib/clerk-appearance";
 import {
   getBillingReturnState,
@@ -54,6 +55,13 @@ export default async function AccountProfilePage({
     }
   });
 
+  const subscriptionSummary = freshUser.subscription
+    ? {
+        ...freshUser.subscription,
+        currentPeriodEndLabel: formatBillingPeriodEndLabel(freshUser.subscription.currentPeriodEnd)
+      }
+    : null;
+
   return (
     <div className="space-y-6">
       {redirectState ? (
@@ -68,7 +76,7 @@ export default async function AccountProfilePage({
         </p>
       ) : null}
 
-      <BillingOverviewCard subscription={freshUser.subscription} />
+      <BillingOverviewCard subscription={subscriptionSummary} />
 
       <div className="border border-border">
         <UserProfile appearance={clerkProfileAppearance} routing="hash" />

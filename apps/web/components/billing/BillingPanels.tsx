@@ -15,7 +15,7 @@ import {
 
 type SubscriptionSummary = {
   creemCustomerId?: string | null;
-  currentPeriodEnd?: Date | null;
+  currentPeriodEndLabel?: string | null;
   plan?: string | null;
   status?: string | null;
 };
@@ -28,10 +28,6 @@ type BillingPanelsProps = {
 type BillingInterval = "monthly" | "yearly";
 
 const numberFormatter = new Intl.NumberFormat("en-US");
-const dateFormatter = new Intl.DateTimeFormat("en-US", {
-  dateStyle: "medium",
-});
-
 const DISPLAY_PRICES: Record<BillingInterval, { label: string; note: string }> = {
   monthly: {
     label: "$5",
@@ -45,14 +41,6 @@ const DISPLAY_PRICES: Record<BillingInterval, { label: string; note: string }> =
 
 function formatLimit(value: number) {
   return `${numberFormatter.format(value)} runs / month`;
-}
-
-function formatDate(value?: Date | null) {
-  if (!value) {
-    return "Not available yet";
-  }
-
-  return dateFormatter.format(value);
 }
 
 function PlanCard({
@@ -316,7 +304,7 @@ export function BillingOverviewCard({
             Current period end
           </p>
           <p className="text-sm text-foreground">
-            {formatDate(subscription?.currentPeriodEnd)}
+            {subscription?.currentPeriodEndLabel ?? "Not available yet"}
           </p>
         </div>
         <div className="space-y-1">

@@ -1,5 +1,10 @@
 import { normalizePlanKey } from "@telegram-builder/shared";
 
+const billingDateFormatter = new Intl.DateTimeFormat("en-US", {
+  dateStyle: "medium",
+  timeZone: "UTC"
+});
+
 function normalizeStatus(value?: string | null) {
   const normalized = value?.trim().toLowerCase();
 
@@ -50,4 +55,18 @@ export function getDisplayStatus(status?: string | null) {
     default:
       return normalized.charAt(0).toUpperCase() + normalized.slice(1);
   }
+}
+
+export function formatBillingPeriodEndLabel(value?: Date | string | null) {
+  if (!value) {
+    return "Not available yet";
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Not available yet";
+  }
+
+  return billingDateFormatter.format(date);
 }
