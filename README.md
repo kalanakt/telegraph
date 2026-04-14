@@ -34,7 +34,7 @@ Telegraph is a SaaS platform for building Telegram bot automations without hand-
 ## Architecture
 
 <p align="center">
-  <img src="assets/architecture.png" alt="telegraph mermaid architecture graph" width="100%">
+  <img src="assets/architecture.svg" alt="telegraph mermaid architecture graph" width="100%">
 </p>
 
 ## Repository Layout
