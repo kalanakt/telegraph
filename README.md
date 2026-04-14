@@ -33,18 +33,9 @@ Telegraph is a SaaS platform for building Telegram bot automations without hand-
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    telegram["Telegram Update"] --> webhook["/api/telegram/webhook/[botId]"]
-    webhook --> web["apps/web"]
-    web --> adapters["DB Adapters"]
-    adapters --> orchestrator["Shared Orchestrator"]
-    orchestrator --> db[("PostgreSQL")]
-    orchestrator --> queue["BullMQ Actions Queue"]
-    queue --> worker["apps/worker"]
-    worker --> telegramApi["Telegram API"]
-    worker --> db
-```
+<p align="center">
+  <img src="assets/architecture.png" alt="telegraph mermaid architecture graph" width="100%">
+</p>
 
 ## Repository Layout
 
