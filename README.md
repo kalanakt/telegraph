@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/flow-builder.jpeg" alt="telegraph flow builder" width="100%">
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="docs/assets/logo-light.svg">
