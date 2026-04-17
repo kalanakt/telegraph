@@ -3,9 +3,9 @@
 <img src="assets/flow-builder.jpeg" alt="telegraph flow builder" width="100%">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="docs/assets/logo-light.svg">
-  <img alt="Telegraph" src="docs/assets/logo-light.svg" width="50">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="assets/logo-light.png">
+  <img alt="Telegraph" src="assets/logo-light.png" width="50">
 </picture>
 
 # Telegraph
