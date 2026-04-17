@@ -2,10 +2,13 @@
 
 <img src="assets/flow-builder.jpeg" alt="telegraph flow builder" width="100%">
 
+<br />
+<br />
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.png">
   <source media="(prefers-color-scheme: light)" srcset="assets/logo-light.png">
-  <img alt="Telegraph" src="assets/logo-light.png" width="50">
+  <img alt="Telegraph" src="assets/logo-light.png" width="80">
 </picture>
 
 # Telegraph
