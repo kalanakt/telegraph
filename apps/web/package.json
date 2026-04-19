@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1028.0",
-    "@clerk/nextjs": "^7.0.12",
+    "@clerk/nextjs": "^7.2.1",
     "@creem_io/nextjs": "^0.6.0",
     "@hugeicons/core-free-icons": "^4.1.1",
     "@hugeicons/react": "^1.1.6",
