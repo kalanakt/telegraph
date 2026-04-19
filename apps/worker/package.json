@@ -9,10 +9,10 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@prisma/client": "^6.19.2",
-    "@sentry/node": "^10.48.0",
+    "@prisma/client": "^7.7.0",
+    "@sentry/node": "^10.49.0",
     "@telegram-builder/shared": "workspace:*",
-    "bullmq": "^5.73.3",
+    "bullmq": "^5.74.1",
     "ioredis": "^5.10.0"
   },
   "devDependencies": {
