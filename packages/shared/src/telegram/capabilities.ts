@@ -237,8 +237,8 @@ const editMessageTextSchema = z
     const hasInline = Boolean(value.inline_message_id);
     const hasChatPair = value.chat_id !== undefined && value.message_id !== undefined;
     if (!hasInline && !hasChatPair) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+      (ctx as { addIssue: (i: unknown) => void }).addIssue({
+        code: "custom",
         message: "editMessageText requires inline_message_id or chat_id + message_id"
       });
     }
@@ -299,15 +299,15 @@ const answerShippingQuerySchema = z
   .strict()
   .superRefine((value, ctx) => {
     if (value.ok && !value.shipping_options) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+      (ctx as { addIssue: (i: unknown) => void }).addIssue({
+        code: "custom",
         message: "answerShippingQuery requires shipping_options when ok=true"
       });
     }
 
     if (!value.ok && !value.error_message) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+      (ctx as { addIssue: (i: unknown) => void }).addIssue({
+        code: "custom",
         message: "answerShippingQuery requires error_message when ok=false"
       });
     }
@@ -322,8 +322,8 @@ const answerPreCheckoutQuerySchema = z
   .strict()
   .superRefine((value, ctx) => {
     if (!value.ok && !value.error_message) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+      (ctx as { addIssue: (i: unknown) => void }).addIssue({
+        code: "custom",
         message: "answerPreCheckoutQuery requires error_message when ok=false"
       });
     }
@@ -366,22 +366,22 @@ const sendInvoiceSchema = z
   .strict()
   .superRefine((value, ctx) => {
     if (value.subscription_period && value.currency !== "XTR") {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+      (ctx as { addIssue: (i: unknown) => void }).addIssue({
+        code: "custom",
         message: 'subscription_period requires currency "XTR"'
       });
     }
 
     if (value.currency === "XTR" && value.provider_token) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+      (ctx as { addIssue: (i: unknown) => void }).addIssue({
+        code: "custom",
         message: 'provider_token must be omitted for currency "XTR"'
       });
     }
 
     if (value.suggested_tip_amounts && value.max_tip_amount === undefined) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+      (ctx as { addIssue: (i: unknown) => void }).addIssue({
+        code: "custom",
         message: "suggested_tip_amounts requires max_tip_amount"
       });
     }
@@ -390,8 +390,8 @@ const sendInvoiceSchema = z
       for (let index = 0; index < value.suggested_tip_amounts.length; index += 1) {
         const amount = value.suggested_tip_amounts[index];
         if (amount && amount > value.max_tip_amount) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+          (ctx as { addIssue: (i: unknown) => void }).addIssue({
+            code: "custom",
             path: ["suggested_tip_amounts", index],
             message: "Suggested tip amount must not exceed max_tip_amount"
           });
@@ -860,7 +860,7 @@ export const TELEGRAM_CAPABILITIES_MANIFEST = TELEGRAM_METHODS.map((method) => {
     return {
       name,
       required: "isOptional" in schema && typeof schema.isOptional === "function" ? !schema.isOptional() : true,
-      kind: (unwrapped as { _def?: { typeName?: string } })?._def?.typeName ?? "unknown"
+      kind: (unwrapped as { _def?: { type?: string; typeName?: string } })?._def?.type ?? (unwrapped as { _def?: { typeName?: string } })?._def?.typeName ?? "unknown"
     };
   });
 

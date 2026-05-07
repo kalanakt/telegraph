@@ -135,24 +135,24 @@ const cryptoPayCreateInvoiceSchema = z
   .superRefine((input, ctx) => {
     const currencyType = input.params.currency_type ?? "crypto";
     if (currencyType === "crypto" && !input.params.asset) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+      (ctx as { addIssue: (i: unknown) => void }).addIssue({
+        code: "custom",
         path: ["params", "asset"],
         message: "asset is required when currency_type is crypto"
       });
     }
 
     if (currencyType === "fiat" && !input.params.fiat) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+      (ctx as { addIssue: (i: unknown) => void }).addIssue({
+        code: "custom",
         path: ["params", "fiat"],
         message: "fiat is required when currency_type is fiat"
       });
     }
 
     if (input.params.paid_btn_name && !input.params.paid_btn_url) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+      (ctx as { addIssue: (i: unknown) => void }).addIssue({
+        code: "custom",
         path: ["params", "paid_btn_url"],
         message: "paid_btn_url is required when paid_btn_name is set"
       });
@@ -169,8 +169,8 @@ export const actionSchema: z.ZodType<ActionPayload> = z
     if (input.type.startsWith("telegram.")) {
       const method = input.type.replace("telegram.", "");
       if (!TELEGRAM_METHODS.includes(method as (typeof TELEGRAM_METHODS)[number])) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+        (ctx as { addIssue: (i: unknown) => void }).addIssue({
+          code: "custom",
           path: ["type"],
           message: `Unsupported telegram action type: ${input.type}`
         });
@@ -181,7 +181,7 @@ export const actionSchema: z.ZodType<ActionPayload> = z
       const parsed = paramsSchema.safeParse(input.params);
       if (!parsed.success) {
         for (const issue of parsed.error.issues) {
-          ctx.addIssue({
+          (ctx as { addIssue: (i: unknown) => void }).addIssue({
             ...issue,
             path: ["params", ...issue.path]
           });
@@ -194,7 +194,7 @@ export const actionSchema: z.ZodType<ActionPayload> = z
       const parsed = webhookSendSchema.safeParse(input);
       if (!parsed.success) {
         for (const issue of parsed.error.issues) {
-          ctx.addIssue({
+          (ctx as { addIssue: (i: unknown) => void }).addIssue({
             ...issue,
             path: issue.path
           });
@@ -207,7 +207,7 @@ export const actionSchema: z.ZodType<ActionPayload> = z
       const parsed = httpRequestSchema.safeParse(input);
       if (!parsed.success) {
         for (const issue of parsed.error.issues) {
-          ctx.addIssue({
+          (ctx as { addIssue: (i: unknown) => void }).addIssue({
             ...issue,
             path: issue.path
           });
@@ -220,7 +220,7 @@ export const actionSchema: z.ZodType<ActionPayload> = z
       const parsed = cryptoPayCreateInvoiceSchema.safeParse(input);
       if (!parsed.success) {
         for (const issue of parsed.error.issues) {
-          ctx.addIssue({
+          (ctx as { addIssue: (i: unknown) => void }).addIssue({
             ...issue,
             path: issue.path
           });
@@ -229,8 +229,8 @@ export const actionSchema: z.ZodType<ActionPayload> = z
       return;
     }
 
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+    (ctx as { addIssue: (i: unknown) => void }).addIssue({
+      code: "custom",
       path: ["type"],
       message: `Unsupported action type: ${input.type}`
     });
@@ -454,8 +454,8 @@ function validateTemplates(action: ActionPayload, ctx: z.RefinementCtx, nodeId: 
       const [prefix] = token.split(".");
       const isAllowed = prefix ? ALLOWED_TEMPLATE_PREFIXES.has(prefix) : false;
       if (!isAllowed) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+        (ctx as { addIssue: (i: unknown) => void }).addIssue({
+          code: "custom",
           message: `Node ${nodeId} references unknown template field: ${token}`
         });
       }
@@ -473,8 +473,8 @@ function validateTemplateValues(value: unknown, ctx: z.RefinementCtx, nodeId: st
       const [prefix] = token.split(".");
       const isAllowed = prefix ? ALLOWED_TEMPLATE_PREFIXES.has(prefix) : false;
       if (!isAllowed) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+        (ctx as { addIssue: (i: unknown) => void }).addIssue({
+          code: "custom",
           message: `Node ${nodeId} references unknown template field: ${token}`
         });
       }
@@ -489,8 +489,8 @@ export function validateFlowForTrigger(
 ) {
   for (const node of flowDefinition.nodes) {
     if (node.type === "condition" && !isConditionAllowedForTrigger(node.data.type, trigger)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+      (ctx as { addIssue: (i: unknown) => void }).addIssue({
+        code: "custom",
         message: `Condition ${node.data.type} is not allowed for trigger ${trigger}.`
       });
     }
@@ -498,8 +498,8 @@ export function validateFlowForTrigger(
     if (node.type === "action") {
       const action = node.data as ActionPayload;
       if (!isActionAllowedForTrigger(action.type, trigger)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+        (ctx as { addIssue: (i: unknown) => void }).addIssue({
+          code: "custom",
           message: `Action ${action.type} is not allowed for trigger ${trigger}.`
         });
       }
@@ -549,8 +549,8 @@ export const flowDefinitionSchema: z.ZodType<FlowDefinition> = z
     const starts = flow.nodes.filter((node) => node.type === "start");
 
     if (starts.length !== 1) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+      (ctx as { addIssue: (i: unknown) => void }).addIssue({
+        code: "custom",
         message: "Flow must include exactly one start node."
       });
     }
@@ -559,8 +559,8 @@ export const flowDefinitionSchema: z.ZodType<FlowDefinition> = z
     const seenNodeKeys = new Set<string>();
     for (const node of flow.nodes) {
       if (seenNodeIds.has(node.id)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+        (ctx as { addIssue: (i: unknown) => void }).addIssue({
+          code: "custom",
           message: `Duplicate node id: ${node.id}`
         });
       }
@@ -569,8 +569,8 @@ export const flowDefinitionSchema: z.ZodType<FlowDefinition> = z
       const nodeKey = node.meta?.key?.trim();
       if (nodeKey) {
         if (seenNodeKeys.has(nodeKey)) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+          (ctx as { addIssue: (i: unknown) => void }).addIssue({
+            code: "custom",
             message: `Duplicate node key: ${nodeKey}`
           });
         }
@@ -581,16 +581,16 @@ export const flowDefinitionSchema: z.ZodType<FlowDefinition> = z
     const seenEdgeIds = new Set<string>();
     for (const edge of flow.edges) {
       if (seenEdgeIds.has(edge.id)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+        (ctx as { addIssue: (i: unknown) => void }).addIssue({
+          code: "custom",
           message: `Duplicate edge id: ${edge.id}`
         });
       }
       seenEdgeIds.add(edge.id);
 
       if (!nodeMap.has(edge.source) || !nodeMap.has(edge.target)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+        (ctx as { addIssue: (i: unknown) => void }).addIssue({
+          code: "custom",
           message: `Edge ${edge.id} has dangling source/target node.`
         });
       }
@@ -603,8 +603,8 @@ export const flowDefinitionSchema: z.ZodType<FlowDefinition> = z
         const trueEdgeCount = outgoing.filter((edge) => edge.sourceHandle === "true").length;
         const falseEdgeCount = outgoing.filter((edge) => edge.sourceHandle === "false").length;
         if (trueEdgeCount !== 1 || falseEdgeCount > 1) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+          (ctx as { addIssue: (i: unknown) => void }).addIssue({
+            code: "custom",
             message: `Condition node ${node.id} must have exactly one 'true' edge and at most one 'false' edge.`
           });
         }
@@ -614,15 +614,15 @@ export const flowDefinitionSchema: z.ZodType<FlowDefinition> = z
         const seenCaseIds = new Set<string>();
         for (const flowCase of node.data.cases) {
           if (flowCase.id === "default") {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
+            (ctx as { addIssue: (i: unknown) => void }).addIssue({
+              code: "custom",
               message: `Switch node ${node.id} cannot use reserved branch id 'default'.`
             });
           }
 
           if (seenCaseIds.has(flowCase.id)) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
+            (ctx as { addIssue: (i: unknown) => void }).addIssue({
+              code: "custom",
               message: `Switch node ${node.id} has duplicate branch id '${flowCase.id}'.`
             });
           }
@@ -636,15 +636,15 @@ export const flowDefinitionSchema: z.ZodType<FlowDefinition> = z
         for (const edge of outgoing) {
           const handle = edge.sourceHandle ?? "default";
           if (!allowedHandles.has(handle)) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
+            (ctx as { addIssue: (i: unknown) => void }).addIssue({
+              code: "custom",
               message: `Switch node ${node.id} has an edge for unknown branch '${handle}'.`
             });
           }
 
           if (seenHandles.has(handle)) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
+            (ctx as { addIssue: (i: unknown) => void }).addIssue({
+              code: "custom",
               message: `Switch node ${node.id} cannot have multiple edges for branch '${handle}'.`
             });
           }
@@ -653,8 +653,8 @@ export const flowDefinitionSchema: z.ZodType<FlowDefinition> = z
 
         for (const flowCase of node.data.cases) {
           if (!seenHandles.has(flowCase.id)) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
+            (ctx as { addIssue: (i: unknown) => void }).addIssue({
+              code: "custom",
               message: `Switch node ${node.id} must connect branch '${flowCase.id}'.`
             });
           }
@@ -693,8 +693,8 @@ export const flowDefinitionSchema: z.ZodType<FlowDefinition> = z
     }
 
     if (visitedCount !== flow.nodes.length) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+      (ctx as { addIssue: (i: unknown) => void }).addIssue({
+        code: "custom",
         message: "Flow graph must be acyclic."
       });
     }
@@ -721,8 +721,8 @@ export const flowDefinitionSchema: z.ZodType<FlowDefinition> = z
 
       for (const node of flow.nodes) {
         if (!reachable.has(node.id)) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+          (ctx as { addIssue: (i: unknown) => void }).addIssue({
+            code: "custom",
             message: `Node ${node.id} is not reachable from the start node.`
           });
         }
